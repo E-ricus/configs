@@ -24,13 +24,13 @@ local zig = {}
 local default_config = {
   keymap = "<leader>cc",
   cargo = {
-    enabled = true,
+    enabled = false,
     default = "clippy",
     keymap = nil,
     on_save = false,
   },
   zig = {
-    enabled = true,
+    enabled = false,
     default = "check",
     keymap = nil,
     on_save = false,
@@ -51,6 +51,37 @@ local last_command = nil
 ---@field text string Error/warning message text
 ---@field type string Quickfix type: "E" (error), "W" (warning), "H" (hint), "I" (info)
 
+---Helper function to process a single span into a quickfix item
+---@param msg table Message object containing level and message text
+---@param span table Span object with file location information
+---@param is_child boolean Whether this is a child message
+---@return QuickfixItem Formatted quickfix item
+local function process_cargo_span(msg, span, is_child)
+  local qf_type = "I" -- Default to info
+  local label = ""
+
+  if msg.level == "error" then
+    qf_type = "E"
+    label = span.label or ""
+  elseif msg.level == "warning" then
+    qf_type = "W"
+  elseif msg.level == "note" or msg.level == "help" then
+    qf_type = "H" -- Hint/Help
+    label = span.suggested_replacement or ""
+  end
+
+  local prefix = is_child and "  → " or ""
+  local text = prefix .. msg.message .. (label ~= "" and "\n" .. label or "")
+
+  return {
+    filename = span.file_name,
+    lnum = span.line_start,
+    col = span.column_start,
+    text = text,
+    type = qf_type,
+  }
+end
+
 ---Parses cargo JSON output into quickfix items
 ---@param data string[] Array of JSON output lines from cargo
 ---@param items QuickfixItem[] Table to populate with parsed quickfix items
@@ -61,50 +92,14 @@ function cargo.formatter(data, items)
       if ok and decoded.message then
         local msg = decoded.message
         if msg.spans and #msg.spans > 0 then
-          local span = msg.spans[1]
+          -- Process main span
+          table.insert(items, process_cargo_span(msg, msg.spans[1], false))
 
-          -- Determine the type based on level
-          local qf_type = "I" -- Default to info
-          local label = ""
-          if msg.level == "error" then
-            qf_type = "E"
-            label = span.label or ""
-          elseif msg.level == "warning" then
-            qf_type = "W"
-          elseif msg.level == "note" or msg.level == "help" then
-            qf_type = "H" -- Hint/Help
-            label = span.suggested_replacement or ""
-          end
-
-          table.insert(items, {
-            filename = span.file_name,
-            lnum = span.line_start,
-            col = span.column_start,
-            text = msg.message .. (label ~= "" and "\n" .. label or ""),
-            type = qf_type,
-          })
-
-          -- Add child messages (hints/notes that follow the main message)
+          -- Process child spans
           if msg.children then
             for _, child in ipairs(msg.children) do
               if child.spans and #child.spans > 0 then
-                local child_span = child.spans[1]
-                local child_type = "H" -- Child messages are usually hints/notes
-                local child_label = ""
-                if child.level == "note" or child.level == "help" then
-                  child_type = "H"
-                  child_label = child_span.suggested_replacement or ""
-                elseif child.level == "warning" then
-                  child_type = "W"
-                end
-
-                table.insert(items, {
-                  filename = child_span.file_name,
-                  lnum = child_span.line_start,
-                  col = child_span.column_start,
-                  text = "  → " .. child.message .. (child_label ~= "" and "\n" .. child_label or ""),
-                  type = child_type,
-                })
+                table.insert(items, process_cargo_span(child, child.spans[1], true))
               end
             end
           end
@@ -115,36 +110,38 @@ function cargo.formatter(data, items)
 end
 
 ---Constructs the full cargo command with JSON message format
----@param subcommand string|nil cargo subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of cargo arguments (defaults to {config.cargo.default})
 ---@return string[] Command array suitable for job execution
-function cargo.build_command(subcommand)
-  subcommand = subcommand or config.cargo.default
-  return { "cargo", subcommand, "--message-format=json" }
+function cargo.build_command(args)
+  args = args or { config.cargo.default }
+  local cmd = { "cargo" }
+  vim.list_extend(cmd, args)
+  table.insert(cmd, "--message-format=json")
+  return cmd
 end
 
 ---Generates success message for cargo command
----@param subcommand string|nil cargo subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of cargo arguments (defaults to {config.cargo.default})
 ---@return string Success notification message
-function cargo.success_message(subcommand)
-  subcommand = subcommand or config.cargo.default
-  return "cargo " .. subcommand .. " complete - no issues"
+function cargo.success_message(args)
+  args = args or { config.cargo.default }
+  return "cargo " .. args[1] .. " complete - no issues"
 end
 
 ---Generates error message for cargo command
----@param subcommand string|nil cargo subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of cargo arguments (defaults to {config.cargo.default})
 ---@return string Error notification message
-function cargo.error_message(subcommand)
-  subcommand = subcommand or config.cargo.default
-  return "cargo " .. subcommand .. " complete - found issues"
+function cargo.error_message(args)
+  args = args or { config.cargo.default }
+  return "cargo " .. args[1] .. " complete - found issues"
 end
 
 ---Executes cargo compile command with specified arguments
----@param args string[]|nil Array of arguments where first element is the subcommand
+---@param args string[]|nil Array of arguments starting with the subcommand
 function cargo.compile(args)
-  local subcommand = args and args[1] or config.cargo.default
-  local cmd = cargo.build_command(subcommand)
-  local success_msg = cargo.success_message(subcommand)
-  local error_msg = cargo.error_message(subcommand)
+  local cmd = cargo.build_command(args)
+  local success_msg = cargo.success_message(args)
+  local error_msg = cargo.error_message(args)
 
   private.compile(cmd, cargo.formatter, success_msg, error_msg)
 end
@@ -155,7 +152,11 @@ function cargo.setup_autocmd()
     vim.api.nvim_create_autocmd("BufWritePost", {
       pattern = { "*.rs", "Cargo.toml" },
       callback = function()
-        cargo.compile()
+        if last_command then
+          cargo.compile(last_command.args)
+        else
+          cargo.compile()
+        end
       end,
       desc = "Run cargo compile on save",
     })
@@ -167,7 +168,7 @@ function cargo.setup_keymap()
   if config.cargo.keymap then
     vim.keymap.set("n", config.cargo.keymap, function()
       cargo.compile()
-    end, { desc = "Run cargo " .. config.cargo.default })
+    end, { desc = "Run cargo default command:" .. config.cargo.default })
   end
 end
 
@@ -208,48 +209,52 @@ function zig.formatter(data, items)
 end
 
 ---Constructs the full zig command
----@param subcommand string|nil zig build subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of zig arguments (defaults to {config.zig.default})
 ---@return string[] Command array suitable for job execution
-function zig.build_command(subcommand)
-  subcommand = subcommand or config.cargo.default
-  -- TODO: Check if we should default build
-  return { "zig", subcommand }
+function zig.build_command(args)
+  args = args or { config.zig.default }
+  local cmd = { "zig" }
+  vim.list_extend(cmd, args)
+  return cmd
 end
 
 ---Generates success message for zig build command
----@param subcommand string|nil zig build subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of zig arguments (defaults to {config.zig.default})
 ---@return string Success notification message
-function zig.success_message(subcommand)
-  subcommand = subcommand or config.cargo.default
-  return "zig build " .. subcommand .. " complete - no issues"
+function zig.success_message(args)
+  args = args or { config.zig.default }
+  return "zig " .. table.concat(args, " ") .. " complete - no issues"
 end
 
 ---Generates error message for zig build command
----@param subcommand string|nil cargo subcommand (defaults to config.cargo.default)
+---@param args string[]|nil Array of zig arguments (defaults to {config.zig.default})
 ---@return string Error notification message
-function zig.error_message(subcommand)
-  subcommand = subcommand or config.cargo.default
-  return "zig build " .. subcommand .. " complete - found issues"
+function zig.error_message(args)
+  args = args or { config.zig.default }
+  return "zig " .. table.concat(args, " ") .. " complete - found issues"
 end
 
 ---Executes zig compile command with specified arguments
----@param args string[]|nil Array of arguments where first element is the subcommand
+---@param args string[]|nil Array of arguments starting with the subcommand
 function zig.compile(args)
-  local subcommand = args and args[1] or config.cargo.default
-  local cmd = zig.build_command(subcommand)
-  local success_msg = zig.success_message(subcommand)
-  local error_msg = zig.error_message(subcommand)
+  local cmd = zig.build_command(args)
+  local success_msg = zig.success_message(args)
+  local error_msg = zig.error_message(args)
 
   private.compile(cmd, zig.formatter, success_msg, error_msg)
 end
 
----Sets up autocmd to run cargo command on file save
+---Sets up autocmd to run zig command on file save
 function zig.setup_autocmd()
   if config.zig.on_save then
     vim.api.nvim_create_autocmd("BufWritePost", {
       pattern = { "*.zig", "*.zig.zon" },
       callback = function()
-        cargo.compile()
+        if last_command then
+          zig.compile(last_command.args)
+        else
+          zig.compile()
+        end
       end,
       desc = "Run zig build compile on save",
     })
@@ -258,9 +263,9 @@ end
 
 ---Sets up keymap for zig default command
 function zig.setup_keymap()
-  if config.cargo.keymap then
+  if config.zig.keymap then
     vim.keymap.set("n", config.zig.keymap, function()
-      cargo.compile()
+      zig.compile()
     end, { desc = "Run zig " .. config.zig.default })
   end
 end
@@ -283,7 +288,7 @@ function private.compile(command, formatter, success_message, error_message)
   local items = {}
   local stdout_lines = {}
 
-  vim.notify("Compiling command: " .. command[1], vim.log.levels.INFO)
+  vim.notify("Compiling command: " .. table.concat(command, " "), vim.log.levels.INFO)
   Job:new({
     command = command[1],
     args = vim.list_slice(command, 2),
@@ -299,6 +304,7 @@ function private.compile(command, formatter, success_message, error_message)
 
       vim.schedule(function()
         if exit_code == 0 then
+          -- TODO: Maybe check if in some circustances it should also close in success
           vim.notify(success_message, vim.log.levels.INFO)
         else
           vim.notify(error_message, vim.log.levels.WARN)
@@ -320,7 +326,7 @@ function private.get_available_modes()
     table.insert(available, "cargo")
   end
   if config.zig.enabled then
-    table.insert(available, "zig build")
+    table.insert(available, "zig")
   end
   return available
 end
@@ -333,30 +339,36 @@ end
 function private.compile_completion(arg_lead, cmd_line, cursor_pos)
   local args = vim.split(cmd_line, "%s+", { trimempty = true })
 
-  -- completing the modes (hardcoded)
-  if #args == 1 then
+  -- args[1] is "Compile", args[2] is mode, args[3] is subcommand, then it should be args
+  local completing_position = #args
+  if arg_lead == "" then
+    completing_position = #args + 1
+  end
+
+  -- mode (command)
+  if completing_position == 2 then
     local available = private.get_available_modes()
     return vim.tbl_filter(function(mode)
       return vim.startswith(mode, arg_lead)
     end, available)
   end
 
-  -- Suggest cargo modes
-  if args[2] == "cargo" then
-    local cargo_subcommands = { "clippy", "check", "build", "test", "run", "bench", "doc" }
-    return vim.tbl_filter(function(subcmd)
-      return vim.startswith(subcmd, arg_lead)
-    end, cargo_subcommands)
+  -- sub command
+  if completing_position == 3 then
+    local mode = args[2]
+
+    if mode == "cargo" and config.cargo.enabled then
+      local cargo_subcommands = { "clippy", "check", "build", "test", "run", "bench", "doc" }
+      return vim.tbl_filter(function(subcmd)
+        return vim.startswith(subcmd, arg_lead)
+      end, cargo_subcommands)
+    elseif mode == "zig" and config.zig.enabled then
+      local zig_subcommands = { "build", "run", "test" }
+      return vim.tbl_filter(function(subcmd)
+        return vim.startswith(subcmd, arg_lead)
+      end, zig_subcommands)
+    end
   end
-  --
-  -- TODO: Fix suggestions
-  -- -- Suggest zig build modes
-  -- if args[2] == "zig build" then
-  --   local zig_subcommands = { "check", "text", "run" }
-  --   return vim.tbl_filter(function(subcmd)
-  --     return vim.startswith(subcmd, arg_lead)
-  --   end, zig_subcommands)
-  -- end
 
   return {}
 end
@@ -405,7 +417,7 @@ function private.create_compile_command()
     end
   end, {
     nargs = "*",
-    desc = "Run compile command for various languages/tools",
+    desc = "Run compile command",
     complete = private.compile_completion,
   })
 end
@@ -425,14 +437,13 @@ function M.setup(user_config)
   -- Merge user config with defaults
   config = vim.tbl_deep_extend("force", default_config, user_config or {})
 
-  -- Create the :Compile command
   private.create_compile_command()
 
-  -- Setup global keymap
   private.setup_global_keymap()
 
-  -- Setup cargo-specific features
+  -- TODO: This are identical, just changing file type and command table, probably refactor to make more generic
   cargo.setup()
+  zig.setup()
 end
 
 return M

@@ -20,17 +20,18 @@ return {
           settings = function(_)
             local base_settings = {
               ["rust-analyzer"] = {
-                checkOnSave = {
-                  enable = false,
-                },
-                diagnostics = {
-                  enable = false,
-                },
-                -- Disabling check and diagnostics in favor of compilemode for faster dev/ex
-                -- check = {
-                --   command = "clippy",
-                --   workspace = false,
+                -- Disable for faster dev/ex
+                -- checkOnSave = {
+                --   enable = false,
                 -- },
+                -- diagnostics = {
+                --   enable = false,
+                -- },
+                -- Disabling check and diagnostics in favor of compilemode for faster dev/ex
+                check = {
+                  command = "clippy",
+                  workspace = false,
+                },
                 semanticHighlighting = {
                   -- So that SQL injections are highlighted
                   strings = {
@@ -80,8 +81,8 @@ return {
       wk.add({
         { "<leader>rt", group = "Rust Targets" },
         { "<leader>re", group = "Rust Expand/Explain" },
-        { "<leader>rm", group = "Rust Move" },
         { "<leader>rr", group = "Rust Render" },
+        { "<leader>rc", group = "Rust Cargo/compile" },
       })
 
       vim.keymap.set("n", "<leader>rtw", function()
@@ -90,16 +91,28 @@ return {
       vim.keymap.set("n", "<leader>rth", function()
         set_rust_target("")
       end, { desc = "Set target back to host" })
-      map("<leader>rd", "openDocs", "Rust [D]ocs")
-      map("<leader>rem", "expandMacro", "Rust Expand Macro")
-      map("<leader>ree", "explainError", "Rust Explain Error")
-      map("<leader>rmd", { "moveItem", "down" }, "Rust Move Down")
-      map("<leader>rmu", { "moveItem", "up" }, "Rust Move [U]p")
-      map("<leader>rrd", "renderDiagnostic", " Rust Render Diagnostic")
-      map("<leader>rc", "openCargo", "Rust Open Cargo")
+      map("<leader>rd", "openDocs", "Open docs")
+      map("<leader>rem", "expandMacro", "Expand Macro")
+      map("<leader>ree", "explainError", "Explain Error")
+      map("<leader>rrd", "renderDiagnostic", " Render Diagnostic")
+      map("<leader>rco", "openCargo", "Open Cargo Toml")
     end,
     init = function()
-      require("local.compilemode").setup()
+      require("local.compilemode").setup({
+        keymap = "<leader>cc",
+        cargo = {
+          enabled = true,
+          default = "clippy",
+          keymap = "<leader>rcc",
+          on_save = false,
+        },
+        zig = {
+          enabled = true,
+          default = "check",
+          keymap = nil,
+          on_save = false,
+        },
+      })
     end,
   },
   {
