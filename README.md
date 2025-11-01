@@ -1,218 +1,196 @@
 # Dotfiles
-My configs
 
-## Dependencies for instalation
-### stow
-MacOS: `brew install stow`
+My personal configuration files for UNIX systems, managed either with nix and home-manager or symlinking.
 
-Arch based: `paru -S stow`
+## Quick Start
 
-Debian based: `sudo apt install stow`
+### NixOS Installation
 
-### $DOTFILES variable
-`export DOTFILES="$HOME/.dotfiles"`
+1. Boot from NixOS installer ISO
+2. Complete the graphical installation
+3. **Before rebooting**, run:
 
-## Install
-There should not be en existing file where stow tries to create the symlink
-
-`chmod +x ./install && ./install`
-
-## Uninstall
-
-`chmod +x ./clean && ./clean`
-
-## Rust 
-For debian based distros some installations of the following dependencies might be problematic, 
-being rust programs, these can be installed with cargo
-
-```sh
-sudo apt install libssl-dev
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-cargo install cargo-edit
-```
-## Fish
-Ubuntu based distros use an older fish version, this repo fixes it
-```sh
-sudo apt-add-repository ppa:fish-shell/release-3
+```bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0-nixos-install | bash
 ```
 
-## Nvim optional requirements
-* fd
-* ripgrep
-* bat
-* Treesitter
+4. Reboot into your new system
+5. Login and run:
 
-Arch based: `paru -S fd ripgrep bat tree-sitter`
-
-MacOS:
-```sh
-brew install fd rigprep bat
-brew install --HEAD tree-sitter
-brew install --HEAD luajit
+```bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
 ```
 
-Deiban based:
-```sh
-sudo apt install ripgrep
-cargo install bat
-cargo install fd-find
-cargo install tree-sitter-cli
+### macOS Setup
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
 ```
 
-## Fonts
-* Nerd fonts fira code
-* Nerd fonts Jetbrans mono
-* Noto fonts emoji (for arch)
+### Other Linux Distributions
 
-Unix based: 
-```sh
-cargo install font-manger
-
-# Install any font
-font-manager install --nerd FiraCode
-font-manager install --nerd JetBrainsMono
+```bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
 ```
 
-Arch based: `paru -S nerd-fonts-fira-code nerd-fonts-jetbrains-mono noto-fonts-emoji`
+## 📁 Repository Structure
 
-MacOS:
-
-```sh
-brew tap homebrew/cask-fonts
-brew install --cask font-fira-code-nerd-font
-brew install --cask font-jetbrains-mono-nerd-font
+```
+.dotfiles/
+├── bootstrap/           # Bootstrap scripts
+│   ├── 0-nixos-install # NixOS initial setup (from live USB)
+│   ├── 1-post-install  # Post-install setup (all systems)
+│   └── lib.sh          # Shared functions
+├── nix/                # Nix configurations
+│   ├── nixos/          # NixOS system configuration
+│   ├── darwin/         # macOS nix-darwin configuration
+│   ├── linux/          # Other Linux configuration
+│   └── home-manager/   # home-manager configuration
+│       ├── flake.nix
+│       ├── hosts/      # Host-specific configs
+│       ├── modules/    # Modular configurations
+│       └── config/     # Config files
+├── symlinkmanager      # Smart symlink manager script
+├── symlink.conf        # Symlink configuration
+├── nvim/               # Neovim configuration (flat structure!)
+│   ├── init.lua
+│   └── lua/
+├── tmux/               # Tmux configuration
+│   └── tmux.conf
+├── ideavim/            # IdeaVim configuration
+│   └── .ideavimrc
+└── (other configs)/    # Other dotfiles
 ```
 
-## Macos tmux true color suppot
+## What's Included
 
-```sh
-curl -LO https://invisible-island.net/datafiles/current/terminfo.src.gz && gunzip terminfo.src.gz
-sudo /usr/bin/tic -xe tmux-256color terminfo.src
-sudo /usr/bin/tic -xe alacritty-direct,tmux-256color terminfo.src
+### System Configuration
+- **NixOS**: Minimal system config with Hyprland
+- **macOS**: nix-darwin configuration
+- **Linux**: Nix package manager setup
+
+### Home Manager
+- **Hyprland**: Wayland compositor with custom config
+- **Waybar**: Status bar with custom styling
+- **Alacritty**: Terminal emulator
+- **Fish & Zsh**: Shell configurations with zinit
+- **Git**: Version control configuration
+- **Starship**: Cross-shell prompt
+
+### Applications
+- Neovim (managed separately)
+- Tmux
+- Firefox
+- Rofi (app launcher)
+- And more...
+
+## Making Changes
+
+### System Configuration (NixOS)
+
+```bash
+# Edit system config
+sudo nvim /etc/nixos/configuration.nix
+
+# Apply changes
+sudo nixos-rebuild switch
 ```
 
-## System-76 laptops
-`paru -S sys76-kb`
+### Home Manager Configuration
 
-## ZSA Keyboards on arch
-https://github.com/zsa/wally/wiki/Live-training-on-Linux
+```bash
+# Edit home-manager config
+nvim ~/.config/home-manager/modules/shell.nix
 
-## Base arch goodies
-- `playerctl` (media controller)
-- `xorg-backlight` (brightness intel graphics)
-- light(brightness amd graphics)
-```sh
-paru -S light
-sudo chmod +s /usr/bin/light
+# Stage changes (required for flakes!)
+cd ~/.config/home-manager
+git add .
+
+# Apply changes
+home-manager switch --flake ~/.config/home-manager#ericus
 ```
 
-## pop-shell
-```sh
-paru -S gnome-shell-extension-pop-shell-git chrome-gnome-shell
+### Dotfiles (Neovim, Tmux, etc.)
+
+Dotfiles not managed in home-manager are managed with a custom symlink manager that intelligently handles both full directory symlinks and content merging.
+
+```bash
+# View symlink.conf to see what's configured
+cat ~/.dotfiles/symlink.conf
+
+# Check current status
+cd ~/.dotfiles
+symlinkmanager status
+
+# Create all symlinks
+symlinkmanager link
+
+# Remove all symlinks
+symlinkmanager unlink
 ```
 
-## Fedora
+**How it works:**
+- If target doesn't exist: Symlinks entire directory
+- If target exists: Merges contents (symlinks individual files/dirs)
+- Skips existing files with warnings (never overwrites)
 
-* Install gcc utilities (for some reason is not present)
-```sh
-sudo dnf install gcc-c++
+**Example:**
+```conf
+# symlink.conf
+nvim -> ~/.config/nvim    # Full directory or merge contents
+ideavim -> ~/             # Merges into existing home directory
 ```
 
-* Enabel RPM fusion and flathub
-https://rpmfusion.org/Configuration
+**Note:** Dotfiles use a flat structure - no need for nested `.config` directories!
 
-```sh
-sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
-sudo dnf groupupdate core
-sudo dnf groupupdate multimedia --setop="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin
-sudo dnf groupupdate sound-and-video
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-```
-### Gaming
-* Gamemodrun for extra perfonmance, run steam games with:
-```sh
-LD_PRELOAD="$LD_PRELOAD:/usr/\$LIB/libgamemode.so.0" gamemoderun %commannd%
-```
+Changes apply immediately, no rebuild needed!
 
-## Nvidia cards
-Ubuntu based and Fedora work almost out of the box, installing just the drivers, and a switch package.
+## Managing Packages
 
-### Dual GPU with optimus (ARCH)
-* Install nvidia-settings and drivers if not already installed
-```sh
-paru -S nvidia nvidia-utils nvidia-settings nvidia-prime
+## Key Commands
+
+### Home Manager
+```bash
+# Apply configuration
+home-manager switch --flake ~/.config/home-manager#ericus
+
+# Update packages
+cd ~/.config/home-manager
+nix flake update
+home-manager switch --flake .#ericus
+
+# Rollback
+home-manager generations
+home-manager switch --switch-generation [NUMBER]
 ```
 
-This works almost out of the box, but the configuration is limited
+### NixOS
+```bash
+# Rebuild system
+sudo nixos-rebuild switch
 
-* Install optimus-manager to change gpus
-```sh 
-paru -S optimus-manager
+# Update system
+sudo nix-channel --update
+sudo nixos-rebuild switch
 ```
 
-* Copy all optimus-manager files to the respective file on `/etc/optimus-manager/`
+### Cleanup
+```bash
+# Clean old generations
+nix-collect-garbage -d
+home-manager expire-generations "-7 days"
 
-* Install drivers for intel/amd gpu if not alreay installed
-```sh
-# For intel
-paru -S xf86-video-intel
-# For amd
-paru -S xf86-video-amdgpu
+# Re-link dotfiles if needed
+cd ~/.dotfiles
+symlinkmanager link
 ```
 
-* If using gnome install gdm-prime, force xorg start
-```sh
-sudo vim /etc/gdm/custom.conf
-# uncomment WaylandEnabled=false
-```
+##  Documentation
 
-* Screen tearing:
-```sh
-nvidia-settings --assign CurrentMetaMode="CONNECTION:RESOLUTION_RATE +0+0 { ForceFullCompositionPipeline = On }"
-```
+- [NixOS Manual](https://nixos.org/manual/nixos/stable/)
+- [Home Manager Manual](https://nix-community.github.io/home-manager/)
+- [Hyprland Wiki](https://wiki.hyprland.org/)
+- [Nix Pills](https://nixos.org/guides/nix-pills/)
 
-### Dual GPU with xorg and system76-power (ARCH)
-* Install nvidia-settings and drivers if not already installed
-```sh
-paru -S nvidia nvidia-utils nvidia-settings nvidia-prime
-```
-
-* Install system76-power
-```sh
-paru -S system76-power
-sudo systemctl enable --now system76-power.service
-```
-
-* cp AMD config to xorg config
-```sh
-sudo cp ~/.dotfiles/xorg-conf/20-amdgpu.conf /etc/X11/xorg.conf.d/
-```
-
-* stow the bin folder to have the change gpu script
-
-### Dual GPU Fedora
-Optimus works out of the box.
-
-* Install nvidia drivers with rpm fusion
-```sh
-sudo dnf update -y 
-sudo dnf install akmod-nvidia
-sudo dnf install xorg-x11-drv-nvidia-cuda #optional for cuda/nvdec/nvenc support
-```
-
-## Mac configuration
-* Window manager: https://github.com/ianyh/Amethyst
-```sh
-brew install --cask amethyst
-```
-Currently there is no way to save the configuration the mapping has to be done manually.
-- Allow to control computer and start in login
-- disable automatic
-
-* Unnatural scroll: https://github.com/ther0n/UnnaturalScrollWheels
-Allows for different scroll movement between the pane and the mouse
-```sh
-brew install --cask unnaturalscrollwheels
-```
-* Move through spaces
-Settings -> Keyboard -> Keyboard Shortcuts -> mission control -> set to move spaces
+## Old configuration
+in Config.md

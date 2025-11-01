@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Bootstrap script for NixOS installation
+# Run this AFTER completing the graphical installer, BEFORE rebooting
+# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0-nixos-install | bash
+
+set -euo pipefail
+
+# Source shared functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib.sh" ]; then
+    source "$SCRIPT_DIR/lib.sh"
+else
+    # If running from curl, download lib.sh
+    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/lib.sh)"
+fi
+
+main() {
+    log_info "=== NixOS Bootstrap - Stage 0 ==="
+    log_info "This script should be run from the NixOS installer"
+    log_info "AFTER completing the graphical installation"
+    log_info "BEFORE rebooting"
+    echo
+    
+    # Verify we're in NixOS
+    if [ "$(detect_system)" != "nixos" ]; then
+        log_error "This script must be run from NixOS installer!"
+        log_info "For post-install setup, use: bootstrap/1-post-install"
+        exit 1
+    fi
+    
+    # Check if /mnt is mounted (installer should have mounted it)
+    if ! mountpoint -q /mnt; then
+        log_error "/mnt is not mounted!"
+        log_error "Please make sure you've completed the NixOS installation first."
+        exit 1
+    fi
+    
+    log_success "NixOS installer environment detected"
+    log_info "Target system is mounted at /mnt"
+    echo
+    
+    # Ensure git is available
+    ensure_git
+    
+    # Clone dotfiles to temporary location
+    TEMP_DOTFILES="/tmp/dotfiles-bootstrap"
+    log_info "Cloning dotfiles to temporary location..."
+    clone_dotfiles "$TEMP_DOTFILES"
+    
+    # Copy NixOS configuration to target system
+    log_info "Installing NixOS configuration..."
+    
+    # Backup existing configuration
+    if [ -f /mnt/etc/nixos/configuration.nix ]; then
+        log_warning "Backing up existing configuration.nix"
+        cp /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.backup
+    fi
+    
+    # Copy our configuration
+    cp "$TEMP_DOTFILES/nix/nixos/configuration.nix" /mnt/etc/nixos/configuration.nix
+    log_success "Configuration copied to /mnt/etc/nixos/configuration.nix"
+    
+    # Copy dotfiles to target home directory
+    log_info "Copying dotfiles to target system..."
+    mkdir -p /mnt/home/ericus
+    cp -r "$TEMP_DOTFILES" /mnt/home/ericus/.dotfiles
+    
+    # Set correct ownership (assuming UID 1000 for first user)
+    chown -R 1000:100 /mnt/home/ericus/.dotfiles
+    log_success "Dotfiles copied to /mnt/home/ericus/.dotfiles"
+    
+    echo
+    log_success "=== Stage 0 Complete ==="
+    log_info "The system is now ready for installation."
+    echo
+    log_info "Next steps:"
+    log_info "1. Review /mnt/etc/nixos/configuration.nix if needed"
+    log_info "2. Run: nixos-install"
+    log_info "3. After installation completes, reboot"
+    log_info "4. On first boot, login and run:"
+    log_info "   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash"
+    echo
+    
+    if confirm "Run nixos-install now?"; then
+        log_info "Running nixos-install..."
+        nixos-install
+        
+        log_success "Installation complete!"
+        echo
+        
+        if confirm "Reboot now?"; then
+            reboot
+        else
+            log_info "Remember to reboot before running stage 1"
+        fi
+    else
+        log_info "Skipping nixos-install. Run it manually when ready."
+    fi
+}
+
+main "$@"

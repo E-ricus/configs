@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+# Bootstrap script for post-installation setup
+# Works on NixOS, macOS, and other Linux distributions
+# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
+
+set -euo pipefail
+
+# Source shared functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib.sh" ]; then
+    source "$SCRIPT_DIR/lib.sh"
+else
+    # If running from curl, download lib.sh
+    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/lib.sh)"
+fi
+
+DOTFILES_DIR="$HOME/.dotfiles"
+
+setup_nixos() {
+    log_info "=== Setting up NixOS ==="
+    
+    # Check if dotfiles exist, if not clone
+    if [ ! -d "$DOTFILES_DIR" ]; then
+        log_info "Dotfiles not found in home directory, cloning..."
+        ensure_git
+        clone_dotfiles "$DOTFILES_DIR"
+    else
+        log_success "Dotfiles already exist at $DOTFILES_DIR"
+    fi
+    
+    # Replace system configuration with symlink
+    log_info "Setting up system configuration symlink..."
+    
+    if [ -f /etc/nixos/configuration.nix ] && [ ! -L /etc/nixos/configuration.nix ]; then
+        log_warning "Removing old configuration.nix (backed up during stage 0)"
+        sudo rm /etc/nixos/configuration.nix
+    fi
+    
+    # Create symlink
+    sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
+    log_success "System configuration symlinked"
+    
+    # Rebuild system (only if not already done in stage 0)
+    if confirm "Rebuild NixOS configuration now?"; then
+        log_info "Rebuilding NixOS..."
+        sudo nixos-rebuild switch
+        log_success "NixOS rebuilt successfully"
+    fi
+}
+
+setup_darwin() {
+    log_info "=== Setting up macOS with nix-darwin ==="
+    
+    # Ensure git
+    ensure_git
+    
+    # Clone dotfiles if needed
+    if [ ! -d "$DOTFILES_DIR" ]; then
+        clone_dotfiles "$DOTFILES_DIR"
+    fi
+    
+    # Install Nix if needed
+    install_nix
+    
+    # Source Nix profile
+    if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+        . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+    fi
+    
+    # Install nix-darwin
+    log_info "Installing nix-darwin..."
+    nix run nix-darwin -- switch --flake "$DOTFILES_DIR/nix/darwin"
+    
+    log_success "nix-darwin installed and configured"
+}
+
+setup_linux() {
+    log_info "=== Setting up Linux with standalone home-manager ==="
+    
+    # Ensure git
+    ensure_git
+    
+    # Clone dotfiles if needed
+    if [ ! -d "$DOTFILES_DIR" ]; then
+        clone_dotfiles "$DOTFILES_DIR"
+    fi
+    
+    # Install Nix
+    install_nix
+    
+    # Source Nix profile
+    if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+    fi
+    
+    log_success "Nix installed for standalone Linux"
+}
+
+setup_home_manager() {
+    log_info "=== Setting up home-manager ==="
+    
+    # Symlink home-manager config
+    local hm_source="$DOTFILES_DIR/nix/home-manager"
+    local hm_target="$HOME/.config/home-manager"
+    
+    create_symlink "$hm_source" "$hm_target"
+    
+    # Determine which user configuration to use
+    local hm_user=$(get_hm_user)
+    log_info "Using home-manager configuration for: $hm_user"
+    
+    # Initialize home-manager flake
+    log_info "Initializing home-manager..."
+    cd "$hm_target"
+    
+    if [ ! -f "flake.lock" ]; then
+        log_info "Generating flake.lock..."
+        nix flake update
+    fi
+    
+    # Apply home-manager configuration
+    log_info "Applying home-manager configuration..."
+    home-manager switch --flake "$hm_target#$hm_user"
+    
+    log_success "home-manager configured successfully"
+}
+
+setup_stow() {
+    log_info "=== Stowing dotfiles ==="
+    
+    # Ensure stow is installed
+    ensure_stow
+    
+    # Stow all configurations
+    stow_configs "$DOTFILES_DIR"
+    
+    log_success "All dotfiles stowed"
+}
+
+main() {
+    echo
+    log_info "╔════════════════════════════════════════╗"
+    log_info "║   Dotfiles Bootstrap - Post Install   ║"
+    log_info "╚════════════════════════════════════════╝"
+    echo
+    
+    # Detect system
+    SYSTEM=$(detect_system)
+    log_info "Detected system: $SYSTEM"
+    echo
+    
+    # System-specific setup
+    case $SYSTEM in
+        nixos)
+            setup_nixos
+            ;;
+        darwin)
+            setup_darwin
+            ;;
+        linux)
+            setup_linux
+            ;;
+        *)
+            log_error "Unsupported system type: $SYSTEM"
+            exit 1
+            ;;
+    esac
+    
+    echo
+    
+    # Setup home-manager (common for all systems)
+    setup_home_manager
+    
+    echo
+    
+    # Stow dotfiles (common for all systems)
+    setup_stow
+    
+    echo
+    log_success "╔════════════════════════════════════════╗"
+    log_success "║     Bootstrap Complete! 🎉             ║"
+    log_success "╚════════════════════════════════════════╝"
+    echo
+    
+    log_info "Your dotfiles are now installed and configured."
+    log_info "Dotfiles location: $DOTFILES_DIR"
+    log_info "home-manager config: ~/.config/home-manager"
+    echo
+    
+    log_info "Next steps:"
+    case $SYSTEM in
+        nixos)
+            log_info "• Your system is ready to use"
+            log_info "• Start Hyprland with: Hyprland"
+            ;;
+        darwin)
+            log_info "• Restart your terminal or run: exec \$SHELL"
+            log_info "• Your macOS is configured with nix-darwin"
+            ;;
+        linux)
+            log_info "• Restart your terminal or run: exec \$SHELL"
+            log_info "• Your system is ready to use"
+            ;;
+    esac
+    echo
+    
+    if confirm "Reboot now?"; then
+        log_info "Rebooting..."
+        sudo reboot
+    else
+        log_info "Remember to restart your shell or reboot for all changes to take effect"
+    fi
+}
+
+main "$@"

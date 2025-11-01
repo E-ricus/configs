@@ -1,0 +1,73 @@
+@define-color foreground #cdd6f4;
+@define-color background #181824;
+@define-color active-workspace #89b4fa;
+
+* {
+  background-color: @background;
+  color: @foreground;
+
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 12px;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 6px;
+  margin: 0 1.5px;
+  min-width: 9px;
+  color: @foreground;  /* Add explicit color for inactive */
+  background-color: transparent;  /* Transparent background for inactive */
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#workspaces button.active {
+  background-color: rgba(137, 180, 250, 0.3);  /* Semi-transparent blue */
+  color: @active-workspace;  /* Blue text */
+  border-radius: 4px;
+}
+
+#cpu,
+#battery,
+#pulseaudio,
+
+#tray {
+  margin-right: 14px;
+}
+
+#bluetooth {
+  margin-right: 17px;
+}
+
+#network {
+  margin-right: 13px;
+}
+
+#custom-expand-icon {
+  margin-right: 20px;
+}
+
+tooltip {
+  padding: 2px;
+}
+
+#clock {
+  margin-left: 8.75px;
+}
+
+.hidden {
+  opacity: 0;
+}

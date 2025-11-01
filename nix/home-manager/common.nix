@@ -1,0 +1,45 @@
+{
+  config,
+  pkgs,
+  ...
+}: {
+  imports = [
+    ./modules/git.nix
+    ./modules/fish.nix
+    ./modules/zsh.nix
+    ./modules/alacritty.nix
+    ./modules/tmux.nix
+  ];
+
+  home.packages = with pkgs; [
+    eza
+    fzf
+    bat
+    fd
+    ripgrep
+    zoxide
+    htop
+    stow
+
+    # C/C++ nightmare
+    gcc
+
+    neovim # not ready to give my config to nix
+
+    # Development
+    nodejs
+    go
+    rustup
+    zig
+    #Formatters
+    alejandra
+  ];
+
+  home.sessionPath = [
+    "$HOME/.local/bin"
+  ];
+
+  # Common programs
+  programs.yazi.enable = true;
+  programs.lazygit.enable = true;
+}
