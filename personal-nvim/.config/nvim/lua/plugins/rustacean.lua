@@ -21,17 +21,17 @@ return {
             local base_settings = {
               ["rust-analyzer"] = {
                 -- Disable for faster dev/ex
-                -- checkOnSave = {
-                --   enable = false,
-                -- },
-                -- diagnostics = {
-                --   enable = false,
-                -- },
-                -- Disabling check and diagnostics in favor of compilemode for faster dev/ex
-                check = {
-                  command = "clippy",
-                  workspace = false,
+                checkOnSave = {
+                  enable = false,
                 },
+                diagnostics = {
+                  enable = false,
+                },
+                -- Disabling check and diagnostics in favor of compilemode for faster dev/ex
+                -- check = {
+                --   command = "clippy",
+                --   workspace = false,
+                -- },
                 semanticHighlighting = {
                   -- So that SQL injections are highlighted
                   strings = {
@@ -42,7 +42,7 @@ return {
             }
 
             -- Apply cargo target only if explicitly set
-            if type(vim.g.rust_analyzer_cargo_target) == "string" and vim.g.rust_analyzer_cargo_target ~= "" then
+            if vim.g.rust_analyzer_cargo_target ~= "" then
               base_settings["rust-analyzer"].cargo = {
                 target = vim.g.rust_analyzer_cargo_target,
               }
