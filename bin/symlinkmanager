@@ -27,6 +27,62 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# Get all valid package names from config
+get_valid_packages() {
+    local packages=()
+    while IFS= read -r line; do
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        if [[ "$line" =~ ^([^-]+)[[:space:]]*-\>[[:space:]]*(.+)$ ]]; then
+            local package="${BASH_REMATCH[1]// /}"
+            packages+=("$package")
+        fi
+    done < "$CONFIG_FILE"
+    printf '%s\n' "${packages[@]}"
+}
+
+# Validate requested packages exist in config
+validate_packages() {
+    local -a requested=("$@")
+    local -a valid_packages=()
+
+    # Read valid packages into array (bash 3.2 compatible)
+    while IFS= read -r pkg; do
+        valid_packages+=("$pkg")
+    done < <(get_valid_packages)
+
+    local errors=0
+    for pkg in "${requested[@]}"; do
+        if [[ ! " ${valid_packages[*]} " =~ " ${pkg} " ]]; then
+            log_error "Package '$pkg' not found in $CONFIG_FILE"
+            errors=$((errors + 1))
+        fi
+    done
+
+    return $errors
+}
+
+# Check if package should be processed
+should_process_package() {
+    local package="$1"
+    shift
+    local -a filter=("$@")
+
+    # If no filter specified, process all
+    [ ${#filter[@]} -eq 0 ] && return 0
+
+    # Check if 'all' is specified
+    for item in "${filter[@]}"; do
+        [ "$item" = "all" ] && return 0
+    done
+
+    # Check if package is in filter
+    for item in "${filter[@]}"; do
+        [ "$item" = "$package" ] && return 0
+    done
+
+    return 1
+}
+
 # Create a symlink with backup if exists
 safe_symlink() {
     local source="$1"
@@ -116,32 +172,47 @@ link_directory_contents() {
 
 # Link packages according to config
 link_packages() {
+    local -a filter=("$@")
+
     log_info "Reading configuration from $CONFIG_FILE"
     log_info "Working directory: $DOTFILES_DIR"
+
+    if [ ${#filter[@]} -gt 0 ] && [[ ! " ${filter[*]} " =~ " all " ]]; then
+        log_info "Filtering packages: ${filter[*]}"
+    fi
     echo
-    
+
+    local processed=0
+
     while IFS= read -r line; do
         # Skip empty lines and comments
         [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-        
+
         # Parse: package -> target
         if [[ "$line" =~ ^([^-]+)[[:space:]]*-\>[[:space:]]*(.+)$ ]]; then
             local package="${BASH_REMATCH[1]// /}"
             local target="${BASH_REMATCH[2]// /}"
-            
+
+            # Check if this package should be processed
+            if ! should_process_package "$package" "${filter[@]}"; then
+                continue
+            fi
+
+            ((processed++))
+
             # Expand ~ to home directory
             target="${target/#\~/$HOME}"
-            
+
             local source_dir="$DOTFILES_DIR/$package"
-            
+
             # Check if package directory exists
             if [ ! -d "$source_dir" ]; then
                 log_warning "Package '$package' not found at $source_dir, skipping"
                 continue
             fi
-            
+
             log_info "Linking $package -> $target"
-            
+
             # Check if target exists
             if [ -d "$target" ] && [ ! -L "$target" ]; then
                 # Target directory exists and is not a symlink - merge contents
@@ -161,32 +232,52 @@ link_packages() {
                 # Target doesn't exist - symlink whole directory
                 safe_symlink "$source_dir" "$target"
             fi
-            
+
             log_success "$package linked successfully"
             echo
         else
             log_warning "Invalid line format: $line"
         fi
     done < "$CONFIG_FILE"
+
+    if [ $processed -eq 0 ]; then
+        log_warning "No packages were processed"
+    fi
 }
 
 # Remove symlinks
 unlink_packages() {
+    local -a filter=("$@")
+
     log_info "Reading configuration from $CONFIG_FILE"
+
+    if [ ${#filter[@]} -gt 0 ] && [[ ! " ${filter[*]} " =~ " all " ]]; then
+        log_info "Filtering packages: ${filter[*]}"
+    fi
     echo
-    
+
+    local processed=0
+
     while IFS= read -r line; do
         [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-        
+
         if [[ "$line" =~ ^([^-]+)[[:space:]]*-\>[[:space:]]*(.+)$ ]]; then
             local package="${BASH_REMATCH[1]// /}"
             local target="${BASH_REMATCH[2]// /}"
+
+            # Check if this package should be processed
+            if ! should_process_package "$package" "${filter[@]}"; then
+                continue
+            fi
+
+            ((processed++))
+
             target="${target/#\~/$HOME}"
-            
+
             local source_dir="$DOTFILES_DIR/$package"
-            
+
             log_info "Unlinking $package from $target"
-            
+
             if [ -L "$target" ]; then
                 local link_target=$(readlink "$target")
                 if [[ "$link_target" == "$source_dir"* ]]; then
@@ -201,10 +292,14 @@ unlink_packages() {
             else
                 log_info "Target doesn't exist: $target"
             fi
-            
+
             echo
         fi
     done < "$CONFIG_FILE"
+
+    if [ $processed -eq 0 ]; then
+        log_warning "No packages were processed"
+    fi
 }
 
 # Recursively remove symlinks from directory
@@ -234,26 +329,42 @@ unlink_directory_contents() {
 
 # Show status
 show_status() {
+    local -a filter=("$@")
+
     log_info "Symlink configuration status:"
     log_info "Working directory: $DOTFILES_DIR"
+
+    if [ ${#filter[@]} -gt 0 ] && [[ ! " ${filter[*]} " =~ " all " ]]; then
+        log_info "Filtering packages: ${filter[*]}"
+    fi
     echo
-    
+
+    local processed=0
+
     while IFS= read -r line; do
         [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-        
+
         if [[ "$line" =~ ^([^-]+)[[:space:]]*-\>[[:space:]]*(.+)$ ]]; then
             local package="${BASH_REMATCH[1]// /}"
             local target="${BASH_REMATCH[2]// /}"
+
+            # Check if this package should be processed
+            if ! should_process_package "$package" "${filter[@]}"; then
+                continue
+            fi
+
+            ((processed++))
+
             target="${target/#\~/$HOME}"
-            
+
             local source_dir="$DOTFILES_DIR/$package"
-            
+
             # Check if package exists
             if [ ! -d "$source_dir" ]; then
                 echo -e "  ${RED}✗${NC} $package -> $target ${RED}(package not found)${NC}"
                 continue
             fi
-            
+
             # Check target status
             if [ -L "$target" ]; then
                 local link_target=$(readlink "$target")
@@ -266,9 +377,9 @@ show_status() {
                 # Check if contents are symlinked
                 local linked_count=0
                 local total_count=0
-                
+
                 count_links "$source_dir" "$target"
-                
+
                 if [ $total_count -eq 0 ]; then
                     echo -e "  ${YELLOW}⚠${NC} $package -> $target ${YELLOW}(empty package)${NC}"
                 elif [ $linked_count -eq $total_count ]; then
@@ -283,6 +394,10 @@ show_status() {
             fi
         fi
     done < "$CONFIG_FILE"
+
+    if [ $processed -eq 0 ]; then
+        log_warning "No packages were processed"
+    fi
 }
 
 # Count linked files recursively
@@ -314,13 +429,17 @@ count_links() {
 # Show usage
 usage() {
     cat << EOF
-Usage: $(basename "$0") [COMMAND]
+Usage: $(basename "$0") COMMAND PACKAGES...
 
 Commands:
-    link      Create symlinks for all packages (default)
-    unlink    Remove symlinks for all packages
-    status    Show current status
+    link      Create symlinks for packages
+    unlink    Remove symlinks for packages
+    status    Show current status of packages
     help      Show this help message
+
+Arguments:
+    PACKAGES  Required. Specify 'all' or list specific package names
+              Examples: all, nvim, alacritty tmux, nvim ideavim
 
 Configuration file: symlink.conf (in current directory)
 Format: package -> target_directory
@@ -328,11 +447,11 @@ Format: package -> target_directory
 Example symlink.conf:
     # Full directory symlink (if target doesn't exist)
     nvim -> ~/.config/nvim
-    
+
     # Merge into existing directory (if target exists)
     ideavim -> ~/
     bash -> ~/
-    
+
     # Also works for nested paths
     tmux -> ~/.config/tmux
 
@@ -342,7 +461,15 @@ How it works:
     - Always creates proper symlinks to your dotfiles directory
     - Never creates broken links or temp directories
 
-Examples:
+Usage Examples:
+    $(basename "$0") link all          # Link all packages
+    $(basename "$0") link nvim tmux    # Link only nvim and tmux
+    $(basename "$0") unlink all        # Unlink all packages
+    $(basename "$0") unlink alacritty  # Unlink only alacritty
+    $(basename "$0") status all        # Show status for all packages
+    $(basename "$0") status nvim bash  # Show status for nvim and bash only
+
+Detailed Example:
     nvim/init.lua + nvim -> ~/.config/nvim
     → If ~/.config/nvim doesn't exist: ~/.config/nvim -> ~/.dotfiles/nvim
     → If ~/.config/nvim exists: ~/.config/nvim/init.lua -> ~/.dotfiles/nvim/init.lua
@@ -352,23 +479,62 @@ EOF
 
 # Main
 main() {
-    case "${1:-link}" in
-        link|stow)
-            link_packages
-            log_success "Linking complete!"
-            ;;
-        unlink|unstow|delete)
-            unlink_packages
-            log_success "Unlinking complete!"
-            ;;
-        status)
-            show_status
+    local command="${1:-help}"
+    shift || true  # Remove command from args, ignore error if no args
+
+    case "$command" in
+        link|stow|unlink|unstow|delete|status)
+            # Require explicit package arguments
+            if [ $# -eq 0 ]; then
+                log_error "No packages specified"
+                echo
+                log_info "Usage: $(basename "$0") $command [all|PACKAGE...]"
+                echo
+                log_info "Available packages in $CONFIG_FILE:"
+                get_valid_packages | sed 's/^/  - /'
+                echo
+                log_info "Examples:"
+                echo "  $(basename "$0") $command all          # Process all packages"
+                echo "  $(basename "$0") $command nvim ideavim # Process specific packages"
+                exit 1
+            fi
+
+            # Validate package names (skip 'all')
+            local -a to_validate=()
+            for pkg in "$@"; do
+                [ "$pkg" != "all" ] && to_validate+=("$pkg")
+            done
+
+            if [ ${#to_validate[@]} -gt 0 ]; then
+                if ! validate_packages "${to_validate[@]}"; then
+                    log_error "Invalid package name(s) specified"
+                    echo
+                    log_info "Available packages in $CONFIG_FILE:"
+                    get_valid_packages | sed 's/^/  - /'
+                    exit 1
+                fi
+            fi
+
+            # Execute command
+            case "$command" in
+                link|stow)
+                    link_packages "$@"
+                    log_success "Linking complete!"
+                    ;;
+                unlink|unstow|delete)
+                    unlink_packages "$@"
+                    log_success "Unlinking complete!"
+                    ;;
+                status)
+                    show_status "$@"
+                    ;;
+            esac
             ;;
         help|-h|--help)
             usage
             ;;
         *)
-            log_error "Unknown command: $1"
+            log_error "Unknown command: $command"
             usage
             exit 1
             ;;

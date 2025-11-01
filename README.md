@@ -49,14 +49,12 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-
 │       ├── flake.nix
 │       ├── hosts/      # Host-specific configs
 │       ├── modules/    # Modular configurations
-│       └── config/     # Config files
+│       └── config/     # Extra native config files (not nix)
 ├── symlinkmanager      # Smart symlink manager script
 ├── symlink.conf        # Symlink configuration
-├── nvim/               # Neovim configuration (flat structure!)
+├── nvim/               # Neovim configuration
 │   ├── init.lua
 │   └── lua/
-├── tmux/               # Tmux configuration
-│   └── tmux.conf
 ├── ideavim/            # IdeaVim configuration
 │   └── .ideavimrc
 └── (other configs)/    # Other dotfiles
@@ -122,11 +120,14 @@ cat ~/.dotfiles/symlink.conf
 cd ~/.dotfiles
 symlinkmanager status
 
-# Create all symlinks
-symlinkmanager link
+# Create all configured symlinks
+symlinkmanager link all
+
+# Create specific configured symlinks
+symlinkmanager link nvim ghostty
 
 # Remove all symlinks
-symlinkmanager unlink
+symlinkmanager unlink all
 ```
 
 **How it works:**
@@ -141,9 +142,7 @@ nvim -> ~/.config/nvim    # Full directory or merge contents
 ideavim -> ~/             # Merges into existing home directory
 ```
 
-**Note:** Dotfiles use a flat structure - no need for nested `.config` directories!
-
-Changes apply immediately, no rebuild needed!
+Changes apply immediately, no rebuild.
 
 ## Managing Packages
 
