@@ -2,7 +2,9 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
+in {
   imports = [./walker.nix ./waybar.nix];
 
   home.packages = with pkgs; [
@@ -75,6 +77,7 @@
       input = {
         kb_layout = "us";
         follow_mouse = 1;
+        kb_options = ["compose:ralt"];
         touchpad = {
           natural_scroll = true;
         };
@@ -83,11 +86,11 @@
 
       bind = [
         "$mod, Return, exec, $terminal"
+        "$mod, F,fullscreen"
         "$mod, E, exec, nautilus"
         "$mod, Q, killactive,"
         "$mod, M, exit"
         "$mod, V, togglefloating"
-        "$mod, S, togglesplit,"
         "$mod, D, exec, $menu"
         "$mod, P, pseudo,"
 
@@ -134,16 +137,17 @@
         "$mod SHIFT, 0, movetoworkspace, 10"
 
         # Screenshot
-        ", Print, exec, grim -g \"$(slurp)\" - | wl-copy"
+        ", Print, exec, grim -g \"$(slurp)\" - | ${sattyCmd}"
+        "SHIFT, Print, exec, grim - | ${sattyCmd}"
 
         # Volume
-        ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
-        ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-        ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
+        ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
+        ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
 
         # Brightness
-        ", XF86MonBrightnessUp, exec, brightnessctl set 5%+"
-        ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
+        ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
+        ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
       ];
 
       bindm = [
@@ -153,12 +157,24 @@
     };
   };
 
+  # Nice common actions (volume, brightness)
+  services.swayosd.enable = true;
+
+  # Screenshots
+  programs.satty.enable = true;
+
+  # Notifications
   services.dunst = {
     enable = true;
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
     settings = {
       global = {
         font = "JetBrainsMono Nerd Font 10";
         geometry = "300x5-30+20";
+        origin = "top-right";
         transparency = 10;
         frame_color = "#89b4fa";
         frame_width = 2;
@@ -167,16 +183,19 @@
       urgency_low = {
         background = "#1e1e2e";
         foreground = "#cdd6f4";
+        timeout = 5;
       };
 
       urgency_normal = {
         background = "#1e1e2e";
         foreground = "#cdd6f4";
+        timeout = 10;
       };
 
       urgency_critical = {
         background = "#1e1e2e";
         foreground = "#f38ba8";
+        timeout = 20;
       };
     };
   };
