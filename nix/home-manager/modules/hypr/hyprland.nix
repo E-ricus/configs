@@ -37,9 +37,8 @@
         "waybar"
         "dunst"
         "hyprpaper"
-        # for walker menu
-        "elephant"
-        "walker --gapplication-service"
+        # for walker menu, it might not be needed.
+        # "walker --gapplication-service"
       ];
 
       general = {

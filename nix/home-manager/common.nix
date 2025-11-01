@@ -42,4 +42,13 @@
   # Common programs
   programs.yazi.enable = true;
   programs.lazygit.enable = true;
+  programs.direnv = {
+    enable = true;
+    enableZshIntegration = true;
+    # fish enabled by default
+    nix-direnv.enable = true;
+    config = {
+      whitelist.prefix = ["~/code/" "~/Projects"];
+    };
+  };
 }
