@@ -29,7 +29,7 @@
             systemctl reboot
             ;;
         "⏻ Shutdown")
-            systemctl poweroff
+            shutdown now
             ;;
     esac
   '';

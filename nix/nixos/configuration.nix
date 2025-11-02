@@ -3,10 +3,8 @@
   pkgs,
   ...
 }: {
-  # accounts for symlinking this file in another location
   imports = [
-    # ./hardware-configuration.nix # would only work if the file is copied not symlinked
-    /etc/nixos/hardware-configuration.nix
+    ./hardware-configuration.nix
   ];
 
   # Bootloader
@@ -52,7 +50,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
         user = "greeter";
       };
     };
@@ -117,7 +115,7 @@
   fonts.packages = with pkgs; [
     noto-fonts
     noto-fonts-cjk-sans
-    noto-fonts-emoji
+    noto-fonts-color-emoji
     font-awesome
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nerd-fonts.fira-code

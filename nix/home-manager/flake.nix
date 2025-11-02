@@ -21,19 +21,30 @@
     walker,
     ...
   }: let
-    linuxSystem = "x86_64-linux";
-    macSystem = "aarch64-darwin";
+    # Define supported systems
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "aarch64-darwin"
+    ];
+
+    # Helper to generate an attribute set for all systems
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+
+    # Generate pkgs for each system
+    pkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
   in {
     homeConfigurations = {
       "ericus" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.${linuxSystem};
+        # Dynamically select pkgs based on current system, fallback to x86_64-linux
+        pkgs = pkgsFor.${builtins.currentSystem or "x86_64-linux"};
         extraSpecialArgs = {inherit nixpkgs walker;};
         modules = [
           ./homes/linux.nix
         ];
       };
       "ericpuentes" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.${macSystem};
+        pkgs = pkgsFor."aarch64-darwin";
         extraSpecialArgs = {inherit nixpkgs;};
         modules = [
           ./homes/mac.nix
