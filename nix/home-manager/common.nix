@@ -20,6 +20,7 @@
     zoxide
     htop
     stow
+    jq
 
     # C/C++ nightmare
     gcc
@@ -33,6 +34,8 @@
     zig
     #Formatters
     alejandra
+    # LLMs
+    opencode
   ];
 
   home.sessionPath = [
