@@ -1,10 +1,43 @@
+# Heavily inspared by omarchy: https://github.com/basecamp/omarchy/blob/master/config/waybar/config.jsonc
 {
   config,
   pkgs,
   ...
-}:
-# Heavily inspared by omarchy: https://github.com/basecamp/omarchy/blob/master/config/waybar/config.jsonc
-{
+}: let
+  powerMenuScript = pkgs.writeShellScriptBin "power-menu" ''
+    # Power menu options
+    options="🔒 Lock\n🚪 Logout\n💤 Suspend\n🛌 Hibernate\n🔄 Reboot\n⏻  Shutdown"
+
+    # Show menu using walker in dmenu mode
+    chosen=$(echo -e "$options" | walker --dmenu -p "Power Menu")
+
+    # Execute action based on selection
+    case "$chosen" in
+        "🔒 Lock")
+            hyprlock
+            ;;
+        "🚪 Logout")
+            hyprctl dispatch exit
+            ;;
+        "💤 Suspend")
+            hyprlock & sleep 1 && systemctl suspend
+            ;;
+        "🛌 Hibernate")
+            hyprlock & sleep 1 && systemctl hibernate
+            ;;
+        "🔄 Reboot")
+            systemctl reboot
+            ;;
+        "⏻ Shutdown")
+            systemctl poweroff
+            ;;
+    esac
+  '';
+in {
+  home.packages = with pkgs; [
+    powerMenuScript
+  ];
+
   services.blueman-applet.enable = true;
 
   programs.waybar = {
@@ -17,7 +50,7 @@
 
         modules-left = ["hyprland/workspaces" "hyprland/window"];
         modules-center = ["clock"];
-        modules-right = ["group/tray-expander" "pulseaudio" "network" "battery" "cpu"];
+        modules-right = ["group/tray-expander" "pulseaudio" "network" "battery" "cpu" "custom/power"];
 
         "group/tray-expander" = {
           orientation = "inherit";
@@ -36,7 +69,7 @@
           spacing = 17;
         };
 
-        "hyperland/workspaces" = {
+        "hyprland/workspaces" = {
           format = "{id}";
         };
 
@@ -87,12 +120,19 @@
 
         "pulseaudio" = {
           format = "{icon}";
+          on-click = "pavucontrol";
           scroll-step = 5;
           tooltip-format = "Playing at {volume}%";
           format-muted = "";
           format-icons = {
             default = ["" "" ""];
           };
+        };
+
+        "custom/power" = {
+          format = "⏻";
+          tooltip = false;
+          on-click = "power-menu";
         };
       };
     };

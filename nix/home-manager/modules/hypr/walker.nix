@@ -60,7 +60,8 @@
       };
 
       keybinds = {
-        quick_activate = ["F1" "F2" "F3"];
+        # For power menu niceties
+        quick_activate = ["F1" "F2" "F3" "F4" "F5" "F6"];
         next = ["Down" "ctrl n"];
         previous = ["Up" "ctrl p"];
       };

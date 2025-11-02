@@ -4,13 +4,15 @@
 
 * {
   background-color: @background;
-  color: @foreground;
-
   border: none;
   border-radius: 0;
   min-height: 0;
   font-family: 'JetBrainsMono Nerd Font';
   font-size: 12px;
+}
+
+window {
+  color: @foreground;
 }
 
 .modules-left {
@@ -22,12 +24,13 @@
 }
 
 #workspaces button {
-  all: initial;
   padding: 0 6px;
   margin: 0 1.5px;
   min-width: 9px;
-  color: @foreground;  /* Add explicit color for inactive */
-  background-color: transparent;  /* Transparent background for inactive */
+  color: @foreground;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 #workspaces button.empty {
@@ -35,37 +38,83 @@
 }
 
 #workspaces button.active {
-  background-color: rgba(137, 180, 250, 0.3);  /* Semi-transparent blue */
-  color: @active-workspace;  /* Blue text */
+  background-color: rgba(137, 180, 250, 0.3);
+  color: #89b4fa;
   border-radius: 4px;
 }
 
+#workspaces button.active * {
+  background-color: transparent;
+  color: #89b4fa;
+}
+
+/* Add uniform spacing and padding to all icons */
 #cpu,
 #battery,
 #pulseaudio,
-
+#network,
 #tray {
-  margin-right: 14px;
+  padding: 0 10px;
+  margin: 0 2px;
 }
 
 #bluetooth {
-  margin-right: 17px;
-}
-
-#network {
-  margin-right: 13px;
+  padding: 0 10px;
+  margin: 0 2px;
 }
 
 #custom-expand-icon {
-  margin-right: 20px;
+  padding: 0 10px;
+  margin: 0 2px;
+}
+
+/* Add hover effects with active workspace color for all interactive modules */
+#cpu:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#bluetooth:hover {
+  background-color: rgba(137, 180, 250, 0.3);
+  color: @active-workspace;
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 tooltip {
-  padding: 2px;
+  background-color: @background;
+  border: 1px solid @active-workspace;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+tooltip label {
+  color: @foreground;
 }
 
 #clock {
-  margin-left: 8.75px;
+  padding: 0 12px;
+  margin: 0 4px;
+}
+
+#clock:hover {
+  background-color: rgba(137, 180, 250, 0.3);
+  color: @active-workspace;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+#custom-power {
+  padding: 0 10px;
+  margin: 0 4px;
+  font-size: 14px;
+  color: @foreground;
+}
+
+#custom-power:hover {
+  color: #f38ba8;
+  background-color: rgba(243, 139, 168, 0.2);
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .hidden {

@@ -8,13 +8,12 @@ in {
   imports = [./walker.nix ./waybar.nix];
 
   home.packages = with pkgs; [
-    swaylock
-    swayidle
+    hyprlock
+    hypridle
     wl-clipboard
     grim
     slurp
     hyprpaper
-    brightnessctl
     networkmanagerapplet
     pavucontrol
   ];
