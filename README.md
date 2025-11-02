@@ -4,33 +4,40 @@ My personal configuration files for UNIX systems, managed either with nix and ho
 
 ## Quick Start
 
-### NixOS Installation
+### NixOS Installation (Fresh System)
 
-1. Boot from NixOS installer ISO
-2. Complete the graphical installation
-3. **Before rebooting**, run:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0-nixos-install | bash
-```
-
-4. Reboot into your new system
-5. Login and run:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
-```
+1. Boot from NixOS **minimal installer** ISO
+2. Connect to the internet:
+   ```bash
+   # For WiFi: sudo systemctl start wpa_supplicant && wpa_cli
+   # Or use: nmtui
+   ```
+3. Run the installation bootstrap:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 | bash
+   ```
+4. The script will guide you through:
+   - Disk partitioning (with instructions)
+   - Hardware configuration generation
+   - System installation
+5. Reboot into your new system
+6. Login as user `ericus` and run post-install setup:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
+   ```
 
 ### macOS Setup
 
+**Note**: Darwin configuration needs to be created first in `nix/darwin/flake.nix`
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
 ```
 
 ### Other Linux Distributions
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
+curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
 ```
 
 ## 📁 Repository Structure
@@ -38,19 +45,20 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-
 ```
 .dotfiles/
 ├── bootstrap/           # Bootstrap scripts
-│   ├── 0-nixos-install # NixOS initial setup (from live USB)
-│   ├── 1-post-install  # Post-install setup (all systems)
+│   ├── 0               # NixOS installer setup (from live USB, before install)
+│   ├── 1               # Post-install setup (all systems, after first boot)
 │   └── lib.sh          # Shared functions
 ├── nix/                # Nix configurations
 │   ├── nixos/          # NixOS system configuration
-│   ├── darwin/         # macOS nix-darwin configuration
-│   ├── linux/          # Other Linux configuration
+│   ├── darwin/         # macOS nix-darwin configuration (empty, needs setup)
 │   └── home-manager/   # home-manager configuration
 │       ├── flake.nix
-│       ├── hosts/      # Host-specific configs
+│       ├── homes/      # User-specific configs (linux.nix, mac.nix)
 │       ├── modules/    # Modular configurations
-│       └── config/     # Extra native config files (not nix)
-├── symlinkmanager      # Smart symlink manager script
+│       ├── config/     # Extra native config files (not nix)
+│       └── common.nix  # Shared configuration
+├── bin/
+│   └── symlinkmanager  # Smart symlink manager script
 ├── symlink.conf        # Symlink configuration
 ├── nvim/               # Neovim configuration
 │   ├── init.lua
@@ -59,6 +67,34 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-
 │   └── .ideavimrc
 └── (other configs)/    # Other dotfiles
 ```
+
+## Bootstrap Workflow
+
+### NixOS Two-Stage Installation
+
+**Stage 0 (Installer)**: Run from the NixOS minimal installer ISO
+- Guides you through disk partitioning
+- Generates hardware-configuration.nix (critical for your hardware)
+- Installs your custom NixOS configuration
+- Runs nixos-install
+- Prepares dotfiles for post-install
+
+**Stage 1 (Post-Install)**: Run after first boot into installed system
+- Symlinks system configuration for easy editing
+- Sets up home-manager with your user configuration
+- Symlinks all dotfiles using symlinkmanager
+- Installs all user packages and programs
+
+### Why Two Stages?
+
+1. **Stage 0** must run from the installer environment while `/mnt` is available
+2. **Stage 1** needs a fully booted system with your user account to set up home-manager
+
+This approach ensures:
+- Correct hardware detection and configuration
+- Proper disk setup and mounting
+- Clean separation between system and user configuration
+- Ability to manage everything from dotfiles after installation
 
 ## What's Included
 
@@ -110,7 +146,7 @@ home-manager switch --flake ~/.config/home-manager#ericus
 
 ### Dotfiles (Neovim, Tmux, etc.)
 
-Dotfiles not managed in home-manager are managed with a custom symlink manager that intelligently handles both full directory symlinks and content merging.
+Dotfiles not managed in home-manager are managed with a custom symlink manager (`bin/symlinkmanager`) that intelligently handles both full directory symlinks and content merging.
 
 ```bash
 # View symlink.conf to see what's configured
@@ -118,16 +154,16 @@ cat ~/.dotfiles/symlink.conf
 
 # Check current status
 cd ~/.dotfiles
-symlinkmanager status
+bin/symlinkmanager status all
 
 # Create all configured symlinks
-symlinkmanager link all
+bin/symlinkmanager link all
 
 # Create specific configured symlinks
-symlinkmanager link nvim ghostty
+bin/symlinkmanager link nvim ghostty
 
 # Remove all symlinks
-symlinkmanager unlink all
+bin/symlinkmanager unlink all
 ```
 
 **How it works:**
@@ -181,7 +217,7 @@ home-manager expire-generations "-7 days"
 
 # Re-link dotfiles if needed
 cd ~/.dotfiles
-symlinkmanager link
+bin/symlinkmanager link all
 ```
 
 ##  Documentation

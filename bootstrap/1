@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap script for post-installation setup
 # Works on NixOS, macOS, and other Linux distributions
-# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
 
 set -euo pipefail
 
@@ -28,28 +28,71 @@ setup_nixos() {
         log_success "Dotfiles already exist at $DOTFILES_DIR"
     fi
     
-    # Replace system configuration with symlink
-    log_info "Setting up system configuration symlink..."
-    
-    if [ -f /etc/nixos/configuration.nix ] && [ ! -L /etc/nixos/configuration.nix ]; then
-        log_warning "Removing old configuration.nix (backed up during stage 0)"
-        sudo rm /etc/nixos/configuration.nix
+    # Check if configuration is already symlinked
+    if [ -L /etc/nixos/configuration.nix ]; then
+        local link_target=$(readlink /etc/nixos/configuration.nix)
+        if [[ "$link_target" == *".dotfiles"* ]]; then
+            log_success "System configuration already symlinked correctly"
+        else
+            log_warning "System configuration is symlinked to: $link_target"
+            if confirm "Replace with dotfiles configuration?"; then
+                sudo rm /etc/nixos/configuration.nix
+                sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
+                log_success "System configuration re-symlinked"
+            fi
+        fi
+    else
+        # Configuration is a regular file, replace with symlink
+        log_info "Setting up system configuration symlink..."
+        
+        if [ -f /etc/nixos/configuration.nix ]; then
+            # Backup the existing file
+            local backup="/etc/nixos/configuration.nix.backup.$(date +%Y%m%d_%H%M%S)"
+            sudo cp /etc/nixos/configuration.nix "$backup"
+            log_info "Backed up existing configuration to $backup"
+            sudo rm /etc/nixos/configuration.nix
+        fi
+        
+        # Create symlink
+        sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
+        log_success "System configuration symlinked"
     fi
     
-    # Create symlink
-    sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
-    log_success "System configuration symlinked"
+    # Check if we need to rebuild
+    echo
+    log_info "System configuration is now managed from:"
+    log_info "  $DOTFILES_DIR/nix/nixos/configuration.nix"
+    echo
     
-    # Rebuild system (only if not already done in stage 0)
-    if confirm "Rebuild NixOS configuration now?"; then
-        log_info "Rebuilding NixOS..."
-        sudo nixos-rebuild switch
-        log_success "NixOS rebuilt successfully"
+    # Only offer rebuild if configuration was just changed
+    if ! [ -L /etc/nixos/configuration.nix ]; then
+        if confirm "Rebuild NixOS configuration now?"; then
+            log_info "Rebuilding NixOS..."
+            sudo nixos-rebuild switch
+            log_success "NixOS rebuilt successfully"
+        else
+            log_info "Skipping rebuild. You can rebuild later with: sudo nixos-rebuild switch"
+        fi
+    else
+        log_info "Configuration already applied. Skipping rebuild."
+        log_info "To rebuild manually later: sudo nixos-rebuild switch"
     fi
 }
 
 setup_darwin() {
     log_info "=== Setting up macOS with nix-darwin ==="
+    
+    # Check if darwin configuration exists
+    if [ ! -f "$DOTFILES_DIR/nix/darwin/flake.nix" ]; then
+        log_error "Darwin configuration not found!"
+        log_error "Expected: $DOTFILES_DIR/nix/darwin/flake.nix"
+        echo
+        log_info "Darwin/macOS configuration needs to be created manually."
+        log_info "Please create nix/darwin/flake.nix in your dotfiles first."
+        echo
+        log_warning "Skipping darwin setup..."
+        return 1
+    fi
     
     # Ensure git
     ensure_git
@@ -103,11 +146,35 @@ setup_home_manager() {
     local hm_source="$DOTFILES_DIR/nix/home-manager"
     local hm_target="$HOME/.config/home-manager"
     
+    # Check if home-manager flake exists
+    if [ ! -f "$hm_source/flake.nix" ]; then
+        log_error "home-manager flake not found at $hm_source/flake.nix"
+        log_error "Cannot proceed with home-manager setup"
+        return 1
+    fi
+    
     create_symlink "$hm_source" "$hm_target"
     
     # Determine which user configuration to use
     local hm_user=$(get_hm_user)
     log_info "Using home-manager configuration for: $hm_user"
+    
+    # Check if the user configuration exists
+    local system=$(detect_system)
+    local user_config=""
+    case $system in
+        nixos|linux)
+            user_config="$hm_source/homes/linux.nix"
+            ;;
+        darwin)
+            user_config="$hm_source/homes/mac.nix"
+            ;;
+    esac
+    
+    if [ ! -f "$user_config" ]; then
+        log_error "User configuration not found: $user_config"
+        return 1
+    fi
     
     # Initialize home-manager flake
     log_info "Initializing home-manager..."
@@ -120,21 +187,38 @@ setup_home_manager() {
     
     # Apply home-manager configuration
     log_info "Applying home-manager configuration..."
-    home-manager switch --flake "$hm_target#$hm_user"
+    log_info "This may take several minutes on first run..."
     
-    log_success "home-manager configured successfully"
+    if home-manager switch --flake "$hm_target#$hm_user"; then
+        log_success "home-manager configured successfully"
+    else
+        log_error "home-manager switch failed!"
+        log_info "You can try manually with: home-manager switch --flake ~/.config/home-manager#$hm_user"
+        return 1
+    fi
 }
 
-setup_stow() {
-    log_info "=== Stowing dotfiles ==="
+setup_symlinks() {
+    log_info "=== Setting up dotfile symlinks ==="
     
-    # Ensure stow is installed
-    ensure_stow
+    # Verify symlinkmanager exists
+    if [ ! -x "$DOTFILES_DIR/bin/symlinkmanager" ]; then
+        log_error "symlinkmanager not found at $DOTFILES_DIR/bin/symlinkmanager"
+        log_error "Cannot proceed with dotfile symlinking"
+        return 1
+    fi
     
-    # Stow all configurations
+    # Verify symlink.conf exists
+    if [ ! -f "$DOTFILES_DIR/symlink.conf" ]; then
+        log_error "symlink.conf not found at $DOTFILES_DIR/symlink.conf"
+        log_error "Cannot proceed with dotfile symlinking"
+        return 1
+    fi
+    
+    # Run symlinkmanager
     stow_configs "$DOTFILES_DIR"
     
-    log_success "All dotfiles stowed"
+    log_success "All dotfiles symlinked"
 }
 
 main() {
@@ -155,7 +239,10 @@ main() {
             setup_nixos
             ;;
         darwin)
-            setup_darwin
+            if ! setup_darwin; then
+                log_warning "Darwin setup failed or was skipped"
+                log_info "Continuing with home-manager setup..."
+            fi
             ;;
         linux)
             setup_linux
@@ -169,12 +256,23 @@ main() {
     echo
     
     # Setup home-manager (common for all systems)
-    setup_home_manager
+    if ! setup_home_manager; then
+        log_error "home-manager setup failed!"
+        log_warning "You may need to fix configuration errors and run manually"
+        echo
+        log_info "After fixing, run: home-manager switch --flake ~/.config/home-manager#$(get_hm_user)"
+        exit 1
+    fi
     
     echo
     
-    # Stow dotfiles (common for all systems)
-    setup_stow
+    # Setup dotfile symlinks (common for all systems)
+    if ! setup_symlinks; then
+        log_error "Dotfile symlinking failed!"
+        log_warning "You may need to run symlinkmanager manually"
+        echo
+        log_info "To fix, run: cd ~/.dotfiles && bin/symlinkmanager link all"
+    fi
     
     echo
     log_success "╔════════════════════════════════════════╗"
@@ -190,25 +288,37 @@ main() {
     log_info "Next steps:"
     case $SYSTEM in
         nixos)
-            log_info "• Your system is ready to use"
+            log_info "• Your system is ready to use!"
             log_info "• Start Hyprland with: Hyprland"
+            log_info "• To update system: sudo nixos-rebuild switch"
+            log_info "• To update home: home-manager switch --flake ~/.config/home-manager#$(get_hm_user)"
             ;;
         darwin)
             log_info "• Restart your terminal or run: exec \$SHELL"
-            log_info "• Your macOS is configured with nix-darwin"
+            log_info "• To update: darwin-rebuild switch --flake ~/.dotfiles/nix/darwin"
+            log_info "• To update home: home-manager switch --flake ~/.config/home-manager#$(get_hm_user)"
             ;;
         linux)
             log_info "• Restart your terminal or run: exec \$SHELL"
-            log_info "• Your system is ready to use"
+            log_info "• To update home: home-manager switch --flake ~/.config/home-manager#$(get_hm_user)"
             ;;
     esac
     echo
     
-    if confirm "Reboot now?"; then
-        log_info "Rebooting..."
-        sudo reboot
+    # Only offer reboot for fresh installations
+    if [ "$SYSTEM" = "nixos" ] && [ ! -f "$HOME/.config/.bootstrap_complete" ]; then
+        # Mark as complete
+        mkdir -p "$HOME/.config"
+        touch "$HOME/.config/.bootstrap_complete"
+        
+        if confirm "This looks like a fresh install. Reboot now?"; then
+            log_info "Rebooting..."
+            sudo reboot
+        else
+            log_info "Remember to reboot or restart your shell for all changes to take effect"
+        fi
     else
-        log_info "Remember to restart your shell or reboot for all changes to take effect"
+        log_info "Restart your shell or reboot for all changes to take effect"
     fi
 }
 

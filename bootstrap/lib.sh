@@ -168,84 +168,43 @@ install_nix_darwin() {
     log_success "nix-darwin installed successfully"
 }
 
-# Install stow
-ensure_stow() {
-    if command_exists stow; then
-        log_success "GNU Stow is already installed"
-        return 0
-    fi
-    
-    log_info "Installing GNU Stow..."
-    local system=$(detect_system)
-    
-    case $system in
-        nixos)
-            nix-env -iA nixos.stow
-            ;;
-        darwin)
-            brew install stow
-            ;;
-        linux)
-            if command_exists apt-get; then
-                sudo apt-get install -y stow
-            elif command_exists dnf; then
-                sudo dnf install -y stow
-            elif command_exists pacman; then
-                sudo pacman -S --noconfirm stow
-            else
-                log_error "Cannot install stow automatically. Please install manually."
-                exit 1
-            fi
-            ;;
-    esac
-    
-    log_success "GNU Stow installed"
-}
+# Note: We use symlinkmanager instead of GNU Stow
+# symlinkmanager is included in the dotfiles repo at bin/symlinkmanager
+# No separate installation needed
 
-# Stow dotfiles
+# Symlink dotfiles using symlinkmanager
 stow_configs() {
     local dotfiles_dir="${1:-$HOME/.dotfiles}"
     
-    log_info "Stowing configuration files..."
+    log_info "Symlinking configuration files..."
     
     cd "$dotfiles_dir"
     
-    # Check if stow-manager exists and use it
-    if [ -x "$dotfiles_dir/stow-manager" ]; then
-        log_info "Using stow-manager for custom targets"
-        "$dotfiles_dir/stow-manager" stow
+    # Check if symlinkmanager exists and use it
+    if [ -x "$dotfiles_dir/bin/symlinkmanager" ]; then
+        log_info "Using symlinkmanager with symlink.conf"
+        "$dotfiles_dir/bin/symlinkmanager" link all
     else
-        log_warning "stow-manager not found, falling back to default stow behavior"
-        
-        # Stow each directory except nix and bootstrap
-        for dir in */; do
-            dir=${dir%/}  # Remove trailing slash
-            
-            # Skip certain directories
-            if [[ "$dir" == "nix" ]] || [[ "$dir" == "bootstrap" ]] || [[ "$dir" == ".git" ]]; then
-                continue
-            fi
-            
-            log_info "Stowing $dir..."
-            stow -v "$dir" || log_warning "Failed to stow $dir (may already exist)"
-        done
+        log_error "symlinkmanager not found at $dotfiles_dir/bin/symlinkmanager"
+        log_error "Cannot proceed with dotfile symlinking"
+        log_info "Please ensure your dotfiles repository is properly cloned"
+        return 1
     fi
     
-    log_success "Dotfiles stowed successfully"
+    log_success "Dotfiles symlinked successfully"
 }
 
 # Get username for home-manager
 get_hm_user() {
     local system=$(detect_system)
     case $system in
-        nixos)
+        nixos|linux)
+            # For NixOS and Linux, use ericus
             echo "ericus"
             ;;
         darwin)
+            # For macOS, use ericpuentes (note: check if this matches your actual username)
             echo "ericpuentes"
-            ;;
-        linux)
-            echo "$USER"
             ;;
     esac
 }

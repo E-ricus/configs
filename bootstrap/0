@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Bootstrap script for NixOS installation
-# Run this AFTER completing the graphical installer, BEFORE rebooting
-# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0-nixos-install | bash
+# Bootstrap script for NixOS installation from minimal installer
+# Run this from the NixOS LIVE installer environment BEFORE installation
+# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 | bash
 
 set -euo pipefail
 
@@ -14,87 +14,326 @@ else
     eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/lib.sh)"
 fi
 
-main() {
-    log_info "=== NixOS Bootstrap - Stage 0 ==="
-    log_info "This script should be run from the NixOS installer"
-    log_info "AFTER completing the graphical installation"
-    log_info "BEFORE rebooting"
-    echo
+# Configuration
+TARGET_USER="ericus"
+TARGET_UID="1000"
+TARGET_GID="100"
+
+#############################################
+# Helper Functions
+#############################################
+
+verify_installer_environment() {
+    log_info "Verifying installer environment..."
     
-    # Verify we're in NixOS
+    # Check if running NixOS
     if [ "$(detect_system)" != "nixos" ]; then
         log_error "This script must be run from NixOS installer!"
-        log_info "For post-install setup, use: bootstrap/1-post-install"
+        log_info "For post-install setup, use: bootstrap/1"
         exit 1
     fi
     
-    # Check if /mnt is mounted (installer should have mounted it)
+    # Check if NOT running in installed system (basic heuristic)
+    if [ -f "/etc/NIXOS" ]; then
+        log_warning "Detected installed NixOS system"
+        if ! confirm "Are you sure you want to run the installer bootstrap?"; then
+            exit 1
+        fi
+    fi
+    
+    log_success "Running in NixOS installer environment"
+}
+
+check_internet() {
+    log_info "Checking internet connectivity..."
+    if ping -c 1 google.com &> /dev/null || ping -c 1 1.1.1.1 &> /dev/null; then
+        log_success "Internet connection available"
+        return 0
+    else
+        log_error "No internet connection detected!"
+        log_info "Please connect to the internet first:"
+        log_info "  For WiFi: sudo systemctl start wpa_supplicant"
+        log_info "  Then configure with: wpa_cli"
+        log_info "  Or use NetworkManager: nmtui"
+        exit 1
+    fi
+}
+
+detect_disks() {
+    log_info "Detecting available disks..."
+    echo
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
+    echo
+}
+
+guide_disk_setup() {
+    log_info "=== Disk Partitioning Guide ==="
+    echo
+    log_info "You need to partition and mount your disk before proceeding."
+    echo
+    log_info "Recommended partition scheme (UEFI):"
+    echo "  1. EFI System Partition: 512MB - 1GB (type: EF00)"
+    echo "  2. Swap (optional): 4-8GB (type: 8200)"
+    echo "  3. Root: Remaining space (type: 8300)"
+    echo
+    log_info "Example commands for /dev/sda:"
+    echo
+    echo "  # Partition the disk"
+    echo "  sudo gdisk /dev/sda"
+    echo "    o (create new GPT partition table)"
+    echo "    n (new partition)"
+    echo "      Partition 1: +512M, type EF00 (EFI)"
+    echo "      Partition 2: +8G, type 8200 (swap, optional)"
+    echo "      Partition 3: (rest), type 8300 (Linux)"
+    echo "    w (write changes)"
+    echo
+    echo "  # Format partitions"
+    echo "  sudo mkfs.fat -F 32 /dev/sda1"
+    echo "  sudo mkswap /dev/sda2 (if using swap)"
+    echo "  sudo mkfs.ext4 /dev/sda3"
+    echo
+    echo "  # Mount partitions"
+    echo "  sudo mount /dev/sda3 /mnt"
+    echo "  sudo mkdir -p /mnt/boot"
+    echo "  sudo mount /dev/sda1 /mnt/boot"
+    echo "  sudo swapon /dev/sda2 (if using swap)"
+    echo
+    log_warning "IMPORTANT: This is just an example. Adjust device names for your system!"
+    echo
+    
+    if confirm "Do you want to see current disk information again?"; then
+        detect_disks
+    fi
+    
+    echo
+    log_info "Please partition and mount your disk now."
+    log_info "This script will continue when you're ready..."
+    echo
+    
+    press_any_key
+}
+
+verify_mounts() {
+    log_info "Verifying mount points..."
+    
     if ! mountpoint -q /mnt; then
         log_error "/mnt is not mounted!"
-        log_error "Please make sure you've completed the NixOS installation first."
+        return 1
+    fi
+    
+    log_success "✓ /mnt is mounted"
+    
+    # Check for boot partition (common locations)
+    if mountpoint -q /mnt/boot || mountpoint -q /mnt/boot/efi; then
+        log_success "✓ Boot partition is mounted"
+    else
+        log_warning "⚠ No boot partition detected at /mnt/boot or /mnt/boot/efi"
+        log_warning "  Make sure you mounted your EFI partition!"
+        if ! confirm "Continue anyway?"; then
+            return 1
+        fi
+    fi
+    
+    echo
+    log_info "Current mount configuration:"
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT | grep -E "(mnt|NAME)"
+    echo
+    
+    return 0
+}
+
+generate_hardware_config() {
+    log_info "=== Generating Hardware Configuration ==="
+    echo
+    
+    log_info "Running nixos-generate-config..."
+    if nixos-generate-config --root /mnt; then
+        log_success "Configuration generated successfully"
+    else
+        log_error "Failed to generate configuration!"
         exit 1
     fi
     
-    log_success "NixOS installer environment detected"
-    log_info "Target system is mounted at /mnt"
+    echo
+    log_info "Verifying generated files..."
+    
+    if [ ! -f /mnt/etc/nixos/configuration.nix ]; then
+        log_error "configuration.nix not found!"
+        exit 1
+    fi
+    log_success "✓ /mnt/etc/nixos/configuration.nix"
+    
+    if [ ! -f /mnt/etc/nixos/hardware-configuration.nix ]; then
+        log_error "hardware-configuration.nix not found!"
+        exit 1
+    fi
+    log_success "✓ /mnt/etc/nixos/hardware-configuration.nix"
+    
+    echo
+    log_info "Generated hardware-configuration.nix contains:"
+    echo
+    grep -E "(fileSystems|swapDevices|boot\.loader)" /mnt/etc/nixos/hardware-configuration.nix || true
     echo
     
-    # Ensure git is available
-    ensure_git
+    if ! confirm "Does the hardware configuration look correct?"; then
+        log_warning "You can manually edit: /mnt/etc/nixos/hardware-configuration.nix"
+        press_any_key
+    fi
+}
+
+install_custom_configuration() {
+    log_info "=== Installing Custom Configuration ==="
+    echo
     
     # Clone dotfiles to temporary location
-    TEMP_DOTFILES="/tmp/dotfiles-bootstrap"
-    log_info "Cloning dotfiles to temporary location..."
-    clone_dotfiles "$TEMP_DOTFILES"
+    local temp_dotfiles="/tmp/dotfiles-bootstrap"
+    log_info "Cloning dotfiles repository..."
+    clone_dotfiles "$temp_dotfiles"
     
-    # Copy NixOS configuration to target system
-    log_info "Installing NixOS configuration..."
+    # Backup the generated configuration.nix
+    log_info "Backing up generated configuration.nix..."
+    mv /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.generated
+    log_success "Backup saved to configuration.nix.generated"
     
-    # Backup existing configuration
-    if [ -f /mnt/etc/nixos/configuration.nix ]; then
-        log_warning "Backing up existing configuration.nix"
-        cp /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.backup
+    # Copy custom configuration.nix
+    log_info "Installing custom configuration.nix..."
+    cp "$temp_dotfiles/nix/nixos/configuration.nix" /mnt/etc/nixos/configuration.nix
+    log_success "Custom configuration installed"
+    
+    # IMPORTANT: Keep the hardware-configuration.nix as-is
+    log_success "✓ hardware-configuration.nix preserved (contains your disk setup)"
+    
+    echo
+    log_info "Configuration files:"
+    log_info "  - configuration.nix: Custom (from dotfiles)"
+    log_info "  - hardware-configuration.nix: Generated (system-specific)"
+    echo
+    
+    # Copy dotfiles to target system for bootstrap/1
+    log_info "Preparing dotfiles for post-install..."
+    mkdir -p /mnt/home/$TARGET_USER
+    cp -r "$temp_dotfiles" "/mnt/home/$TARGET_USER/.dotfiles"
+    
+    # Set correct ownership (will be corrected by nixos-install)
+    chown -R $TARGET_UID:$TARGET_GID "/mnt/home/$TARGET_USER/.dotfiles" || true
+    log_success "Dotfiles prepared in /mnt/home/$TARGET_USER/.dotfiles"
+    
+    # Cleanup
+    rm -rf "$temp_dotfiles"
+}
+
+run_nixos_install() {
+    log_info "=== Running NixOS Installation ==="
+    echo
+    
+    log_warning "This will install NixOS to /mnt"
+    log_info "The installation will:"
+    log_info "  1. Install all system packages"
+    log_info "  2. Set up the bootloader"
+    log_info "  3. Create user '$TARGET_USER'"
+    log_info "  4. Ask you to set the root password"
+    log_info "  5. Ask you to set the user password"
+    echo
+    
+    if ! confirm "Proceed with installation?"; then
+        log_info "Installation cancelled"
+        exit 0
     fi
     
-    # Copy our configuration
-    cp "$TEMP_DOTFILES/nix/nixos/configuration.nix" /mnt/etc/nixos/configuration.nix
-    log_success "Configuration copied to /mnt/etc/nixos/configuration.nix"
-    
-    # Copy dotfiles to target home directory
-    log_info "Copying dotfiles to target system..."
-    mkdir -p /mnt/home/ericus
-    cp -r "$TEMP_DOTFILES" /mnt/home/ericus/.dotfiles
-    
-    # Set correct ownership (assuming UID 1000 for first user)
-    chown -R 1000:100 /mnt/home/ericus/.dotfiles
-    log_success "Dotfiles copied to /mnt/home/ericus/.dotfiles"
-    
     echo
-    log_success "=== Stage 0 Complete ==="
-    log_info "The system is now ready for installation."
-    echo
-    log_info "Next steps:"
-    log_info "1. Review /mnt/etc/nixos/configuration.nix if needed"
-    log_info "2. Run: nixos-install"
-    log_info "3. After installation completes, reboot"
-    log_info "4. On first boot, login and run:"
-    log_info "   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1-post-install | bash"
+    log_info "Starting installation (this may take 10-30 minutes)..."
     echo
     
-    if confirm "Run nixos-install now?"; then
-        log_info "Running nixos-install..."
-        nixos-install
-        
-        log_success "Installation complete!"
+    if nixos-install; then
         echo
+        log_success "╔════════════════════════════════════════╗"
+        log_success "║   NixOS Installation Complete! 🎉     ║"
+        log_success "╚════════════════════════════════════════╝"
+    else
+        echo
+        log_error "Installation failed!"
+        log_error "Please check the error messages above"
+        log_info "You can try to fix issues and re-run: nixos-install"
+        exit 1
+    fi
+}
+
+#############################################
+# Main Function
+#############################################
+
+main() {
+    echo
+    log_info "╔════════════════════════════════════════╗"
+    log_info "║   NixOS Bootstrap - Stage 0           ║"
+    log_info "║   Fresh Installation Setup            ║"
+    log_info "╚════════════════════════════════════════╝"
+    echo
+    
+    # Phase 1: Pre-flight checks
+    verify_installer_environment
+    check_internet
+    ensure_git
+    
+    echo
+    
+    # Phase 2: Disk setup
+    log_info "=== Phase 1: Disk Preparation ==="
+    echo
+    detect_disks
+    
+    if ! mountpoint -q /mnt; then
+        log_warning "/mnt is not mounted"
+        guide_disk_setup
         
-        if confirm "Reboot now?"; then
-            reboot
-        else
-            log_info "Remember to reboot before running stage 1"
+        # Verify after user partitions
+        if ! verify_mounts; then
+            log_error "Mount verification failed!"
+            log_info "Please ensure /mnt is properly mounted and try again"
+            exit 1
         fi
     else
-        log_info "Skipping nixos-install. Run it manually when ready."
+        log_success "/mnt is already mounted"
+        verify_mounts
+    fi
+    
+    echo
+    
+    # Phase 3: Generate hardware config
+    log_info "=== Phase 2: Hardware Configuration ==="
+    echo
+    generate_hardware_config
+    
+    echo
+    
+    # Phase 4: Install custom configuration
+    log_info "=== Phase 3: Custom Configuration ==="
+    echo
+    install_custom_configuration
+    
+    echo
+    
+    # Phase 5: Run installation
+    log_info "=== Phase 4: System Installation ==="
+    echo
+    run_nixos_install
+    
+    echo
+    log_info "╔════════════════════════════════════════╗"
+    log_info "║        Next Steps                      ║"
+    log_info "╚════════════════════════════════════════╝"
+    echo
+    log_info "1. Reboot into your new system: reboot"
+    log_info "2. Login as user: $TARGET_USER"
+    log_info "3. Run post-install setup:"
+    log_info "   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash"
+    echo
+    
+    if confirm "Reboot now?"; then
+        log_info "Rebooting..."
+        reboot
+    else
+        log_info "Remember to reboot before running bootstrap/1"
     fi
 }
 

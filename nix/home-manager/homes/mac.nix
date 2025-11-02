@@ -5,11 +5,10 @@
 }: {
   imports = [
     ./../common.nix
-    ./../modules/hyperland.nix
   ];
 
   home = {
-    username = "ericpuents";
+    username = "ericpuentes";
     homeDirectory = "/Users/ericpuentes";
     stateVersion = "25.05";
   };
