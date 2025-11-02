@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Bootstrap script for NixOS installation from minimal installer
-# Run this from the NixOS LIVE installer environment BEFORE installation
+# Smart NixOS Installer with Interactive Partitioning
+# Run this from the NixOS LIVE installer environment
 # Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 | bash
 
 set -euo pipefail
@@ -18,6 +18,9 @@ fi
 TARGET_USER="ericus"
 TARGET_UID="1000"
 TARGET_GID="100"
+GITHUB_USER="e-ricus"
+DOTFILES_REPO="https://github.com/$GITHUB_USER/.dotfiles"
+RAW_CONFIG_URL="https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/nix/nixos/configuration.nix"
 
 #############################################
 # Helper Functions
@@ -31,14 +34,6 @@ verify_installer_environment() {
         log_error "This script must be run from NixOS installer!"
         log_info "For post-install setup, use: bootstrap/1"
         exit 1
-    fi
-    
-    # Check if NOT running in installed system (basic heuristic)
-    if [ -f "/etc/NIXOS" ]; then
-        log_warning "Detected installed NixOS system"
-        if ! confirm "Are you sure you want to run the installer bootstrap?"; then
-            exit 1
-        fi
     fi
     
     log_success "Running in NixOS installer environment"
@@ -62,84 +57,185 @@ check_internet() {
 detect_disks() {
     log_info "Detecting available disks..."
     echo
-    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT -e 7,11
     echo
 }
 
-guide_disk_setup() {
-    log_info "=== Disk Partitioning Guide ==="
-    echo
-    log_info "You need to partition and mount your disk before proceeding."
-    echo
-    log_info "Recommended partition scheme (UEFI):"
-    echo "  1. EFI System Partition: 512MB - 1GB (type: EF00)"
-    echo "  2. Swap (optional): 4-8GB (type: 8200)"
-    echo "  3. Root: Remaining space (type: 8300)"
-    echo
-    log_info "Example commands for /dev/sda:"
-    echo
-    echo "  # Partition the disk"
-    echo "  sudo gdisk /dev/sda"
-    echo "    o (create new GPT partition table)"
-    echo "    n (new partition)"
-    echo "      Partition 1: +512M, type EF00 (EFI)"
-    echo "      Partition 2: +8G, type 8200 (swap, optional)"
-    echo "      Partition 3: (rest), type 8300 (Linux)"
-    echo "    w (write changes)"
-    echo
-    echo "  # Format partitions"
-    echo "  sudo mkfs.fat -F 32 /dev/sda1"
-    echo "  sudo mkswap /dev/sda2 (if using swap)"
-    echo "  sudo mkfs.ext4 /dev/sda3"
-    echo
-    echo "  # Mount partitions"
-    echo "  sudo mount /dev/sda3 /mnt"
-    echo "  sudo mkdir -p /mnt/boot"
-    echo "  sudo mount /dev/sda1 /mnt/boot"
-    echo "  sudo swapon /dev/sda2 (if using swap)"
-    echo
-    log_warning "IMPORTANT: This is just an example. Adjust device names for your system!"
+select_disk() {
+    log_info "=== Disk Selection ==="
     echo
     
-    if confirm "Do you want to see current disk information again?"; then
-        detect_disks
+    # Get list of disks (excluding loop and rom devices)
+    mapfile -t DISKS < <(lsblk -ndo NAME,SIZE,TYPE -e 7,11 | grep 'disk' | awk '{print $1}')
+    
+    if [ ${#DISKS[@]} -eq 0 ]; then
+        log_error "No disks found!"
+        exit 1
     fi
     
+    # Display available disks
+    log_info "Available disks:"
+    for i in "${!DISKS[@]}"; do
+        local disk="${DISKS[$i]}"
+        local size=$(lsblk -ndo SIZE "/dev/$disk")
+        local model=$(lsblk -ndo MODEL "/dev/$disk" 2>/dev/null || echo "Unknown")
+        echo "  $((i+1))) /dev/$disk - $size - $model"
+    done
     echo
-    log_info "Please partition and mount your disk now."
-    log_info "This script will continue when you're ready..."
-    echo
     
-    press_any_key
-}
-
-verify_mounts() {
-    log_info "Verifying mount points..."
-    
-    if ! mountpoint -q /mnt; then
-        log_error "/mnt is not mounted!"
-        return 1
-    fi
-    
-    log_success "✓ /mnt is mounted"
-    
-    # Check for boot partition (common locations)
-    if mountpoint -q /mnt/boot || mountpoint -q /mnt/boot/efi; then
-        log_success "✓ Boot partition is mounted"
-    else
-        log_warning "⚠ No boot partition detected at /mnt/boot or /mnt/boot/efi"
-        log_warning "  Make sure you mounted your EFI partition!"
-        if ! confirm "Continue anyway?"; then
-            return 1
+    # Prompt for selection
+    while true; do
+        read -p "Select disk number (1-${#DISKS[@]}): " selection
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le ${#DISKS[@]} ]; then
+            SELECTED_DISK="/dev/${DISKS[$((selection-1))]}"
+            break
+        else
+            log_error "Invalid selection. Please try again."
         fi
+    done
+    
+    echo
+    log_warning "WARNING: All data on $SELECTED_DISK will be DESTROYED!"
+    echo
+    if ! confirm "Continue with $SELECTED_DISK?"; then
+        log_info "Installation cancelled"
+        exit 0
     fi
     
+    log_success "Selected disk: $SELECTED_DISK"
+}
+
+get_partition_sizes() {
+    log_info "=== Partition Configuration ==="
+    echo
+    
+    local disk_size_gb=$(lsblk -ndo SIZE "$SELECTED_DISK" | sed 's/G//')
+    log_info "Total disk size: ${disk_size_gb}G"
+    echo
+    
+    # EFI partition size
+    log_info "EFI System Partition (recommended: 512M-1G)"
+    read -p "Enter EFI size in MB [default: 512]: " EFI_SIZE
+    EFI_SIZE=${EFI_SIZE:-512}
+    
+    # Swap partition
+    log_info "Swap partition (recommended: 4G-8G, 0 to skip)"
+    read -p "Enter swap size in GB [default: 8]: " SWAP_SIZE
+    SWAP_SIZE=${SWAP_SIZE:-8}
+    
+    # Root gets the rest
+    log_success "Root partition will use remaining space"
+    
+    echo
+    log_info "Partition plan:"
+    echo "  1. EFI:  ${EFI_SIZE}M"
+    if [ "$SWAP_SIZE" != "0" ]; then
+        echo "  2. Swap: ${SWAP_SIZE}G"
+        echo "  3. Root: Remaining space"
+    else
+        echo "  2. Root: Remaining space"
+    fi
+    echo
+    
+    if ! confirm "Proceed with this partition plan?"; then
+        log_info "Installation cancelled"
+        exit 0
+    fi
+}
+
+partition_disk() {
+    log_info "=== Partitioning Disk ==="
+    echo
+    
+    log_info "Creating GPT partition table on $SELECTED_DISK..."
+    parted -s "$SELECTED_DISK" mklabel gpt
+    
+    log_info "Creating EFI partition (${EFI_SIZE}M)..."
+    parted -s "$SELECTED_DISK" mkpart ESP fat32 1MiB ${EFI_SIZE}MiB
+    parted -s "$SELECTED_DISK" set 1 esp on
+    
+    local next_start="${EFI_SIZE}MiB"
+    local part_num=2
+    
+    if [ "$SWAP_SIZE" != "0" ]; then
+        local swap_end=$((EFI_SIZE + SWAP_SIZE * 1024))
+        log_info "Creating swap partition (${SWAP_SIZE}G)..."
+        parted -s "$SELECTED_DISK" mkpart primary linux-swap ${next_start} ${swap_end}MiB
+        next_start="${swap_end}MiB"
+        part_num=3
+    fi
+    
+    log_info "Creating root partition (remaining space)..."
+    parted -s "$SELECTED_DISK" mkpart primary ext4 ${next_start} 100%
+    
+    # Wait for kernel to re-read partition table
+    sleep 2
+    partprobe "$SELECTED_DISK"
+    sleep 2
+    
+    log_success "Partitioning complete"
+    echo
+    lsblk "$SELECTED_DISK"
+}
+
+format_partitions() {
+    log_info "=== Formatting Partitions ==="
+    echo
+    
+    # Determine partition naming scheme
+    if [[ "$SELECTED_DISK" == *"nvme"* ]] || [[ "$SELECTED_DISK" == *"mmcblk"* ]]; then
+        PART_PREFIX="${SELECTED_DISK}p"
+    else
+        PART_PREFIX="${SELECTED_DISK}"
+    fi
+    
+    EFI_PART="${PART_PREFIX}1"
+    
+    if [ "$SWAP_SIZE" != "0" ]; then
+        SWAP_PART="${PART_PREFIX}2"
+        ROOT_PART="${PART_PREFIX}3"
+    else
+        SWAP_PART=""
+        ROOT_PART="${PART_PREFIX}2"
+    fi
+    
+    log_info "Formatting EFI partition as FAT32..."
+    mkfs.fat -F 32 "$EFI_PART"
+    
+    if [ -n "$SWAP_PART" ]; then
+        log_info "Setting up swap..."
+        mkswap "$SWAP_PART"
+    fi
+    
+    log_info "Formatting root partition as ext4..."
+    mkfs.ext4 -F "$ROOT_PART"
+    
+    log_success "Formatting complete"
+}
+
+mount_partitions() {
+    log_info "=== Mounting Partitions ==="
+    echo
+    
+    log_info "Mounting root partition to /mnt..."
+    mount "$ROOT_PART" /mnt
+    
+    log_info "Creating /mnt/boot directory..."
+    mkdir -p /mnt/boot
+    
+    log_info "Mounting EFI partition to /mnt/boot..."
+    mount "$EFI_PART" /mnt/boot
+    
+    if [ -n "$SWAP_PART" ]; then
+        log_info "Enabling swap..."
+        swapon "$SWAP_PART"
+    fi
+    
+    log_success "All partitions mounted"
     echo
     log_info "Current mount configuration:"
     lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT | grep -E "(mnt|NAME)"
     echo
-    
-    return 0
 }
 
 generate_hardware_config() {
@@ -157,12 +253,6 @@ generate_hardware_config() {
     echo
     log_info "Verifying generated files..."
     
-    if [ ! -f /mnt/etc/nixos/configuration.nix ]; then
-        log_error "configuration.nix not found!"
-        exit 1
-    fi
-    log_success "✓ /mnt/etc/nixos/configuration.nix"
-    
     if [ ! -f /mnt/etc/nixos/hardware-configuration.nix ]; then
         log_error "hardware-configuration.nix not found!"
         exit 1
@@ -170,56 +260,41 @@ generate_hardware_config() {
     log_success "✓ /mnt/etc/nixos/hardware-configuration.nix"
     
     echo
-    log_info "Generated hardware-configuration.nix contains:"
+    log_info "Generated hardware configuration contains:"
     echo
     grep -E "(fileSystems|swapDevices|boot\.loader)" /mnt/etc/nixos/hardware-configuration.nix || true
     echo
-    
-    if ! confirm "Does the hardware configuration look correct?"; then
-        log_warning "You can manually edit: /mnt/etc/nixos/hardware-configuration.nix"
-        press_any_key
-    fi
 }
 
-install_custom_configuration() {
-    log_info "=== Installing Custom Configuration ==="
+download_custom_configuration() {
+    log_info "=== Downloading Custom Configuration ==="
     echo
     
-    # Clone dotfiles to temporary location
-    local temp_dotfiles="/tmp/dotfiles-bootstrap"
-    log_info "Cloning dotfiles repository..."
-    clone_dotfiles "$temp_dotfiles"
-    
     # Backup the generated configuration.nix
-    log_info "Backing up generated configuration.nix..."
-    mv /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.generated
-    log_success "Backup saved to configuration.nix.generated"
+    if [ -f /mnt/etc/nixos/configuration.nix ]; then
+        log_info "Backing up generated configuration.nix..."
+        mv /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.generated
+        log_success "Backup saved to configuration.nix.generated"
+    fi
     
-    # Copy custom configuration.nix
-    log_info "Installing custom configuration.nix..."
-    cp "$temp_dotfiles/nix/nixos/configuration.nix" /mnt/etc/nixos/configuration.nix
-    log_success "Custom configuration installed"
+    # Download custom configuration from GitHub
+    log_info "Downloading configuration.nix from GitHub..."
+    if curl -fsSL "$RAW_CONFIG_URL" -o /mnt/etc/nixos/configuration.nix; then
+        log_success "Custom configuration downloaded"
+    else
+        log_error "Failed to download configuration from GitHub!"
+        log_error "URL: $RAW_CONFIG_URL"
+        exit 1
+    fi
     
     # IMPORTANT: Keep the hardware-configuration.nix as-is
     log_success "✓ hardware-configuration.nix preserved (contains your disk setup)"
     
     echo
     log_info "Configuration files:"
-    log_info "  - configuration.nix: Custom (from dotfiles)"
+    log_info "  - configuration.nix: Custom (from GitHub)"
     log_info "  - hardware-configuration.nix: Generated (system-specific)"
     echo
-    
-    # Copy dotfiles to target system for bootstrap/1
-    log_info "Preparing dotfiles for post-install..."
-    mkdir -p /mnt/home/$TARGET_USER
-    cp -r "$temp_dotfiles" "/mnt/home/$TARGET_USER/.dotfiles"
-    
-    # Set correct ownership (will be corrected by nixos-install)
-    chown -R $TARGET_UID:$TARGET_GID "/mnt/home/$TARGET_USER/.dotfiles" || true
-    log_success "Dotfiles prepared in /mnt/home/$TARGET_USER/.dotfiles"
-    
-    # Cleanup
-    rm -rf "$temp_dotfiles"
 }
 
 run_nixos_install() {
@@ -247,7 +322,7 @@ run_nixos_install() {
     if nixos-install; then
         echo
         log_success "╔════════════════════════════════════════╗"
-        log_success "║   NixOS Installation Complete! 🎉     ║"
+        log_success "║   NixOS Installation Complete!         ║"
         log_success "╚════════════════════════════════════════╝"
     else
         echo
@@ -265,37 +340,54 @@ run_nixos_install() {
 main() {
     echo
     log_info "╔════════════════════════════════════════╗"
-    log_info "║   NixOS Bootstrap - Stage 0           ║"
-    log_info "║   Fresh Installation Setup            ║"
+    log_info "║   NixOS Smart Installer               ║"
+    log_info "║   Interactive Partition Setup         ║"
     log_info "╚════════════════════════════════════════╝"
+    echo
+    
+    log_warning "This script will:"
+    log_info "  • Help you partition your disk interactively"
+    log_info "  • Format and mount all partitions"
+    log_info "  • Download your configuration from GitHub"
+    log_info "  • Install NixOS with your custom config"
+    echo
+    
+    if ! confirm "Ready to begin?"; then
+        log_info "Installation cancelled"
+        exit 0
+    fi
+    
     echo
     
     # Phase 1: Pre-flight checks
     verify_installer_environment
     check_internet
-    ensure_git
     
     echo
     
-    # Phase 2: Disk setup
+    # Phase 2: Interactive disk setup
     log_info "=== Phase 1: Disk Preparation ==="
     echo
-    detect_disks
     
-    if ! mountpoint -q /mnt; then
-        log_warning "/mnt is not mounted"
-        guide_disk_setup
-        
-        # Verify after user partitions
-        if ! verify_mounts; then
-            log_error "Mount verification failed!"
-            log_info "Please ensure /mnt is properly mounted and try again"
-            exit 1
-        fi
-    else
-        log_success "/mnt is already mounted"
-        verify_mounts
+    detect_disks
+    select_disk
+    get_partition_sizes
+    
+    echo
+    log_warning "FINAL WARNING: This will DESTROY all data on $SELECTED_DISK"
+    if ! confirm "Type 'yes' to continue"; then
+        log_info "Installation cancelled"
+        exit 0
     fi
+    
+    echo
+    partition_disk
+    
+    echo
+    format_partitions
+    
+    echo
+    mount_partitions
     
     echo
     
@@ -306,10 +398,10 @@ main() {
     
     echo
     
-    # Phase 4: Install custom configuration
+    # Phase 4: Download custom configuration
     log_info "=== Phase 3: Custom Configuration ==="
     echo
-    install_custom_configuration
+    download_custom_configuration
     
     echo
     
@@ -326,7 +418,13 @@ main() {
     log_info "1. Reboot into your new system: reboot"
     log_info "2. Login as user: $TARGET_USER"
     log_info "3. Run post-install setup:"
-    log_info "   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash"
+    log_info "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/bootstrap/1 | bash"
+    echo
+    log_info "The post-install script will:"
+    log_info "  • Clone your dotfiles"
+    log_info "  • Copy hardware-configuration.nix to dotfiles"
+    log_info "  • Rebuild using your flake"
+    log_info "  • Set up home-manager"
     echo
     
     if confirm "Reboot now?"; then

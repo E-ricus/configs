@@ -28,54 +28,66 @@ setup_nixos() {
         log_success "Dotfiles already exist at $DOTFILES_DIR"
     fi
     
-    # Check if configuration is already symlinked
-    if [ -L /etc/nixos/configuration.nix ]; then
-        local link_target=$(readlink /etc/nixos/configuration.nix)
-        if [[ "$link_target" == *".dotfiles"* ]]; then
-            log_success "System configuration already symlinked correctly"
-        else
-            log_warning "System configuration is symlinked to: $link_target"
-            if confirm "Replace with dotfiles configuration?"; then
-                sudo rm /etc/nixos/configuration.nix
-                sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
-                log_success "System configuration re-symlinked"
-            fi
+    # Copy hardware-configuration.nix from /etc/nixos to dotfiles
+    log_info "Copying hardware-configuration.nix to dotfiles..."
+    if [ -f /etc/nixos/hardware-configuration.nix ]; then
+        # Backup existing if present
+        if [ -f "$DOTFILES_DIR/nix/nixos/hardware-configuration.nix" ]; then
+            local backup="$DOTFILES_DIR/nix/nixos/hardware-configuration.nix.backup.$(date +%Y%m%d_%H%M%S)"
+            mv "$DOTFILES_DIR/nix/nixos/hardware-configuration.nix" "$backup"
+            log_info "Backed up existing hardware config to $(basename $backup)"
         fi
+        
+        cp /etc/nixos/hardware-configuration.nix "$DOTFILES_DIR/nix/nixos/"
+        log_success "Hardware configuration copied to dotfiles"
     else
-        # Configuration is a regular file, replace with symlink
-        log_info "Setting up system configuration symlink..."
-        
-        if [ -f /etc/nixos/configuration.nix ]; then
-            # Backup the existing file
-            local backup="/etc/nixos/configuration.nix.backup.$(date +%Y%m%d_%H%M%S)"
-            sudo cp /etc/nixos/configuration.nix "$backup"
-            log_info "Backed up existing configuration to $backup"
-            sudo rm /etc/nixos/configuration.nix
-        fi
-        
-        # Create symlink
-        sudo ln -sf "$DOTFILES_DIR/nix/nixos/configuration.nix" /etc/nixos/configuration.nix
-        log_success "System configuration symlinked"
+        log_error "Hardware configuration not found at /etc/nixos/hardware-configuration.nix"
+        log_error "Cannot proceed without hardware configuration"
+        exit 1
     fi
     
-    # Check if we need to rebuild
     echo
-    log_info "System configuration is now managed from:"
-    log_info "  $DOTFILES_DIR/nix/nixos/configuration.nix"
+    log_info "Hardware configuration is now in:"
+    log_info "  $DOTFILES_DIR/nix/nixos/hardware-configuration.nix"
     echo
     
-    # Only offer rebuild if configuration was just changed
-    if ! [ -L /etc/nixos/configuration.nix ]; then
-        if confirm "Rebuild NixOS configuration now?"; then
-            log_info "Rebuilding NixOS..."
-            sudo nixos-rebuild switch
-            log_success "NixOS rebuilt successfully"
+    # Detect system architecture
+    local arch=$(uname -m)
+    local flake_config=""
+    case $arch in
+        x86_64)
+            flake_config="nixos-x86"
+            ;;
+        aarch64)
+            flake_config="nixos-arm"
+            ;;
+        *)
+            log_error "Unsupported architecture: $arch"
+            exit 1
+            ;;
+    esac
+    
+    log_info "Detected architecture: $arch"
+    log_info "Using flake configuration: $flake_config"
+    echo
+    
+    # Rebuild using flake
+    if confirm "Rebuild NixOS using flake configuration?"; then
+        log_info "Rebuilding NixOS from flake..."
+        log_info "This may take several minutes on first run..."
+        echo
+        
+        if sudo nixos-rebuild switch --flake "$DOTFILES_DIR/nix/nixos#$flake_config"; then
+            log_success "NixOS rebuilt successfully with flake!"
         else
-            log_info "Skipping rebuild. You can rebuild later with: sudo nixos-rebuild switch"
+            log_error "Failed to rebuild NixOS!"
+            log_info "You can try manually with:"
+            log_info "  sudo nixos-rebuild switch --flake $DOTFILES_DIR/nix/nixos#$flake_config"
+            exit 1
         fi
     else
-        log_info "Configuration already applied. Skipping rebuild."
-        log_info "To rebuild manually later: sudo nixos-rebuild switch"
+        log_info "Skipping rebuild. You can rebuild later with:"
+        log_info "  sudo nixos-rebuild switch --flake $DOTFILES_DIR/nix/nixos#$flake_config"
     fi
 }
 
@@ -290,7 +302,7 @@ main() {
         nixos)
             log_info "• Your system is ready to use!"
             log_info "• Start Hyprland with: Hyprland"
-            log_info "• To update system: sudo nixos-rebuild switch"
+            log_info "• To update system: sudo nixos-rebuild switch --flake ~/.dotfiles/nix/nixos"
             log_info "• To update home: home-manager switch --flake ~/.config/home-manager#$(get_hm_user)"
             ;;
         darwin)
