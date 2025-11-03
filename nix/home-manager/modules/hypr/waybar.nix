@@ -28,8 +28,8 @@
         "🔄 Reboot")
             systemctl reboot
             ;;
-        "⏻ Shutdown")
-            shutdown now
+        "⏻  Shutdown")
+            systemctl poweroff
             ;;
     esac
   '';
