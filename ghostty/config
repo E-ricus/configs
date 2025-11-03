@@ -43,8 +43,6 @@
 # resize-overlay-duration = 4s 200ms
 
 # To show config: ghostty +show-config | grep keybind | fzf
-command = /opt/homebrew/bin/fish --login --interactive
-
 
 # Tmux like navigation
 keybind = ctrl+a>n=new_window

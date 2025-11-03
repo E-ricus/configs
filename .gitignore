@@ -10,3 +10,4 @@ fish/completions/nvm.fish
 nushell/.config/nushell/history.txt
 tmux/tmux/plugins
 bin/codelldb
+nix/nix-darwin/result
