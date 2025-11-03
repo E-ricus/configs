@@ -14,6 +14,8 @@
     stateVersion = "25.05";
   };
 
+  programs.home-manager.enable = true;
+
   # Linux only packages
   home.packages = with pkgs; [
     # File managers
@@ -35,9 +37,9 @@
 
     # C/C++ nightmare
     gcc
+    #Develpment
+    podman-compose
   ];
-
-  programs.home-manager.enable = true;
 
   # linux only programs
   programs.firefox.enable = true;
@@ -50,8 +52,8 @@
   gtk = {
     enable = true;
     theme = {
-      name = "Adwaita-dark";
-      package = pkgs.gnome-themes-extra;
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
     };
     iconTheme = {
       name = "Papirus-Dark";
@@ -60,12 +62,20 @@
     gtk3.extraConfig = {
       gtk-application-prefer-dark-theme = 1;
     };
-    gtk4.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
+  };
+
+  dconf = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
+    settings = {
+      "org/gnome/desktop/interface" = {
+        color-scheme = "prefer-dark";
+      };
     };
   };
+
   qt = {
     enable = true;
     platformTheme.name = "gtk";
   };
+  # Dev only linux
+  services.podman.enable = true;
 }

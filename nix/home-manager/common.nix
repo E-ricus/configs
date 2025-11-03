@@ -3,6 +3,9 @@
   pkgs,
   ...
 }: {
+  # Allow unfree packages in home-manager
+  nixpkgs.config.allowUnfree = true;
+
   imports = [
     ./modules/git.nix
     ./modules/fish.nix
@@ -34,6 +37,7 @@
     alejandra
     # LLMs
     opencode
+    claude-code
   ];
 
   home.sessionPath = [
