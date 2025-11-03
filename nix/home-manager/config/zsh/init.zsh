@@ -9,6 +9,26 @@ export EDITOR="nvim"
 export KUBE_EDITOR="nvim"
 export FZF_DEFAULT_COMMAND='fd --type file --hidden --no-ignore'
 
+
+# TODO Integrate better with nix these
+function add_to_path() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: add_to_path <parameter>"
+        return 1
+    fi
+
+    if [[ -e "$1" ]]; then
+        if [[ -d "$1" ]]; then
+            export PATH="$1:$PATH"
+        else
+            return 1
+        fi
+    else
+        return 1
+    fi
+}
+add_to_path "$HOME/.cargo/bin"
+
 # Enhanced cd with zoxide
 zd() {
   if [ $# -eq 0 ]; then

@@ -21,9 +21,7 @@
     htop
     stow
     jq
-
-    # C/C++ nightmare
-    gcc
+    tree-sitter
 
     neovim # not ready to give my config to nix
 

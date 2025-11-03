@@ -22,7 +22,6 @@
     # Browsers
     firefox
     brave
-
     # Editors
     # Neovim in common
 
@@ -33,6 +32,9 @@
     font-awesome
 
     btop
+
+    # C/C++ nightmare
+    gcc
   ];
 
   programs.home-manager.enable = true;
