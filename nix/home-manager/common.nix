@@ -27,6 +27,8 @@
     tree-sitter
 
     neovim # not ready to give my config to nix
+    # needed for neovim
+    luajitPackages.luarocks-nix
 
     # Development
     nodejs

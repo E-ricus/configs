@@ -18,9 +18,9 @@
       lt = "eza --tree --level=2 --long --icons --git";
       lta = "lt -a";
       ff = "fzf --preview 'bat --style=numbers --color=always {}'";
-      # TODO: Make it get the username
       hm = "home-manager switch --flake ~/.config/home-manager#$USER";
       hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch --flake .#$USER";
+      ngc = "nix-collect-garbage --delete-older-than 2d";
     };
 
     # Import from external file

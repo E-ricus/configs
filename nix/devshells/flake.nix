@@ -41,6 +41,7 @@
           personalPackages
           ++ [
             pkgs.awscli2
+            pkgs.gh
             ldcli
           ];
       in {

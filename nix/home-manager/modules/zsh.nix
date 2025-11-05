@@ -17,6 +17,7 @@
       ff = "fzf --preview 'bat --style=numbers --color=always {}'";
       hm = "home-manager switch --flake ~/.config/home-manager#$USER";
       hmu = "cd ~/.config/home-manager && nix flake update && home-manager switch --flake .#$USER";
+      ngc = "nix-collect-garbage --delete-older-than 2d";
     };
 
     history = {
