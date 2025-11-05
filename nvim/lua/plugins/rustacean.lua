@@ -21,17 +21,17 @@ return {
             local base_settings = {
               ["rust-analyzer"] = {
                 -- Disable for faster dev/ex
-                checkOnSave = {
-                  enable = false,
-                },
-                diagnostics = {
-                  enable = false,
-                },
-                -- Disabling check and diagnostics in favor of compilemode for faster dev/ex
-                -- check = {
-                --   command = "clippy",
-                --   workspace = false,
+                -- checkOnSave = {
+                --   enable = false,
                 -- },
+                -- diagnostics = {
+                --   enable = false,
+                -- },
+                -- disable check and diagnostics in favor of compilemode for faster dev/ex
+                check = {
+                  command = "clippy",
+                  workspace = false,
+                },
                 semanticHighlighting = {
                   -- So that SQL injections are highlighted
                   strings = {
