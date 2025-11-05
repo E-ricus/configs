@@ -3,9 +3,6 @@
   pkgs,
   ...
 }: {
-  # Allow unfree packages in home-manager
-  nixpkgs.config.allowUnfree = true;
-
   imports = [
     ./modules/git.nix
     ./modules/fish.nix

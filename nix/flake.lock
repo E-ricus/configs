@@ -6,11 +6,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1762340075,
-        "narHash": "sha256-fEWzTPj5lRGaWrCMRbAptAYMTaUcxftnaNkf11A/Tr4=",
+        "lastModified": 1762361386,
+        "narHash": "sha256-aB2zPTEbpVfNnzJ9ZcXBmlxFb57PadfWGViss0y911A=",
         "owner": "abenz1267",
         "repo": "elephant",
-        "rev": "bc5200a9fada16cdb226e616aa83068f50cf5ba1",
+        "rev": "589fd225f36bbb3612d3284cff36f6d5e0d31bd6",
         "type": "github"
       },
       "original": {
@@ -26,16 +26,37 @@
         ]
       },
       "locked": {
-        "lastModified": 1762351818,
-        "narHash": "sha256-0ptUDbYwxv1kk/uzEX4+NJjY2e16MaAhtzAOJ6K0TG0=",
+        "lastModified": 1762367206,
+        "narHash": "sha256-c/164YOPkV09BH8KIUdvVvJs3VF2LNIbE2piKGgXPxk=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "b959c67241cae17fc9e4ee7eaf13dfa8512477ea",
+        "rev": "af119feb17cb242398e0fb97f92b867d25882522",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nix-darwin": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762304480,
+        "narHash": "sha256-ikVIPB/ea/BAODk6aksgkup9k2jQdrwr4+ZRXtBgmSs=",
+        "owner": "nix-darwin",
+        "repo": "nix-darwin",
+        "rev": "b8c7ac030211f18bd1f41eae0b815571853db7a2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-darwin",
+        "ref": "master",
+        "repo": "nix-darwin",
         "type": "github"
       }
     },
@@ -75,6 +96,7 @@
       "inputs": {
         "elephant": "elephant",
         "home-manager": "home-manager",
+        "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs_2",
         "walker": "walker"
       }
@@ -120,11 +142,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1762346011,
-        "narHash": "sha256-eWqMoNeMFSL9M4QRyMmquCbcucBzBFD0luyUU4LYZjM=",
+        "lastModified": 1762359898,
+        "narHash": "sha256-yJKjyURwPfH3QN5e4ettmhctgieBeKTx7z7huFtMhiQ=",
         "owner": "abenz1267",
         "repo": "walker",
-        "rev": "5cce10efb61bb355aa353bfe1b03dacc02173c9c",
+        "rev": "539decbec6c42f103d646aac31efa09bc17a87d2",
         "type": "github"
       },
       "original": {

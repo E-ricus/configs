@@ -5,8 +5,8 @@
   ...
 }: {
   imports = [
-    ./../common.nix
-    ./../modules/hypr/hyprland.nix
+    ./common.nix
+    ./modules/hypr/hyprland.nix
   ];
 
   home = {

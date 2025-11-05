@@ -36,8 +36,6 @@ My personal configuration files for UNIX systems, managed either with nix and ho
 
 ### macOS Setup
 
-**Note**: Darwin configuration needs to be created first in `nix/darwin/flake.nix`
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
 ```
@@ -56,18 +54,30 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 
 │   ├── 0               # Smart NixOS installer with interactive partitioning
 │   ├── 1               # Post-install setup (all systems, after first boot)
 │   └── lib.sh          # Shared functions
-├── nix/                # Nix configurations
-│   ├── nixos/          # NixOS system configuration (flake-based)
-│   │   ├── flake.nix   # Flake with nixos-x86 and nixos-arm configs
-│   │   ├── configuration.nix           # Main system config
-│   │   └── hardware-configuration.nix  # Generated, copied here by bootstrap/1
-│   ├── darwin/         # macOS nix-darwin configuration (empty, needs setup)
-│   └── home-manager/   # home-manager configuration (flake-based)
-│       ├── flake.nix
-│       ├── homes/      # User-specific configs (linux.nix, mac.nix)
-│       ├── modules/    # Modular configurations
-│       ├── config/     # Extra native config files (not nix)
-│       └── common.nix  # Shared configuration
+├── nix/                # Unified Nix configurations
+│   ├── flake.nix       # Single unified flake for all systems
+│   ├── flake.lock      # Dependency lock file
+│   ├── lib/
+│   │   └── mksystem.nix  # Helper function for system creation
+│   ├── systems/        # System configurations
+│   │   ├── nixos/
+│   │   │   ├── x86_64/
+│   │   │   │   ├── configuration.nix
+│   │   │   │   └── hardware-configuration.nix
+│   │   │   └── aarch64/
+│   │   │       ├── configuration.nix
+│   │   │       └── hardware-configuration.nix
+│   │   └── darwin/
+│   │       └── work-mac/
+│   │           └── configuration.nix
+│   ├── home/           # Home-manager configurations
+│   │   ├── common.nix  # Shared home-manager config
+│   │   ├── linux.nix   # Linux-specific home config
+│   │   ├── mac.nix     # macOS-specific home config
+│   │   ├── config/     # External config files (fish, zsh init, etc.)
+│   │   └── modules/    # Home-manager modules
+│   └── devshells/      # Separate dev environment flake
+│       └── flake.nix
 ├── bin/
 │   └── symlinkmanager  # Smart symlink manager script
 ├── symlink.conf        # Symlink configuration
@@ -97,8 +107,8 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 
 - **Clones dotfiles**: Gets the dotfiles from GitHub to `~/.dotfiles`
 - **Copies hardware config**: Moves `/etc/nixos/hardware-configuration.nix` to dotfiles for version control
 - **Architecture detection**: Automatically detects x86_64 or aarch64
-- **Flake rebuild**: Rebuilds system using `sudo nixos-rebuild switch --flake ~/.dotfiles/nix/nixos#nixos-x86`
-- **Sets up home-manager**: Symlinks config and runs `home-manager switch`
+- **Flake rebuild**: Rebuilds system using `sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86`
+- **Home-manager included**: Integrated in system rebuild (no separate setup needed)
 - **Symlinks dotfiles**: Uses symlinkmanager to link all other dotfiles
 
 ### Why Two Stages?
@@ -115,48 +125,68 @@ This approach ensures:
 
 ## What's Included
 
-### System Configuration
-- **NixOS**: Minimal system config with Hyprland (flake-based)
-- **macOS**: nix-darwin configuration
-- **Linux**: Nix package manager setup
+### System Configuration (Unified Flake)
+- **NixOS**: System config with Hyprland for x86_64 and aarch64
+- **macOS**: nix-darwin configuration for work-mac
+- **Home-Manager**: Integrated as module in system configs
+- **Standalone Home-Manager**: Also available for fast iteration
 
 ### Home Manager
-- **Hyprland**: Wayland compositor with custom config
-- **Waybar**: Status bar with custom styling
+- **Hyprland**: Wayland compositor with custom config (Linux only)
+- **Waybar**: Status bar with custom styling (Linux only)
 - **Alacritty**: Terminal emulator
-- **Fish & Zsh**: Shell configurations with zinit
+- **Fish & Zsh**: Shell configurations with custom aliases
 - **Git**: Version control configuration
-- **Starship**: Cross-shell prompt
+- **Tmux**: Terminal multiplexer
+- **Development tools**: Node.js, Go, Rust, Zig, and more
 
 ## Making Changes
 
 ### System Configuration (NixOS)
 
+System rebuilds include both system configuration AND home-manager configuration.
+
 ```bash
-# Edit system config in the dotfiles
-nvim ~/.dotfiles/nix/nixos/configuration.nix
+# Edit system config
+nvim ~/.dotfiles/nix/systems/nixos/x86_64/configuration.nix
 
 # Stage changes (required for flakes!)
-cd ~/.dotfiles/nix/nixos
+cd ~/.dotfiles/nix
 git add .
 
-# Apply changes
-sudo nixos-rebuild switch --flake ~/.dotfiles/nix/nixos#nixos-x86
-# Or for ARM: sudo nixos-rebuild switch --flake ~/.dotfiles/nix/nixos#nixos-arm
+# Apply changes (includes home-manager)
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86
+# Or for ARM VM: sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-arm
+
+# Or use the alias:
+nos   # Rebuilds system + home-manager for x86_64
 ```
 
-### Home Manager Configuration
+### Home Manager Configuration (Hybrid Approach)
 
+**Option 1: Fast iteration (home-manager only)**
 ```bash
 # Edit home-manager config
-nvim ~/.config/home-manager/modules/shell.nix
+nvim ~/.dotfiles/nix/home/modules/fish.nix
 
 # Stage changes (required for flakes!)
-cd ~/.config/home-manager
+cd ~/.dotfiles/nix
 git add .
 
-# Apply changes
-home-manager switch --flake ~/.config/home-manager#ericus
+# Apply changes (fast, no system rebuild)
+home-manager switch --flake ~/.dotfiles/nix#ericus
+
+# Or use the alias:
+hm    # Quick home-manager switch
+```
+
+**Option 2: Full rebuild (system + home-manager)**
+```bash
+# Use when making system-level changes or want everything in sync
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86
+
+# Or use the alias:
+nos   # Full system rebuild including home-manager
 ```
 
 ### Dotfiles (Neovim, Tmux, etc.)
@@ -199,31 +229,75 @@ Changes apply immediately, no rebuild.
 
 ## Key Commands
 
-### Home Manager
+### Shell Aliases (Available in Fish & Zsh)
+
+```bash
+# Home-manager (standalone - fast iteration)
+hm      # Switch home-manager config: home-manager switch --flake ~/.dotfiles/nix#$USER
+hmu     # Update flake + switch home-manager
+
+# System rebuilds (includes home-manager + system)
+nos     # NixOS rebuild: sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86
+nom     # Darwin rebuild: darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac
+
+# Combined (update + rebuild)
+nosu    # Update flake + rebuild NixOS system
+
+# Maintenance
+ngc     # Garbage collection: nix-collect-garbage --delete-older-than 2d
+```
+
+### Home Manager (Standalone)
+
+For quick dotfile/package changes without system rebuild:
+
 ```bash
 # Apply configuration
-home-manager switch --flake ~/.config/home-manager#ericus
+home-manager switch --flake ~/.dotfiles/nix#ericus
+# Or use alias: hm
 
 # Update packages
-cd ~/.config/home-manager
+cd ~/.dotfiles/nix
 nix flake update
 home-manager switch --flake .#ericus
+# Or use alias: hmu
 
 # Rollback
 home-manager generations
 home-manager switch --switch-generation [NUMBER]
 ```
 
-### NixOS
-```bash
-# Rebuild system
-sudo nixos-rebuild switch --flake ~/.dotfiles/nix/nixos#nixos-x86
+### NixOS (System + Home-Manager)
 
-# Update system (flake-based)
-cd ~/.dotfiles/nix/nixos
+System rebuilds include both system AND home-manager configuration:
+
+```bash
+# Rebuild system (includes home-manager)
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86
+# Or use alias: nos
+
+# For ARM VM:
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-arm
+
+# Update system and packages (flake-based)
+cd ~/.dotfiles/nix
 nix flake update
 git add flake.lock  # Stage the updated lock file
 sudo nixos-rebuild switch --flake .#nixos-x86
+# Or use alias: nosu
+```
+
+### macOS (Darwin + Home-Manager)
+
+```bash
+# Rebuild system (includes home-manager)
+darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac
+# Or use alias: nom
+
+# Update
+cd ~/.dotfiles/nix
+nix flake update
+darwin-rebuild switch --flake .#work-mac
 ```
 
 ### Cleanup
@@ -236,6 +310,37 @@ home-manager expire-generations "-7 days"
 cd ~/.dotfiles
 bin/symlinkmanager link all
 ```
+
+## Architecture: Unified Flake Design
+
+This configuration uses a **single unified flake** (`nix/flake.nix`) that:
+
+- Defines all system configurations (NixOS x86/ARM + Darwin)
+- Integrates home-manager as a module in system configs
+- Also exports standalone home-manager configurations
+- Shares a single `flake.lock` for consistency across all systems
+
+### Benefits
+
+✅ **Single source of truth** - All configurations in one place
+✅ **Consistent package versions** - Shared flake.lock ensures same nixpkgs version
+✅ **Home-manager integrated** - System rebuilds include home config
+✅ **Fast iteration option** - Standalone home-manager for quick changes
+✅ **Clean separation** - systems/ vs home/ directories
+✅ **Multiple hardware configs** - Each system's hardware-configuration.nix versioned separately
+✅ **No git stash dance** - Can version different hardware configs for different machines
+
+### The Hybrid Approach
+
+**System Rebuild** (slower, complete):
+- Updates both system and home configuration
+- Creates new system generation
+- Use for: System-level changes, major updates
+
+**Home-Manager Only** (faster, targeted):
+- Updates only home configuration
+- Doesn't create system generation
+- Use for: Dotfile tweaks, package additions, alias changes
 
 ##  Documentation
 
