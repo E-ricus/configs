@@ -14,16 +14,16 @@
     # Execute action based on selection
     case "$chosen" in
         "🔒 Lock")
-            hyprlock
+            loginctl lock-session
             ;;
         "🚪 Logout")
             hyprctl dispatch exit
             ;;
         "💤 Suspend")
-            hyprlock & sleep 1 && systemctl suspend
+            systemctl suspend
             ;;
         "🛌 Hibernate")
-            hyprlock & sleep 1 && systemctl hibernate
+            systemctl hibernate
             ;;
         "🔄 Reboot")
             systemctl reboot
