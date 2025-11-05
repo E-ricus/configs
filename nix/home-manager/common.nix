@@ -37,6 +37,7 @@
     zig
     #Formatters
     alejandra
+    stylua
     # LLMs
     opencode
     claude-code
@@ -49,6 +50,7 @@
   # Common programs
   programs.yazi.enable = true;
   programs.lazygit.enable = true;
+  programs.jujutsu.enable = true;
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;

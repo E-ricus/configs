@@ -87,7 +87,6 @@ in {
         "$mod, F,fullscreen"
         "$mod, E, exec, nautilus"
         "$mod, Q, killactive,"
-        "$mod, M, exit"
         "$mod, V, togglefloating"
         "$mod, D, exec, $menu"
         "$mod, P, pseudo,"
