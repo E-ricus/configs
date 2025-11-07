@@ -7,6 +7,7 @@
   # $ nix-env -qaP | grep wget
   environment.systemPackages = [
     pkgs.vim
+    pkgs.home-manager
   ];
 
   nix.enable = false;
@@ -26,9 +27,12 @@
 
   # System configuration
   programs.fish.enable = true;
-  system.primaryUser = user;
-  users.users.${user}.uid = 501;
-  users.users.${user}.shell = pkgs.fish;
-  users.users.${user}.home = "/Users/${user}";
+
   users.knownUsers = [user];
+  system.primaryUser = user;
+  users.users.${user} = {
+    uid = 501;
+    shell = pkgs.fish;
+    home = "/Users/${user}";
+  };
 }

@@ -33,6 +33,18 @@
       ngc = "nix-collect-garbage --delete-older-than 2d";
     };
 
+    plugins = [
+      {
+        name = "fzf.fish";
+        src = pkgs.fetchFromGitHub {
+          owner = "PatrickF1";
+          repo = "fzf.fish";
+          rev = "8920367cf85eee5218cc25a11e209d46e2591e7a";
+          sha256 = "1hqqppna8iwjnm8135qdjbd093583qd2kbq8pj507zpb1wn9ihjg";
+        };
+      }
+    ];
+
     # Import from external file
     interactiveShellInit = builtins.readFile ../config/fish/init.fish;
   };

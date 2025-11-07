@@ -6,6 +6,16 @@ set -x EDITOR nvim
 set -x KUBE_EDITOR nvim
 set -x FZF_DEFAULT_COMMAND 'fd --type file --hidden --no-ignore'
 
+
+# TODO: Integrate better with nix these
+function add_to_path -a path
+    if test -e $path
+        fish_add_path $path
+    end
+end
+
+add_to_path $HOME/.cargo/bin
+
 # Vim keybindings
 fish_vi_key_bindings
 
