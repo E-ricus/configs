@@ -7,44 +7,60 @@ My personal configuration files for UNIX systems, managed either with nix and ho
 ### NixOS Installation (Fresh System)
 
 1. Boot from NixOS **minimal installer** ISO
-2. Connect to the internet:
+2. **Connect to the internet first** (required to download installer):
    ```bash
    # For WiFi: sudo systemctl start wpa_supplicant && wpa_cli
    # Or use: nmtui
    ```
-3. Run the smart installer:
+3. Download and run the smart installer:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 | bash
+   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 > install.sh
+   sudo bash install.sh
    ```
 4. The interactive installer will:
    - **Detect available disks** and let you choose which one to use
    - **Ask for partition sizes** (EFI, swap, root)
    - **Automatically partition and format** the disk
    - **Mount everything** to `/mnt`
-   - **Download the configuration** from GitHub
-   - **Install NixOS** with the custom config
+   - **Generate hardware configuration** for your specific hardware
+   - **Install NixOS** with the generated config
 5. Reboot into the new system
-6. Login as user `ericus` and run post-install setup:
+6. **Login as root** (user doesn't exist yet) and run post-install setup:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
+   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 > setup.sh
+   bash setup.sh
    ```
 7. The post-install script will:
-   - Clone the dotfiles
+   - Clone the dotfiles to /root/.dotfiles
+   - Ask you to select architecture (x86_64 or aarch64)
    - Copy hardware configuration to dotfiles
-   - Rebuild system using the flake
-   - Set up home-manager
+   - Rebuild system using the flake (creates user `ericus`)
+   - Prompt you to set password for user `ericus`
 
 ### macOS Setup
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
-```
+1. **Install Nix first** using the Determinate Systems installer:
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+   ```
+2. Restart your terminal, then run the bootstrap script:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 > setup.sh
+   bash setup.sh
+   ```
+3. The script will:
+   - Clone dotfiles to ~/.dotfiles
+   - Install nix-darwin
+   - Set up home-manager (integrated)
 
 ### Other Linux Distributions
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
-```
+**TODO**: Not yet implemented in bootstrap scripts.
+
+For now, you can manually:
+1. Install Nix using Determinate Systems installer
+2. Clone this repo
+3. Set up standalone home-manager
 
 ## 📁 Repository Structure
 
@@ -93,34 +109,38 @@ curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 
 
 ### NixOS Two-Stage Installation
 
-**Stage 0 (Smart Installer)**: Run from the NixOS minimal installer ISO
+**Stage 0 (Smart Installer)**: Run from the NixOS minimal installer ISO (as root with sudo)
+- **Prerequisites**: Must be connected to the internet to download the script
+- **Download and run**: Downloads script first, then runs with sudo (not piped to bash)
 - **Interactive disk selection**: Lists all available disks with size/model info
 - **Custom partition sizes**: Prompts for EFI size (default 512MB) and swap size (default 8GB, 0 to skip)
 - **Automatic partitioning**: Creates GPT partition table with proper filesystem types
 - **Smart formatting**: Handles both `/dev/sda` and `/dev/nvme0n1` naming schemes
 - **Auto-mounting**: Mounts all partitions to `/mnt` correctly
 - **Hardware config generation**: Runs `nixos-generate-config` for the specific hardware
-- **Downloads the config**: Fetches `configuration.nix` directly from GitHub (raw file)
-- **Standard installation**: Runs `nixos-install` with flakes already enabled
+- **Standard installation**: Runs `nixos-install` with generated configuration
 
-**Stage 1 (Post-Install)**: Run after first boot into installed system
-- **Clones dotfiles**: Gets the dotfiles from GitHub to `~/.dotfiles`
+**Stage 1 (Post-Install)**: Run after first boot into installed system (as root)
+- **Run as root**: User account doesn't exist yet after fresh install
+- **Clones dotfiles**: Gets the dotfiles from GitHub to `/root/.dotfiles`
 - **Copies hardware config**: Moves `/etc/nixos/hardware-configuration.nix` to dotfiles for version control
-- **Architecture detection**: Automatically detects x86_64 or aarch64
-- **Flake rebuild**: Rebuilds system using `sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86`
+- **Interactive architecture selection**: Prompts to choose x86_64 or aarch64
+- **Flake rebuild**: Rebuilds system using `nixos-rebuild switch --flake /root/.dotfiles/nix#nixos-x86`
+- **Creates user**: The flake rebuild creates the `ericus` user account
+- **Sets password**: Prompts to set password for user `ericus`
 - **Home-manager included**: Integrated in system rebuild (no separate setup needed)
-- **Symlinks dotfiles**: Uses symlinkmanager to link all other dotfiles
 
 ### Why Two Stages?
 
 1. **Stage 0** must run from the installer environment to partition disks and access `/mnt`
-2. **Stage 1** needs a fully booted system with the user account for proper flake setup
+2. **Stage 1** needs a fully booted system to clone dotfiles and rebuild with the flake
 
 This approach ensures:
 - **No manual partitioning needed** - fully automated with user input
+- **No internet check**: User must connect before downloading (script download confirms connectivity)
 - **Hardware config preserved** - copied to dotfiles for future rebuilds
 - **Flake-based from the start** - system uses flake immediately after post-install
-- **Clean separation** - system vs user configuration
+- **Clean separation** - installer vs system configuration
 - **Reproducible** - can reinstall on any machine by running the same two commands
 
 ## What's Included

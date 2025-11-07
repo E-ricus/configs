@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Smart NixOS Installer with Interactive Partitioning
 # Run this from the NixOS LIVE installer environment
-# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 | bash
+# Usage:
+#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 > install.sh
+#   Then run with: sudo bash install.sh
 
 set -euo pipefail
 
@@ -20,7 +22,6 @@ TARGET_UID="1000"
 TARGET_GID="100"
 GITHUB_USER="e-ricus"
 DOTFILES_REPO="https://github.com/$GITHUB_USER/.dotfiles"
-RAW_CONFIG_URL="https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/nix/nixos/configuration.nix"
 
 #############################################
 # Helper Functions
@@ -39,20 +40,6 @@ verify_installer_environment() {
     log_success "Running in NixOS installer environment"
 }
 
-check_internet() {
-    log_info "Checking internet connectivity..."
-    if ping -c 1 google.com &> /dev/null || ping -c 1 1.1.1.1 &> /dev/null; then
-        log_success "Internet connection available"
-        return 0
-    else
-        log_error "No internet connection detected!"
-        log_info "Please connect to the internet first:"
-        log_info "  For WiFi: sudo systemctl start wpa_supplicant"
-        log_info "  Then configure with: wpa_cli"
-        log_info "  Or use NetworkManager: nmtui"
-        exit 1
-    fi
-}
 
 detect_disks() {
     log_info "Detecting available disks..."
@@ -266,36 +253,6 @@ generate_hardware_config() {
     echo
 }
 
-download_custom_configuration() {
-    log_info "=== Downloading Custom Configuration ==="
-    echo
-    
-    # Backup the generated configuration.nix
-    if [ -f /mnt/etc/nixos/configuration.nix ]; then
-        log_info "Backing up generated configuration.nix..."
-        mv /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/configuration.nix.generated
-        log_success "Backup saved to configuration.nix.generated"
-    fi
-    
-    # Download custom configuration from GitHub
-    log_info "Downloading configuration.nix from GitHub..."
-    if curl -fsSL "$RAW_CONFIG_URL" -o /mnt/etc/nixos/configuration.nix; then
-        log_success "Custom configuration downloaded"
-    else
-        log_error "Failed to download configuration from GitHub!"
-        log_error "URL: $RAW_CONFIG_URL"
-        exit 1
-    fi
-    
-    # IMPORTANT: Keep the hardware-configuration.nix as-is
-    log_success "✓ hardware-configuration.nix preserved (contains your disk setup)"
-    
-    echo
-    log_info "Configuration files:"
-    log_info "  - configuration.nix: Custom (from GitHub)"
-    log_info "  - hardware-configuration.nix: Generated (system-specific)"
-    echo
-}
 
 run_nixos_install() {
     log_info "=== Running NixOS Installation ==="
@@ -348,8 +305,8 @@ main() {
     log_warning "This script will:"
     log_info "  • Help you partition your disk interactively"
     log_info "  • Format and mount all partitions"
-    log_info "  • Download your configuration from GitHub"
-    log_info "  • Install NixOS with your custom config"
+    log_info "  • Generate hardware configuration"
+    log_info "  • Install NixOS with generated config"
     echo
     
     if ! confirm "Ready to begin?"; then
@@ -358,11 +315,10 @@ main() {
     fi
     
     echo
-    
+
     # Phase 1: Pre-flight checks
     verify_installer_environment
-    check_internet
-    
+
     echo
     
     # Phase 2: Interactive disk setup
@@ -390,23 +346,16 @@ main() {
     mount_partitions
     
     echo
-    
+
     # Phase 3: Generate hardware config
     log_info "=== Phase 2: Hardware Configuration ==="
     echo
     generate_hardware_config
-    
+
     echo
-    
-    # Phase 4: Download custom configuration
-    log_info "=== Phase 3: Custom Configuration ==="
-    echo
-    download_custom_configuration
-    
-    echo
-    
-    # Phase 5: Run installation
-    log_info "=== Phase 4: System Installation ==="
+
+    # Phase 4: Run installation
+    log_info "=== Phase 3: System Installation ==="
     echo
     run_nixos_install
     
@@ -416,15 +365,16 @@ main() {
     log_info "╚════════════════════════════════════════╝"
     echo
     log_info "1. Reboot into your new system: reboot"
-    log_info "2. Login as user: $TARGET_USER"
+    log_info "2. Login as root (user doesn't exist yet)"
     log_info "3. Run post-install setup:"
-    log_info "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/bootstrap/1 | bash"
+    log_info "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/bootstrap/1 > setup.sh"
+    log_info "   bash setup.sh"
     echo
     log_info "The post-install script will:"
     log_info "  • Clone your dotfiles"
     log_info "  • Copy hardware-configuration.nix to dotfiles"
-    log_info "  • Rebuild using your flake"
-    log_info "  • Set up home-manager"
+    log_info "  • Rebuild system using your flake"
+    log_info "  • Set up user password"
     echo
     
     if confirm "Reboot now?"; then

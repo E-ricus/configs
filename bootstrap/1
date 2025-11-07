@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Bootstrap script for post-installation setup
 # Works on NixOS, macOS, and other Linux distributions
-# Usage: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 | bash
+# Usage:
+#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 > setup.sh
+#   Then run: bash setup.sh
 
 set -euo pipefail
 
@@ -18,49 +20,53 @@ DOTFILES_DIR="$HOME/.dotfiles"
 
 setup_nixos() {
     log_info "=== Setting up NixOS ==="
-    
+
+    # For NixOS post-install, we're running as root
+    DOTFILES_DIR="/root/.dotfiles"
+
     # Check if dotfiles exist, if not clone
     if [ ! -d "$DOTFILES_DIR" ]; then
-        log_info "Dotfiles not found in home directory, cloning..."
+        log_info "Cloning dotfiles repository..."
         ensure_git
         clone_dotfiles "$DOTFILES_DIR"
     else
         log_success "Dotfiles already exist at $DOTFILES_DIR"
     fi
-    
-    # Detect system architecture first
-    local arch=$(uname -m)
+
+    # Prompt user for architecture/system selection
+    echo
+    log_info "Select your system configuration:"
+    echo "  1) x86_64 (Intel/AMD 64-bit)"
+    echo "  2) aarch64 (ARM 64-bit)"
+    echo
+
     local flake_config=""
     local hw_config_dest=""
-    case $arch in
-        x86_64)
-            flake_config="nixos-x86"
-            hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/x86_64/hardware-configuration.nix"
-            ;;
-        aarch64)
-            flake_config="nixos-arm"
-            hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/aarch64/hardware-configuration.nix"
-            ;;
-        *)
-            log_error "Unsupported architecture: $arch"
-            exit 1
-            ;;
-    esac
+    while true; do
+        read -p "Enter selection (1 or 2): " arch_selection
+        case $arch_selection in
+            1)
+                flake_config="nixos-x86"
+                hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/x86_64/hardware-configuration.nix"
+                break
+                ;;
+            2)
+                flake_config="nixos-arm"
+                hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/aarch64/hardware-configuration.nix"
+                break
+                ;;
+            *)
+                log_error "Invalid selection. Please enter 1 or 2."
+                ;;
+        esac
+    done
 
-    log_info "Detected architecture: $arch"
     log_info "Using flake configuration: $flake_config"
     echo
 
     # Copy hardware-configuration.nix from /etc/nixos to dotfiles
     log_info "Copying hardware-configuration.nix to dotfiles..."
     if [ -f /etc/nixos/hardware-configuration.nix ]; then
-        # Backup existing if present
-        if [ -f "$hw_config_dest" ]; then
-            local backup="${hw_config_dest}.backup.$(date +%Y%m%d_%H%M%S)"
-            mv "$hw_config_dest" "$backup"
-            log_info "Backed up existing hardware config to $(basename $backup)"
-        fi
-
         # Ensure destination directory exists
         mkdir -p "$(dirname "$hw_config_dest")"
         cp /etc/nixos/hardware-configuration.nix "$hw_config_dest"
@@ -77,52 +83,92 @@ setup_nixos() {
     echo
 
     # Rebuild using flake
-    if confirm "Rebuild NixOS using flake configuration?"; then
-        log_info "Rebuilding NixOS from flake..."
-        log_info "This may take several minutes on first run..."
-        echo
-        
-        if sudo nixos-rebuild switch --flake "$DOTFILES_DIR/nix#$flake_config"; then
-            log_success "NixOS rebuilt successfully with flake!"
-            log_info "Note: home-manager is integrated in the system rebuild"
-        else
-            log_error "Failed to rebuild NixOS!"
-            log_info "You can try manually with:"
-            log_info "  sudo nixos-rebuild switch --flake $DOTFILES_DIR/nix#$flake_config"
-            exit 1
-        fi
+    log_info "Rebuilding NixOS from flake..."
+    log_info "This may take several minutes on first run..."
+    echo
+
+    cd "$DOTFILES_DIR/nix"
+    if nixos-rebuild switch --flake ".#$flake_config"; then
+        log_success "NixOS rebuilt successfully with flake!"
+        log_info "Note: home-manager is integrated in the system rebuild"
     else
-        log_info "Skipping rebuild. You can rebuild later with:"
-        log_info "  sudo nixos-rebuild switch --flake $DOTFILES_DIR/nix#$flake_config"
+        log_error "Failed to rebuild NixOS!"
+        log_info "You can try manually with:"
+        log_info "  cd $DOTFILES_DIR/nix && nixos-rebuild switch --flake .#$flake_config"
+        exit 1
     fi
+
+    # Set user password
+    echo
+    log_info "Setting password for user 'ericus'..."
+    if passwd ericus; then
+        log_success "User password set successfully"
+    else
+        log_warning "Failed to set user password. You can set it later with: passwd ericus"
+    fi
+
+    # Clone dotfiles to user's home and set permissions
+    echo
+    log_info "Setting up dotfiles in user home directory..."
+
+    USER_DOTFILES="/home/ericus/.dotfiles"
+    if [ ! -d "$USER_DOTFILES" ]; then
+        log_info "Cloning dotfiles to /home/ericus/.dotfiles..."
+        git clone https://github.com/e-ricus/.dotfiles.git "$USER_DOTFILES"
+
+        # Set ownership to user
+        chown -R ericus:users "$USER_DOTFILES"
+        log_success "Dotfiles cloned and ownership set to ericus"
+    else
+        log_info "Dotfiles already exist at $USER_DOTFILES"
+        # Ensure correct ownership anyway
+        chown -R ericus:users "$USER_DOTFILES"
+    fi
+
+    # Clean up root's dotfiles
+    if [ -d "/root/.dotfiles" ]; then
+        log_info "Cleaning up /root/.dotfiles..."
+        rm -rf "/root/.dotfiles"
+        log_success "Root dotfiles cleaned up"
+    fi
+
+    echo
+    log_success "Setup complete! Dotfiles are ready at /home/ericus/.dotfiles"
+    log_info "When you login as ericus, you can use the 'hm' and 'nos' aliases"
 }
 
 setup_darwin() {
     log_info "=== Setting up macOS with nix-darwin ==="
+
+    # Check if Nix is installed
+    if ! command_exists nix; then
+        log_error "Nix is not installed!"
+        echo
+        log_info "Please install Nix first using the Determinate Systems installer:"
+        log_info "  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
+        echo
+        log_info "After installing Nix, restart your terminal and run this script again."
+        exit 1
+    fi
+
+    log_success "Nix is installed"
 
     # Ensure git
     ensure_git
 
     # Clone dotfiles if needed
     if [ ! -d "$DOTFILES_DIR" ]; then
+        log_info "Cloning dotfiles to $DOTFILES_DIR..."
         clone_dotfiles "$DOTFILES_DIR"
+    else
+        log_success "Dotfiles already exist at $DOTFILES_DIR"
     fi
 
     # Check if unified flake exists
     if [ ! -f "$DOTFILES_DIR/nix/flake.nix" ]; then
         log_error "Unified flake not found!"
         log_error "Expected: $DOTFILES_DIR/nix/flake.nix"
-        echo
-        log_warning "Skipping darwin setup..."
-        return 1
-    fi
-
-    # Install Nix if needed
-    install_nix
-
-    # Source Nix profile
-    if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
-        . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+        exit 1
     fi
 
     # Install nix-darwin with unified flake
@@ -130,37 +176,31 @@ setup_darwin() {
     log_info "This may take several minutes on first run..."
     echo
 
-    if nix run nix-darwin -- switch --flake "$DOTFILES_DIR/nix#work-mac"; then
+    cd "$DOTFILES_DIR/nix"
+    if sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake ".#work-mac"; then
         log_success "nix-darwin installed and configured"
         log_info "Note: home-manager is integrated in the darwin rebuild"
     else
         log_error "Failed to install nix-darwin!"
         log_info "You can try manually with:"
-        log_info "  darwin-rebuild switch --flake $DOTFILES_DIR/nix#work-mac"
-        return 1
+        log_info "  cd ~/.dotfiles/nix && sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake .#work-mac"
+        exit 1
     fi
 }
 
 setup_linux() {
-    log_info "=== Setting up Linux with standalone home-manager ==="
-    
-    # Ensure git
-    ensure_git
-    
-    # Clone dotfiles if needed
-    if [ ! -d "$DOTFILES_DIR" ]; then
-        clone_dotfiles "$DOTFILES_DIR"
-    fi
-    
-    # Install Nix
-    install_nix
-    
-    # Source Nix profile
-    if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-    fi
-    
-    log_success "Nix installed for standalone Linux"
+    # TODO: Implement setup for other Linux distributions
+    # This should:
+    #   1. Check if Nix is installed, if not fail and prompt to install with Determinate Systems
+    #   2. Ensure git is installed
+    #   3. Clone dotfiles repository if not present
+    #   4. Set up standalone home-manager configuration
+    #   5. Apply home-manager switch --flake ~/.dotfiles/nix#ericus
+
+    log_error "Other Linux distributions are not yet supported in this bootstrap script"
+    log_info "Please install Nix manually using Determinate Systems installer:"
+    log_info "  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
+    exit 1
 }
 
 setup_home_manager() {
