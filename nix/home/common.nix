@@ -22,6 +22,7 @@
     stow
     jq
     tree-sitter
+    gh
 
     neovim # not ready to give my config to nix
     # needed for neovim
@@ -32,6 +33,7 @@
     go
     rustup
     zig
+    just
     #Formatters
     alejandra
     stylua

@@ -22,7 +22,7 @@
 
       # System rebuilds (includes home-manager)
       nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86";
-      nom = "darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac";
+      nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac";
 
       # Combined (update flake + rebuild system)
       nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#nixos-x86";

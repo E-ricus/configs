@@ -15,9 +15,38 @@ function add_to_path -a path
 end
 
 add_to_path $HOME/.cargo/bin
+add_to_path /opt/homebrew/bin
 
 # Vim keybindings
 fish_vi_key_bindings
+
+# Bind Tab to fzf completion (similar to fzf-tab in zsh)
+# This replaces the default Tab completion with fzf
+function fzf_complete
+    set -l token (commandline -t)
+    set -l completions (complete -C)
+    set -l comp_count (count $completions)
+
+    # If no completions, do nothing
+    if test $comp_count -eq 0
+        return
+    # If only one completion, auto-complete without fzf
+    else if test $comp_count -eq 1
+        commandline -t -- (string trim $completions[1] | string split -f1 \t)
+    # If multiple completions, use fzf
+    else
+        set -l result (printf '%s\n' $completions | fzf --height 40% --reverse --query="$token")
+        if test -n "$result"
+            commandline -t -- (string trim $result | string split -f1 \t)
+        end
+    end
+    commandline -f repaint
+end
+
+# Only bind Tab in insert mode (for vi bindings)
+bind -M insert \t fzf_complete
+# For default/emacs mode users:
+# bind \t fzf_complete
 
 # Enhanced cd function
 function cd --description "Enhanced cd with zoxide integration"

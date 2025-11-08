@@ -28,6 +28,37 @@
   # System configuration
   programs.fish.enable = true;
 
+  # Keyboard settings
+  system.keyboard = {
+    enableKeyMapping = true;
+    remapCapsLockToControl = true;
+    swapLeftCtrlAndFn = true;
+  };
+
+  # Homebrew configuration for GUI apps and some CLI tools
+  homebrew = {
+    enable = true;
+    onActivation = {
+      autoUpdate = true;
+      cleanup = "zap";
+      upgrade = true;
+    };
+    taps = [
+      "nikitabobko/tap" # Required for aerospace
+    ];
+    brews = [
+      "cargo-binstall"
+      "reattach-to-user-namespace"
+      "openssl@3"
+    ];
+    casks = [
+      "alacritty"
+      "nikitabobko/tap/aerospace" # Window manager
+      "font-jetbrains-mono-nerd-font"
+      "font-symbols-only-nerd-font"
+    ];
+  };
+
   users.knownUsers = [user];
   system.primaryUser = user;
   users.users.${user} = {
