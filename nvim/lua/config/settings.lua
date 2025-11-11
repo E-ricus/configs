@@ -36,3 +36,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   group = highlight_group,
   pattern = "*",
 })
+
+-- Create a unique shada file per project directory to isolate jumplists
+local shada_dir = vim.fn.stdpath("data") .. "/shada"
+local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
+vim.opt.shadafile = shada_dir .. "/main_" .. project_name .. ".shada"

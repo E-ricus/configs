@@ -44,6 +44,11 @@
 
 # To show config: ghostty +show-config | grep keybind | fzf
 
+# macOS: Make Option keys work as Alt
+macos-option-as-alt = true
+
+theme = catppuccin-frappe
+
 # Tmux like navigation
 #keybind = ctrl+a>n=new_window
 #keybind = ctrl+a>c=new_tab

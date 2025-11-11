@@ -35,9 +35,9 @@
       # Database tools
       postgresql
 
-      # DevOps
+      # Containers
+      podman
       docker-compose
-      podman-compose
 
       # CLI tools
       ngrok

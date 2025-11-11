@@ -35,7 +35,12 @@ function fzf_complete
         commandline -t -- (string trim $completions[1] | string split -f1 \t)
     # If multiple completions, use fzf
     else
-        set -l result (printf '%s\n' $completions | fzf --height 40% --reverse --query="$token")
+        set -l result (printf '%s\n' $completions | fzf \
+            --height 40% \
+            --reverse \
+            --query="$token" \
+            --bind 'tab:down,shift-tab:up' \
+            --cycle)
         if test -n "$result"
             commandline -t -- (string trim $result | string split -f1 \t)
         end
