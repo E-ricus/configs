@@ -5,6 +5,7 @@
 }: {
   imports = [
     ./common.nix
+    ./modules/aerospace.nix
   ];
 
   home = {

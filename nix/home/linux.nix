@@ -7,6 +7,8 @@
   imports = [
     ./common.nix
     ./modules/hypr/hyprland.nix
+    # Not available in mac yet
+    ./modules/ghostty.nix
   ];
 
   home = {
