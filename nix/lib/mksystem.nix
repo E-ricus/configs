@@ -4,6 +4,7 @@
   user,
   hardwareConfig ? null,
   darwin ? false,
+  determinate ? false,
 }: let
   pkgs = import inputs.nixpkgs {
     inherit system;
@@ -48,6 +49,13 @@ in
 
     modules = [
       systemConfig
+
+      # Add dterminate system's nix
+      (
+        if determinate
+        then inputs.determinate.nixosModules.default
+        else {}
+      )
 
       # Add hardware config for NixOS
       (

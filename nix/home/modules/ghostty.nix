@@ -11,11 +11,9 @@
     enableBashIntegration = true;
 
     settings = {
+      theme = "Nordfox";
       # macOS: Make Option keys work as Alt (for nvim keymaps, etc.)
       macos-option-as-alt = true;
-
-      # Theme
-      theme = "catppuccin-frappe";
 
       # tmux-like navigation keybindings
       # keybind = [

@@ -37,6 +37,7 @@
     font-awesome
 
     btop
+    vlc
 
     # C/C++ nightmare
     gcc

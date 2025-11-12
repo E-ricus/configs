@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -26,6 +27,7 @@
   outputs = {
     self,
     nixpkgs,
+    determinate,
     home-manager,
     nix-darwin,
     walker,
@@ -58,6 +60,7 @@
         hostname = "nixos-x86";
         user = "ericus";
         hardwareConfig = ./systems/nixos/x86_64/hardware-configuration.nix;
+        determinate = true;
       };
 
       nixos-arm = mkSystem {
