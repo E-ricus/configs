@@ -71,7 +71,7 @@
         user = "ericus";
         determinate = true;
         extraModules = [
-          nixos-hardware.nixosModules.lenovo-legion-15ach6
+          nixos-hardware.nixosModules.lenovo-legion-15ach6h
         ];
       };
 

@@ -8,9 +8,10 @@
 
     # Enable shell integration
     enableFishIntegration = true;
-    enableBashIntegration = true;
 
     settings = {
+      gtk-single-instance = true;
+      background-opacity = 0.98;
       theme = "Nordfox";
       # macOS: Make Option keys work as Alt (for nvim keymaps, etc.)
       macos-option-as-alt = true;
