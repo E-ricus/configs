@@ -71,16 +71,19 @@ For now, you can manually:
 │   ├── 1               # Post-install setup (all systems, after first boot)
 │   └── lib.sh          # Shared functions
 ├── nix/                # Unified Nix configurations
-│   ├── flake.nix       # Single unified flake for all systems
+│   ├── flake.nix       # Single unified flake for all hosts
 │   ├── flake.lock      # Dependency lock file
 │   ├── lib/
 │   │   └── mksystem.nix  # Helper function for system creation
-│   ├── systems/        # System configurations
+│   ├── hosts/        # System configurations
 │   │   ├── nixos/
-│   │   │   ├── x86_64/
+│   │   │   ├── laptop-amd/
 │   │   │   │   ├── configuration.nix
 │   │   │   │   └── hardware-configuration.nix
-│   │   │   └── aarch64/
+│   │   │   ├── laptop-lenovo/
+│   │   │   │   ├── configuration.nix
+│   │   │   │   └── hardware-configuration.nix
+│   │   │   └── vm-aarch64/
 │   │   │       ├── configuration.nix
 │   │   │       └── hardware-configuration.nix
 │   │   └── darwin/
@@ -168,14 +171,14 @@ System rebuilds include both system configuration AND home-manager configuration
 
 ```bash
 # Edit system config
-nvim ~/.dotfiles/nix/systems/nixos/x86_64/configuration.nix
+nvim ~/.dotfiles/nix/hosts/nixos/laptop-amd/configuration.nix
 
 # Stage changes (required for flakes!)
 cd ~/.dotfiles/nix
 git add .
 
 # Apply changes (includes home-manager)
-sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd
 # Or for ARM VM: sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-arm
 
 # Or use the alias:
@@ -338,7 +341,7 @@ This configuration uses a **single unified flake** (`nix/flake.nix`) that:
 - Defines all system configurations (NixOS x86/ARM + Darwin)
 - Integrates home-manager as a module in system configs
 - Also exports standalone home-manager configurations
-- Shares a single `flake.lock` for consistency across all systems
+- Shares a single `flake.lock` for consistency across all hosts
 
 ### Benefits
 
@@ -346,7 +349,7 @@ This configuration uses a **single unified flake** (`nix/flake.nix`) that:
 ✅ **Consistent package versions** - Shared flake.lock ensures same nixpkgs version
 ✅ **Home-manager integrated** - System rebuilds include home config
 ✅ **Fast iteration option** - Standalone home-manager for quick changes
-✅ **Clean separation** - systems/ vs home/ directories
+✅ **Clean separation** - hosts/ vs home/ directories
 ✅ **Multiple hardware configs** - Each system's hardware-configuration.nix versioned separately
 ✅ **No git stash dance** - Can version different hardware configs for different machines
 

@@ -24,11 +24,12 @@
       hmu = "cd ~/.dotfiles/nix && nix flake update && home-manager switch --flake .#$USER";
 
       # System rebuilds (includes home-manager)
-      nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86";
+      # Change laptop-amd to your host: laptop-amd, laptop-lenovo, or vm-aarch64
+      nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd";
       nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac";
 
       # Combined (update flake + rebuild system)
-      nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#nixos-x86";
+      nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#laptop-amd";
 
       ngc = "nix-collect-garbage --delete-older-than 2d";
     };

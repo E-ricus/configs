@@ -36,27 +36,33 @@ setup_nixos() {
     # Prompt user for architecture/system selection
     echo
     log_info "Select your system configuration:"
-    echo "  1) x86_64 (Intel/AMD 64-bit)"
-    echo "  2) aarch64 (ARM 64-bit)"
+    echo "  1) laptop-amd (Intel/AMD 64-bit)"
+    echo "  2) laptop-lenovo (Intel/AMD 64-bit) and nvidia graphics"
+    echo "  3) vm-aarch64 (ARM 64-bit)"
     echo
 
     local flake_config=""
     local hw_config_dest=""
     while true; do
-        read -p "Enter selection (1 or 2): " arch_selection
+        read -p "Enter selection (1, 2, or 3): " arch_selection
         case $arch_selection in
             1)
-                flake_config="nixos-x86"
-                hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/x86_64/hardware-configuration.nix"
+                flake_config="laptop-amd"
+                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/laptop-amd/hardware-configuration.nix"
                 break
                 ;;
             2)
-                flake_config="nixos-arm"
-                hw_config_dest="$DOTFILES_DIR/nix/systems/nixos/aarch64/hardware-configuration.nix"
+                flake_config="laptop-lenovo"
+                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/laptop-lenovo/hardware-configuration.nix"
+                break
+                ;;
+            3)
+                flake_config="vm-aarch64"
+                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/vm-aarch64/hardware-configuration.nix"
                 break
                 ;;
             *)
-                log_error "Invalid selection. Please enter 1 or 2."
+                log_error "Invalid selection. Please enter 1, 2, or 3."
                 ;;
         esac
     done
@@ -327,7 +333,7 @@ main() {
     
     echo
     
-    # Setup dotfile symlinks (common for all systems)
+    # Setup dotfile symlinks (common for all hosts)
     if ! setup_symlinks; then
         log_error "Dotfile symlinking failed!"
         log_warning "You may need to run symlinkmanager manually"
@@ -354,8 +360,8 @@ main() {
             echo
             log_info "Commands (or use aliases):"
             log_info "• System rebuild (includes home-manager):"
-            log_info "    sudo nixos-rebuild switch --flake ~/.dotfiles/nix#nixos-x86"
-            log_info "    Alias: nos"
+            log_info "    sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd"
+            log_info "    Alias: nos (update the alias in fish/zsh config to your host)"
             log_info "• Quick home-manager only update:"
             log_info "    home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
             log_info "    Alias: hm"

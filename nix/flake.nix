@@ -15,6 +15,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
     # Custom inputs
     elephant.url = "github:abenz1267/elephant";
     walker = {
@@ -30,6 +32,7 @@
     determinate,
     home-manager,
     nix-darwin,
+    nixos-hardware,
     walker,
     ...
   } @ inputs: let
@@ -55,19 +58,24 @@
   in {
     # NixOS configurations
     nixosConfigurations = {
-      nixos-x86 = mkSystem {
+      laptop-amd = mkSystem {
         system = "x86_64-linux";
-        hostname = "nixos-x86";
+        hostname = "laptop-amd";
         user = "ericus";
-        hardwareConfig = ./systems/nixos/x86_64/hardware-configuration.nix;
         determinate = true;
       };
 
-      nixos-arm = mkSystem {
-        system = "aarch64-linux";
-        hostname = "nixos-arm";
+      laptop-lenovo = mkSystem {
+        system = "x86_64-linux";
+        hostname = "laptop-lenovo";
         user = "ericus";
-        hardwareConfig = ./systems/nixos/aarch64/hardware-configuration.nix;
+        determinate = true;
+      };
+
+      vm-aarch64 = mkSystem {
+        system = "aarch64-linux";
+        hostname = "vm-aarch64";
+        user = "ericus";
       };
     };
 

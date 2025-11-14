@@ -2,7 +2,6 @@
   system,
   hostname,
   user,
-  hardwareConfig ? null,
   darwin ? false,
   determinate ? false,
 }: let
@@ -13,26 +12,27 @@
 
   # Select appropriate home-manager module
   home-manager-module =
-    if darwin
-    then inputs.home-manager.darwinModules.home-manager
-    else inputs.home-manager.nixosModules.home-manager;
+    if !darwin
+    then inputs.home-manager.nixosModules.home-manager
+    else inputs.home-manager.darwinModules.home-manager;
 
   # Select appropriate system builder
   systemFunc =
-    if darwin
-    then inputs.nix-darwin.lib.darwinSystem
-    else inputs.nixpkgs.lib.nixosSystem;
+    if !darwin
+    then inputs.nixpkgs.lib.nixosSystem
+    else inputs.nix-darwin.lib.darwinSystem;
 
   # Platform-specific config path
   systemConfig =
-    if darwin
-    then ../systems/darwin/${hostname}/configuration.nix
-    else
-      ../systems/nixos/${
-        if system == "x86_64-linux"
-        then "x86_64"
-        else "aarch64"
-      }/configuration.nix;
+    if !darwin
+    then ../hosts/nixos/${hostname}/configuration.nix
+    else ../hosts/darwin/${hostname}/configuration.nix;
+
+  # Auto-construct hardware config path for NixOS (null for Darwin)
+  hardwareConfig =
+    if !darwin
+    then ../hosts/nixos/${hostname}/hardware-configuration.nix
+    else null;
 
   # Home-manager config based on user
   homeConfig =
@@ -48,19 +48,19 @@ in
     };
 
     modules = [
+      # Add hardware config for NixOS
+      (
+        if hardwareConfig != null
+        then hardwareConfig
+        else {}
+      )
+
       systemConfig
 
       # Add dterminate system's nix
       (
         if determinate
         then inputs.determinate.nixosModules.default
-        else {}
-      )
-
-      # Add hardware config for NixOS
-      (
-        if hardwareConfig != null
-        then hardwareConfig
         else {}
       )
 

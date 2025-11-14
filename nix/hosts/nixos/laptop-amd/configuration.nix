@@ -1,18 +1,15 @@
 {
   config,
   pkgs,
+  hostname,
   ...
 }: {
-  imports = [
-    ./hardware-configuration.nix
-  ];
-
   # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Networking
-  networking.hostName = "nixos";
+  networking.hostName = "nixos-${hostname}";
   networking.networkmanager.enable = true;
 
   # Time zone and locale
@@ -64,10 +61,8 @@
     extraPortals = [pkgs.xdg-desktop-portal-gtk];
   };
 
-  # Graphics drivers - uncomment the one you need
+  # Graphics drivers
   hardware.graphics.enable = true;
-  # hardware.nvidia.modesetting.enable = true; # For NVIDIA
-  # services.xserver.videoDrivers = [ "nvidia" ]; # For NVIDIA
 
   hardware.bluetooth = {
     enable = true;
