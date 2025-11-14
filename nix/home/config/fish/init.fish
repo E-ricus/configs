@@ -24,7 +24,7 @@ fish_vi_key_bindings
 # This replaces the default Tab completion with fzf
 function fzf_complete
     set -l token (commandline -t)
-    set -l completions (complete -C)
+    set -l completions (complete -C (commandline -p))
     set -l comp_count (count $completions)
 
     # If no completions, do nothing
