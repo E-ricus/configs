@@ -104,15 +104,27 @@
     shell = pkgs.fish; # managed by home-manager
   };
 
-  # System packages (minimal - user packages go in home-manager)
+  # System packages
   environment.systemPackages = with pkgs; [
+    # minimal
     git
     wget
     curl
     vim
     home-manager
     fish
+
+    # Gaming
+    mangohud
+    protonup
   ];
+  # Game config
+  programs.steam.enable = true;
+  programs.steam.gamescopeSession.enable = true;
+  programs.gamemode.enable = true;
+  environment.sessionVariables = {
+    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "\${HOME}/.steam/root/compatibilitytools.d";
+  };
 
   # Fonts
   fonts.packages = with pkgs; [
