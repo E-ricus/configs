@@ -70,6 +70,9 @@
         hostname = "laptop-lenovo";
         user = "ericus";
         determinate = true;
+        extraModules = [
+          nixos-hardware.nixosModules.lenovo-legion-15ach6
+        ];
       };
 
       vm-aarch64 = mkSystem {

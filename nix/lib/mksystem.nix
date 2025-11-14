@@ -4,6 +4,7 @@
   user,
   darwin ? false,
   determinate ? false,
+  extraModules ? [],
 }: let
   pkgs = import inputs.nixpkgs {
     inherit system;
@@ -75,5 +76,6 @@ in
           walker = inputs.walker or null;
         };
       }
-    ];
+    ]
+    ++ extraModules;
   }

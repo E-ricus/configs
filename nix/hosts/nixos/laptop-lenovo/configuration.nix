@@ -2,11 +2,8 @@
   config,
   pkgs,
   hostname,
-  nixos-hardware,
   ...
 }: {
-  imports = [nixos-hardware.nixosModules.lenovo-legion-15ach6];
-
   # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -64,13 +61,11 @@
     extraPortals = [pkgs.xdg-desktop-portal-gtk];
   };
 
-  # Graphics drivers - uncomment the one you need
+  # Graphics drivers
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
   };
-  hardware.nvidia.modesetting.enable = true; # For NVIDIA
-  services.xserver.videoDrivers = ["nvidia"]; # For NVIDIA
 
   hardware.bluetooth = {
     enable = true;
@@ -116,7 +111,7 @@
 
     # Gaming
     mangohud
-    protonup
+    protonup-ng
   ];
   # Game config
   programs.steam.enable = true;
