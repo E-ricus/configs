@@ -41,6 +41,7 @@
 
     # C/C++ nightmare
     gcc
+    gnumake
     #Develpment
     podman-compose
   ];
