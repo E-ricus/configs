@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# symlinkmanager - Smart dotfiles symlinking with custom targets
-# Usage: cd ~/.dotfiles && symlinkmanager link
+# symlinkmanager - Smart config file symlinking with custom targets
+# Usage: cd ~/configs && symlinkmanager link
 
 set -euo pipefail
 
 # Use current working directory
-DOTFILES_DIR="$(pwd)"
-CONFIG_FILE="$DOTFILES_DIR/symlink.conf"
+CONFIGS_DIR="$(pwd)"
+CONFIG_FILE="$CONFIGS_DIR/symlink.conf"
 
 # Colors
 GREEN='\033[0;32m'
@@ -23,7 +23,7 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $*"; }
 # Check if config exists
 if [ ! -f "$CONFIG_FILE" ]; then
     log_error "symlink.conf not found at $CONFIG_FILE"
-    log_info "Make sure you're in your dotfiles directory"
+    log_info "Make sure you're in your configs directory"
     exit 1
 fi
 
@@ -175,7 +175,7 @@ link_packages() {
     local -a filter=("$@")
 
     log_info "Reading configuration from $CONFIG_FILE"
-    log_info "Working directory: $DOTFILES_DIR"
+    log_info "Working directory: $CONFIGS_DIR"
 
     if [ ${#filter[@]} -gt 0 ] && [[ ! " ${filter[*]} " =~ " all " ]]; then
         log_info "Filtering packages: ${filter[*]}"
@@ -203,7 +203,7 @@ link_packages() {
             # Expand ~ to home directory
             target="${target/#\~/$HOME}"
 
-            local source_dir="$DOTFILES_DIR/$package"
+            local source_dir="$CONFIGS_DIR/$package"
 
             # Check if package directory exists
             if [ ! -d "$source_dir" ]; then
@@ -274,7 +274,7 @@ unlink_packages() {
 
             target="${target/#\~/$HOME}"
 
-            local source_dir="$DOTFILES_DIR/$package"
+            local source_dir="$CONFIGS_DIR/$package"
 
             log_info "Unlinking $package from $target"
 
@@ -332,7 +332,7 @@ show_status() {
     local -a filter=("$@")
 
     log_info "Symlink configuration status:"
-    log_info "Working directory: $DOTFILES_DIR"
+    log_info "Working directory: $CONFIGS_DIR"
 
     if [ ${#filter[@]} -gt 0 ] && [[ ! " ${filter[*]} " =~ " all " ]]; then
         log_info "Filtering packages: ${filter[*]}"
@@ -357,7 +357,7 @@ show_status() {
 
             target="${target/#\~/$HOME}"
 
-            local source_dir="$DOTFILES_DIR/$package"
+            local source_dir="$CONFIGS_DIR/$package"
 
             # Check if package exists
             if [ ! -d "$source_dir" ]; then
@@ -458,7 +458,7 @@ Example symlink.conf:
 How it works:
     - If target doesn't exist: Symlinks entire directory
     - If target exists: Merges contents (symlinks individual files/dirs)
-    - Always creates proper symlinks to your dotfiles directory
+    - Always creates proper symlinks to your configs directory
     - Never creates broken links or temp directories
 
 Usage Examples:
@@ -471,8 +471,8 @@ Usage Examples:
 
 Detailed Example:
     nvim/init.lua + nvim -> ~/.config/nvim
-    → If ~/.config/nvim doesn't exist: ~/.config/nvim -> ~/.dotfiles/nvim
-    → If ~/.config/nvim exists: ~/.config/nvim/init.lua -> ~/.dotfiles/nvim/init.lua
+    → If ~/.config/nvim doesn't exist: ~/.config/nvim -> ~/configs/nvim
+    → If ~/.config/nvim exists: ~/.config/nvim/init.lua -> ~/configs/nvim/init.lua
 
 EOF
 }

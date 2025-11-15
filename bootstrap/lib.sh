@@ -90,26 +90,26 @@ ensure_git() {
     log_success "Git installed successfully"
 }
 
-# Clone dotfiles repo
-clone_dotfiles() {
-    local target_dir="${1:-$HOME/.dotfiles}"
-    local repo_url="https://github.com/e-ricus/.dotfiles.git"
-    
+# Clone configs repo
+clone_configs() {
+    local target_dir="${1:-$HOME/configs}"
+    local repo_url="https://github.com/e-ricus/configs.git"
+
     if [ -d "$target_dir" ]; then
-        log_warning "Dotfiles directory already exists at $target_dir"
+        log_warning "Configs directory already exists at $target_dir"
         read -p "Do you want to remove it and re-clone? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             rm -rf "$target_dir"
         else
-            log_info "Using existing dotfiles directory"
+            log_info "Using existing configs directory"
             return 0
         fi
     fi
-    
-    log_info "Cloning dotfiles repository..."
+
+    log_info "Cloning configs repository..."
     git clone "$repo_url" "$target_dir"
-    log_success "Dotfiles cloned to $target_dir"
+    log_success "Configs cloned to $target_dir"
 }
 
 # Create symlink with backup
@@ -163,35 +163,35 @@ install_nix_darwin() {
     log_info "Installing nix-darwin..."
     
     # Run nix-darwin installer
-    nix run nix-darwin -- switch --flake ~/.dotfiles/nix/darwin
+    nix run nix-darwin -- switch --flake ~/configs/nix/darwin
     
     log_success "nix-darwin installed successfully"
 }
 
 # Note: We use symlinkmanager instead of GNU Stow
-# symlinkmanager is included in the dotfiles repo at bin/symlinkmanager
+# symlinkmanager is included in the configs repo at bin/symlinkmanager
 # No separate installation needed
 
-# Symlink dotfiles using symlinkmanager
+# Symlink configs using symlinkmanager
 stow_configs() {
-    local dotfiles_dir="${1:-$HOME/.dotfiles}"
-    
+    local configs_dir="${1:-$HOME/configs}"
+
     log_info "Symlinking configuration files..."
-    
-    cd "$dotfiles_dir"
-    
+
+    cd "$configs_dir"
+
     # Check if symlinkmanager exists and use it
-    if [ -x "$dotfiles_dir/bin/symlinkmanager" ]; then
+    if [ -x "$configs_dir/bin/symlinkmanager" ]; then
         log_info "Using symlinkmanager with symlink.conf"
-        "$dotfiles_dir/bin/symlinkmanager" link all
+        "$configs_dir/bin/symlinkmanager" link all
     else
-        log_error "symlinkmanager not found at $dotfiles_dir/bin/symlinkmanager"
-        log_error "Cannot proceed with dotfile symlinking"
-        log_info "Please ensure your dotfiles repository is properly cloned"
+        log_error "symlinkmanager not found at $configs_dir/bin/symlinkmanager"
+        log_error "Cannot proceed with config symlinking"
+        log_info "Please ensure your configs repository is properly cloned"
         return 1
     fi
-    
-    log_success "Dotfiles symlinked successfully"
+
+    log_success "Configs symlinked successfully"
 }
 
 # Get username for home-manager

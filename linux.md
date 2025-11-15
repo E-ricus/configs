@@ -90,13 +90,6 @@ paru -S system76-power
 sudo systemctl enable --now system76-power.service
 ```
 
-* cp AMD config to xorg config
-```sh
-sudo cp ~/.dotfiles/xorg-conf/20-amdgpu.conf /etc/X11/xorg.conf.d/
-```
-
-* stow the bin folder to have the change gpu script
-
 ### Dual GPU Fedora
 Optimus works out of the box.
 

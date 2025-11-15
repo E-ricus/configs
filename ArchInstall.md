@@ -56,8 +56,8 @@ paru -S tmux ripgrep fd bat starship zoxide exa neovim tmux xclip ripgrep fd bat
 
 * Clone dotfles and configs
 ```sh
-git clone git@github.com:ericpubu/.dotfiles.git
-cd .dotfiles/
+git clone git@github.com:ericpubu/configs.git
+cd configs/
 stow alacritty
 stow git
 stow tmux

@@ -2,7 +2,7 @@
 # Smart NixOS Installer with Interactive Partitioning
 # Run this from the NixOS LIVE installer environment
 # Usage:
-#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/0 > install.sh
+#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/0 > install.sh
 #   Then run with: sudo bash install.sh
 
 set -euo pipefail
@@ -13,7 +13,7 @@ if [ -f "$SCRIPT_DIR/lib.sh" ]; then
     source "$SCRIPT_DIR/lib.sh"
 else
     # If running from curl, download lib.sh
-    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/lib.sh)"
+    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/lib.sh)"
 fi
 
 # Configuration
@@ -21,7 +21,7 @@ TARGET_USER="ericus"
 TARGET_UID="1000"
 TARGET_GID="100"
 GITHUB_USER="e-ricus"
-DOTFILES_REPO="https://github.com/$GITHUB_USER/.dotfiles"
+CONFIGS_REPO="https://github.com/$GITHUB_USER/configs"
 
 #############################################
 # Helper Functions
@@ -367,12 +367,12 @@ main() {
     log_info "1. Reboot into your new system: reboot"
     log_info "2. Login as root (user doesn't exist yet)"
     log_info "3. Run post-install setup:"
-    log_info "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_USER/.dotfiles/main/bootstrap/1 > setup.sh"
+    log_info "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_USER/configs/main/bootstrap/1 > setup.sh"
     log_info "   bash setup.sh"
     echo
     log_info "The post-install script will:"
-    log_info "  • Clone your dotfiles"
-    log_info "  • Copy hardware-configuration.nix to dotfiles"
+    log_info "  • Clone your configs"
+    log_info "  • Copy hardware-configuration.nix to configs"
     log_info "  • Rebuild system using your flake"
     log_info "  • Set up user password"
     echo

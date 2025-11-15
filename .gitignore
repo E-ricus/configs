@@ -1,13 +1,2 @@
-fish/fish_variables
-fish/conf.d/fisher.fish
-fish/completions/fisher.fish
-fish/functions/fisher.fish
-fish/functions/_nvm*
-fish/functions/nvm.fish
-fish/conf.d/nvm.fish
-fish/functions/nvm.fish
-fish/completions/nvm.fish
-nushell/.config/nushell/history.txt
-tmux/tmux/plugins
 bin/codelldb
 nix/result

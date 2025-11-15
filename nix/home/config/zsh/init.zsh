@@ -2,7 +2,7 @@
 export ZSH_ENV_HOME=$HOME
 export XDG_CONFIG_HOME=$HOME/.config
 export ZSH_CUSTOM="$XDG_CONFIG_HOME/zsh"
-export DOTFILES="$HOME/.dotfiles"
+export CONFIGS="$HOME/configs"
 
 # Globals
 export EDITOR="nvim"

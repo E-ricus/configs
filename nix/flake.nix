@@ -122,7 +122,7 @@
 
       "ericpuentes-work-mac" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."aarch64-darwin";
-        extraSpecialArgs = {inherit inputs;};
+        extraSpecialArgs = {inherit inputs walker;};
         modules = [./hosts/darwin/work-mac/home.nix];
       };
     };

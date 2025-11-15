@@ -2,7 +2,7 @@
 # Bootstrap script for post-installation setup
 # Works on NixOS, macOS, and other Linux distributions
 # Usage:
-#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/1 > setup.sh
+#   Download first: curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/1 > setup.sh
 #   Then run: bash setup.sh
 
 set -euo pipefail
@@ -13,24 +13,24 @@ if [ -f "$SCRIPT_DIR/lib.sh" ]; then
     source "$SCRIPT_DIR/lib.sh"
 else
     # If running from curl, download lib.sh
-    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/.dotfiles/main/bootstrap/lib.sh)"
+    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/lib.sh)"
 fi
 
-DOTFILES_DIR="$HOME/.dotfiles"
+CONFIGS_DIR="$HOME/configs"
 
 setup_nixos() {
     log_info "=== Setting up NixOS ==="
 
     # For NixOS post-install, we're running as root
-    DOTFILES_DIR="/root/.dotfiles"
+    CONFIGS_DIR="/root/configs"
 
-    # Check if dotfiles exist, if not clone
-    if [ ! -d "$DOTFILES_DIR" ]; then
-        log_info "Cloning dotfiles repository..."
+    # Check if configs exist, if not clone
+    if [ ! -d "$CONFIGS_DIR" ]; then
+        log_info "Cloning configs repository..."
         ensure_git
-        clone_dotfiles "$DOTFILES_DIR"
+        clone_configs "$CONFIGS_DIR"
     else
-        log_success "Dotfiles already exist at $DOTFILES_DIR"
+        log_success "Configs already exist at $CONFIGS_DIR"
     fi
 
     # Prompt user for architecture/system selection
@@ -48,17 +48,17 @@ setup_nixos() {
         case $arch_selection in
             1)
                 flake_config="laptop-amd"
-                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/laptop-amd/hardware-configuration.nix"
+                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/laptop-amd/hardware-configuration.nix"
                 break
                 ;;
             2)
                 flake_config="laptop-lenovo"
-                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/laptop-lenovo/hardware-configuration.nix"
+                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/laptop-lenovo/hardware-configuration.nix"
                 break
                 ;;
             3)
                 flake_config="vm-aarch64"
-                hw_config_dest="$DOTFILES_DIR/nix/hosts/nixos/vm-aarch64/hardware-configuration.nix"
+                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/vm-aarch64/hardware-configuration.nix"
                 break
                 ;;
             *)
@@ -70,13 +70,13 @@ setup_nixos() {
     log_info "Using flake configuration: $flake_config"
     echo
 
-    # Copy hardware-configuration.nix from /etc/nixos to dotfiles
-    log_info "Copying hardware-configuration.nix to dotfiles..."
+    # Copy hardware-configuration.nix from /etc/nixos to configs
+    log_info "Copying hardware-configuration.nix to configs..."
     if [ -f /etc/nixos/hardware-configuration.nix ]; then
         # Ensure destination directory exists
         mkdir -p "$(dirname "$hw_config_dest")"
         cp /etc/nixos/hardware-configuration.nix "$hw_config_dest"
-        log_success "Hardware configuration copied to dotfiles"
+        log_success "Hardware configuration copied to configs"
     else
         log_error "Hardware configuration not found at /etc/nixos/hardware-configuration.nix"
         log_error "Cannot proceed without hardware configuration"
@@ -93,14 +93,14 @@ setup_nixos() {
     log_info "This may take several minutes on first run..."
     echo
 
-    cd "$DOTFILES_DIR/nix"
+    cd "$CONFIGS_DIR/nix"
     if nixos-rebuild switch --flake ".#$flake_config"; then
         log_success "NixOS rebuilt successfully with flake!"
         log_info "Note: home-manager is integrated in the system rebuild"
     else
         log_error "Failed to rebuild NixOS!"
         log_info "You can try manually with:"
-        log_info "  cd $DOTFILES_DIR/nix && nixos-rebuild switch --flake .#$flake_config"
+        log_info "  cd $CONFIGS_DIR/nix && nixos-rebuild switch --flake .#$flake_config"
         exit 1
     fi
 
@@ -113,33 +113,33 @@ setup_nixos() {
         log_warning "Failed to set user password. You can set it later with: passwd ericus"
     fi
 
-    # Clone dotfiles to user's home and set permissions
+    # Clone configs to user's home and set permissions
     echo
-    log_info "Setting up dotfiles in user home directory..."
+    log_info "Setting up configs in user home directory..."
 
-    USER_DOTFILES="/home/ericus/.dotfiles"
-    if [ ! -d "$USER_DOTFILES" ]; then
-        log_info "Cloning dotfiles to /home/ericus/.dotfiles..."
-        git clone https://github.com/e-ricus/.dotfiles.git "$USER_DOTFILES"
+    USER_CONFIGS="/home/ericus/configs"
+    if [ ! -d "$USER_CONFIGS" ]; then
+        log_info "Cloning configs to /home/ericus/configs..."
+        git clone https://github.com/e-ricus/configs.git "$USER_CONFIGS"
 
         # Set ownership to user
-        chown -R ericus:users "$USER_DOTFILES"
-        log_success "Dotfiles cloned and ownership set to ericus"
+        chown -R ericus:users "$USER_CONFIGS"
+        log_success "Configs cloned and ownership set to ericus"
     else
-        log_info "Dotfiles already exist at $USER_DOTFILES"
+        log_info "Configs already exist at $USER_CONFIGS"
         # Ensure correct ownership anyway
-        chown -R ericus:users "$USER_DOTFILES"
+        chown -R ericus:users "$USER_CONFIGS"
     fi
 
-    # Clean up root's dotfiles
-    if [ -d "/root/.dotfiles" ]; then
-        log_info "Cleaning up /root/.dotfiles..."
-        rm -rf "/root/.dotfiles"
-        log_success "Root dotfiles cleaned up"
+    # Clean up root's configs
+    if [ -d "/root/configs" ]; then
+        log_info "Cleaning up /root/configs..."
+        rm -rf "/root/configs"
+        log_success "Root configs cleaned up"
     fi
 
     echo
-    log_success "Setup complete! Dotfiles are ready at /home/ericus/.dotfiles"
+    log_success "Setup complete! Configs are ready at /home/ericus/configs"
     log_info "When you login as ericus, you can use the 'hm' and 'nos' aliases"
 }
 
@@ -162,18 +162,18 @@ setup_darwin() {
     # Ensure git
     ensure_git
 
-    # Clone dotfiles if needed
-    if [ ! -d "$DOTFILES_DIR" ]; then
-        log_info "Cloning dotfiles to $DOTFILES_DIR..."
-        clone_dotfiles "$DOTFILES_DIR"
+    # Clone configs if needed
+    if [ ! -d "$CONFIGS_DIR" ]; then
+        log_info "Cloning configs to $CONFIGS_DIR..."
+        clone_configs "$CONFIGS_DIR"
     else
-        log_success "Dotfiles already exist at $DOTFILES_DIR"
+        log_success "Configs already exist at $CONFIGS_DIR"
     fi
 
     # Check if unified flake exists
-    if [ ! -f "$DOTFILES_DIR/nix/flake.nix" ]; then
+    if [ ! -f "$CONFIGS_DIR/nix/flake.nix" ]; then
         log_error "Unified flake not found!"
-        log_error "Expected: $DOTFILES_DIR/nix/flake.nix"
+        log_error "Expected: $CONFIGS_DIR/nix/flake.nix"
         exit 1
     fi
 
@@ -182,14 +182,14 @@ setup_darwin() {
     log_info "This may take several minutes on first run..."
     echo
 
-    cd "$DOTFILES_DIR/nix"
+    cd "$CONFIGS_DIR/nix"
     if sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake ".#work-mac"; then
         log_success "nix-darwin installed and configured"
         log_info "Note: home-manager is integrated in the darwin rebuild"
     else
         log_error "Failed to install nix-darwin!"
         log_info "You can try manually with:"
-        log_info "  cd ~/.dotfiles/nix && sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake .#work-mac"
+        log_info "  cd ~/configs/nix && sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake .#work-mac"
         exit 1
     fi
 }
@@ -199,9 +199,9 @@ setup_linux() {
     # This should:
     #   1. Check if Nix is installed, if not fail and prompt to install with Determinate Systems
     #   2. Ensure git is installed
-    #   3. Clone dotfiles repository if not present
+    #   3. Clone configs repository if not present
     #   4. Set up standalone home-manager configuration
-    #   5. Apply home-manager switch --flake ~/.dotfiles/nix#ericus
+    #   5. Apply home-manager switch --flake ~/configs/nix#ericus
 
     log_error "Other Linux distributions are not yet supported in this bootstrap script"
     log_info "Please install Nix manually using Determinate Systems installer:"
@@ -219,7 +219,7 @@ setup_home_manager() {
         log_info "It was included in the system rebuild"
         echo
         log_info "Optional: You can also use standalone home-manager for quick iterations:"
-        log_info "  home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
+        log_info "  home-manager switch --flake ~/configs/nix#$(get_hm_user)"
         echo
         return 0
     fi
@@ -228,8 +228,8 @@ setup_home_manager() {
     log_info "=== Setting up standalone home-manager ==="
 
     # Check if unified flake exists
-    if [ ! -f "$DOTFILES_DIR/nix/flake.nix" ]; then
-        log_error "Unified flake not found at $DOTFILES_DIR/nix/flake.nix"
+    if [ ! -f "$CONFIGS_DIR/nix/flake.nix" ]; then
+        log_error "Unified flake not found at $CONFIGS_DIR/nix/flake.nix"
         log_error "Cannot proceed with home-manager setup"
         return 1
     fi
@@ -242,7 +242,7 @@ setup_home_manager() {
     local user_config=""
     case $system in
         linux)
-            user_config="$DOTFILES_DIR/nix/home/linux.nix"
+            user_config="$CONFIGS_DIR/nix/home/linux.nix"
             ;;
     esac
 
@@ -256,42 +256,42 @@ setup_home_manager() {
     log_info "This may take several minutes on first run..."
     echo
 
-    if home-manager switch --flake "$DOTFILES_DIR/nix#$hm_user"; then
+    if home-manager switch --flake "$CONFIGS_DIR/nix#$hm_user"; then
         log_success "home-manager configured successfully"
     else
         log_error "home-manager switch failed!"
-        log_info "You can try manually with: home-manager switch --flake ~/.dotfiles/nix#$hm_user"
+        log_info "You can try manually with: home-manager switch --flake ~/configs/nix#$hm_user"
         return 1
     fi
 }
 
 setup_symlinks() {
-    log_info "=== Setting up dotfile symlinks ==="
-    
+    log_info "=== Setting up config symlinks ==="
+
     # Verify symlinkmanager exists
-    if [ ! -x "$DOTFILES_DIR/bin/symlinkmanager" ]; then
-        log_error "symlinkmanager not found at $DOTFILES_DIR/bin/symlinkmanager"
-        log_error "Cannot proceed with dotfile symlinking"
+    if [ ! -x "$CONFIGS_DIR/bin/symlinkmanager" ]; then
+        log_error "symlinkmanager not found at $CONFIGS_DIR/bin/symlinkmanager"
+        log_error "Cannot proceed with config symlinking"
         return 1
     fi
-    
+
     # Verify symlink.conf exists
-    if [ ! -f "$DOTFILES_DIR/symlink.conf" ]; then
-        log_error "symlink.conf not found at $DOTFILES_DIR/symlink.conf"
-        log_error "Cannot proceed with dotfile symlinking"
+    if [ ! -f "$CONFIGS_DIR/symlink.conf" ]; then
+        log_error "symlink.conf not found at $CONFIGS_DIR/symlink.conf"
+        log_error "Cannot proceed with config symlinking"
         return 1
     fi
-    
+
     # Run symlinkmanager
-    stow_configs "$DOTFILES_DIR"
-    
-    log_success "All dotfiles symlinked"
+    stow_configs "$CONFIGS_DIR"
+
+    log_success "All configs symlinked"
 }
 
 main() {
     echo
     log_info "╔════════════════════════════════════════╗"
-    log_info "║   Dotfiles Bootstrap - Post Install   ║"
+    log_info "║   Configs Bootstrap - Post Install    ║"
     log_info "╚════════════════════════════════════════╝"
     echo
     
@@ -327,29 +327,29 @@ main() {
         log_error "home-manager setup failed!"
         log_warning "You may need to fix configuration errors and run manually"
         echo
-        log_info "After fixing, run: home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
+        log_info "After fixing, run: home-manager switch --flake ~/configs/nix#$(get_hm_user)"
         exit 1
     fi
     
     echo
     
-    # Setup dotfile symlinks (common for all hosts)
+    # Setup config symlinks (common for all hosts)
     if ! setup_symlinks; then
-        log_error "Dotfile symlinking failed!"
+        log_error "Config symlinking failed!"
         log_warning "You may need to run symlinkmanager manually"
         echo
-        log_info "To fix, run: cd ~/.dotfiles && bin/symlinkmanager link all"
+        log_info "To fix, run: cd ~/configs && bin/symlinkmanager link all"
     fi
-    
+
     echo
     log_success "╔════════════════════════════════════════╗"
     log_success "║     Bootstrap Complete! 🎉             ║"
     log_success "╚════════════════════════════════════════╝"
     echo
-    
-    log_info "Your dotfiles are now installed and configured."
-    log_info "Dotfiles location: $DOTFILES_DIR"
-    log_info "Unified flake: ~/.dotfiles/nix/flake.nix"
+
+    log_info "Your configs are now installed and configured."
+    log_info "Configs location: $CONFIGS_DIR"
+    log_info "Unified flake: ~/configs/nix/flake.nix"
     echo
 
     log_info "Next steps:"
@@ -360,10 +360,10 @@ main() {
             echo
             log_info "Commands (or use aliases):"
             log_info "• System rebuild (includes home-manager):"
-            log_info "    sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd"
+            log_info "    sudo nixos-rebuild switch --flake ~/configs/nix#laptop-amd"
             log_info "    Alias: nos (update the alias in fish/zsh config to your host)"
             log_info "• Quick home-manager only update:"
-            log_info "    home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
+            log_info "    home-manager switch --flake ~/configs/nix#$(get_hm_user)"
             log_info "    Alias: hm"
             ;;
         darwin)
@@ -371,16 +371,16 @@ main() {
             echo
             log_info "Commands (or use aliases):"
             log_info "• System rebuild (includes home-manager):"
-            log_info "    darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac"
+            log_info "    darwin-rebuild switch --flake ~/configs/nix#work-mac"
             log_info "    Alias: nom"
             log_info "• Quick home-manager only update:"
-            log_info "    home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
+            log_info "    home-manager switch --flake ~/configs/nix#$(get_hm_user)"
             log_info "    Alias: hm"
             ;;
         linux)
             log_info "• Restart your terminal or run: exec \$SHELL"
             log_info "• To update home-manager:"
-            log_info "    home-manager switch --flake ~/.dotfiles/nix#$(get_hm_user)"
+            log_info "    home-manager switch --flake ~/configs/nix#$(get_hm_user)"
             log_info "    Alias: hm"
             ;;
     esac

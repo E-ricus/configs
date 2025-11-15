@@ -161,14 +161,14 @@ Shell configurations use hostname detection for dynamic commands:
 
 **Fish:**
 ```fish
-hm = "home-manager switch --flake ~/.dotfiles/nix#$USER-(hostname)"
-nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#(hostname)"
+hm = "home-manager switch --flake ~/configs/nix#$USER-(hostname)"
+nos = "sudo nixos-rebuild switch --flake ~/configs/nix#(hostname)"
 ```
 
 **Zsh:**
 ```zsh
-hm = "home-manager switch --flake ~/.dotfiles/nix#$USER-$HOST"
-nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#$HOST"
+hm = "home-manager switch --flake ~/configs/nix#$USER-$HOST"
+nos = "sudo nixos-rebuild switch --flake ~/configs/nix#$HOST"
 ```
 
 ### Example: Host-Specific Home Configuration

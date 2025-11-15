@@ -24,16 +24,16 @@
         ff = "fzf --preview 'bat --style=numbers --color=always {}'";
 
         # Home-manager (standalone - fast iteration)
-        hm = "home-manager switch --flake ~/.dotfiles/nix#$USER-$HOST";
-        hmu = "cd ~/.dotfiles/nix && nix flake update && home-manager switch --flake .#$USER-$HOST";
+        hm = "home-manager switch --flake ~/configs/nix#$USER-$HOST";
+        hmu = "cd ~/configs/nix && nix flake update && home-manager switch --flake .#$USER-$HOST";
 
         # System rebuilds (includes home-manager)
         # Automatically uses current hostname
-        nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#$HOST";
-        nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#$HOST";
+        nos = "sudo nixos-rebuild switch --flake ~/configs/nix#$HOST";
+        nom = "sudo darwin-rebuild switch --flake ~/configs/nix#$HOST";
 
         # Combined (update flake + rebuild system)
-        nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#$HOST";
+        nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#$HOST";
 
         ngc = "nix-collect-garbage --delete-older-than 2d";
       };
