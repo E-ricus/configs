@@ -1,4 +1,4 @@
-# Dotfiles
+# config
 
 My personal configuration files for UNIX systems, managed either with nix and home-manager or symlinking.
 
@@ -62,7 +62,7 @@ For now, you can manually:
 2. Clone this repo
 3. Set up standalone home-manager
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 .dotfiles/
