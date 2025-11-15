@@ -28,6 +28,9 @@ function add_to_path() {
     fi
 }
 add_to_path "$HOME/.cargo/bin"
+# Mac annoying shit
+add_to_path "/opt/homebrew/bin"
+add_to_path "/etc/profiles/per-user/ericpuentes/bin"
 
 # Enhanced cd with zoxide
 zd() {

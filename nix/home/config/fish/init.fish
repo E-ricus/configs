@@ -15,7 +15,9 @@ function add_to_path -a path
 end
 
 add_to_path $HOME/.cargo/bin
+# Mac annoying shit
 add_to_path /opt/homebrew/bin
+add_to_path /etc/profiles/per-user/ericpuentes/bin
 
 # Vim keybindings
 fish_vi_key_bindings
