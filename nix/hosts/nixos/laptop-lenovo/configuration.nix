@@ -114,6 +114,17 @@
     # Gaming
     mangohud
     protonup-ng
+
+    # Steam GameScope launcher
+    (makeDesktopItem {
+      name = "steam-gamescope";
+      desktopName = "Steam (GameScope)";
+      comment = "Launch Steam in GameScope for optimized gaming";
+      exec = "/run/wrappers/bin/gamescope -e -- steam -gamepadui";
+      icon = "steam";
+      categories = ["Game"];
+      prefersNonDefaultGPU = true;
+    })
   ];
   # Game config
   programs.gamescope = {
@@ -125,11 +136,13 @@
       "-w 3840" # Game width
       "-h 2160" # Game height
       "-r 60" # Refresh rate (adjust to your display's max)
-      "-f" # Fullscreen
+      # "-f" # Fullscreen
       "--adaptive-sync"
+      "--hdr-enabled"
       "--rt"
     ];
   };
+  # Enable in settings -> inteface -> Enable GPU acceleration for web views, to get Bigpicture mode working in 4k
   programs.steam = {
     enable = true;
     gamescopeSession.enable = true;
@@ -174,7 +187,7 @@
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 7d";
+    options = "--delete-older-than 2d";
   };
 
   # System state version

@@ -22,7 +22,7 @@
 
       # System rebuilds (includes home-manager)
       # Change laptop-amd to your host: laptop-amd, laptop-lenovo, or vm-aarch64
-      nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd";
+      nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-lenovo";
       nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac";
 
       # Combined (update flake + rebuild system)

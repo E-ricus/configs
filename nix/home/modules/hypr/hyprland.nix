@@ -33,6 +33,16 @@ in {
         ",preferred,auto,auto"
       ];
 
+      # Comment if weird stuff
+      xwayland = {
+        force_zero_scaling = true;
+      };
+      env = [
+        "GDK_SCALE,2"
+        "QT_SCALE_FACTOR,2"
+        "XCURSOR_SIZE,32"
+      ];
+
       exec-once = [
         "waybar"
         "dunst"
