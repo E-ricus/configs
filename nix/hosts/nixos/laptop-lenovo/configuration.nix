@@ -109,6 +109,8 @@
     home-manager
     fish
 
+    wireguard-tools
+
     # Gaming
     mangohud
     protonup-ng

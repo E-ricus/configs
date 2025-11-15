@@ -9,6 +9,7 @@
     ./modules/hypr/hyprland.nix
     # Not available in mac yet
     ./modules/ghostty.nix
+    ./modules/wireguard.nix
   ];
 
   home = {

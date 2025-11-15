@@ -96,7 +96,7 @@
     shell = pkgs.fish; # managed by home-manager
   };
 
-  # System packages (minimal - user packages go in home-manager)
+  # System packages (user packages go in home-manager)
   environment.systemPackages = with pkgs; [
     git
     wget
@@ -104,6 +104,7 @@
     vim
     home-manager
     fish
+    wireguard-tools
   ];
 
   # Fonts
