@@ -42,9 +42,6 @@
 
       # Build tools
       cmake
-
-      # Shell
-      bash-completion
     ];
   };
 }
