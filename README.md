@@ -73,28 +73,56 @@ For now, you can manually:
 ├── nix/                # Unified Nix configurations
 │   ├── flake.nix       # Single unified flake for all hosts
 │   ├── flake.lock      # Dependency lock file
+│   ├── ARCHITECTURE.md # Detailed architecture documentation
 │   ├── lib/
 │   │   └── mksystem.nix  # Helper function for system creation
-│   ├── hosts/        # System configurations
+│   ├── modules/        # NixOS system modules (toggleable)
+│   │   ├── default.nix           # Imports all modules + sets defaults
+│   │   ├── base-system.nix       # Core system (bootloader, networking, nix)
+│   │   ├── locale-time.nix       # Locale and timezone
+│   │   ├── desktop-wayland.nix   # Wayland desktop (Hyprland, greetd)
+│   │   ├── media.nix             # Audio (PipeWire) + Bluetooth
+│   │   ├── graphics.nix          # Graphics drivers
+│   │   ├── minimal-packages.nix  # Essential packages + fonts
+│   │   ├── gaming.nix            # Gaming (Steam, GameScope)
+│   │   └── virtualization.nix    # QEMU/KVM virtualization
+│   ├── hosts/          # Host-specific configurations
 │   │   ├── nixos/
 │   │   │   ├── laptop-amd/
-│   │   │   │   ├── configuration.nix
+│   │   │   │   ├── configuration.nix  # NixOS system config
+│   │   │   │   ├── home.nix          # Home-manager config
 │   │   │   │   └── hardware-configuration.nix
 │   │   │   ├── laptop-lenovo/
 │   │   │   │   ├── configuration.nix
+│   │   │   │   ├── home.nix
 │   │   │   │   └── hardware-configuration.nix
 │   │   │   └── vm-aarch64/
 │   │   │       ├── configuration.nix
+│   │   │       ├── home.nix
 │   │   │       └── hardware-configuration.nix
 │   │   └── darwin/
 │   │       └── work-mac/
-│   │           └── configuration.nix
-│   ├── home/           # Home-manager configurations
-│   │   ├── common.nix  # Shared home-manager config
-│   │   ├── linux.nix   # Linux-specific home config
-│   │   ├── mac.nix     # macOS-specific home config
-│   │   ├── config/     # External config files (fish, zsh init, etc.)
-│   │   └── modules/    # Home-manager modules
+│   │           ├── configuration.nix
+│   │           └── home.nix
+│   ├── home/           # Home-manager modules (toggleable)
+│   │   ├── default.nix   # Imports all modules + sets defaults
+│   │   ├── common.nix    # Common packages (tools, dev tools)
+│   │   ├── config/       # External config files
+│   │   └── modules/      # Home-manager feature modules
+│   │       ├── git.nix
+│   │       ├── fish.nix
+│   │       ├── zsh.nix
+│   │       ├── alacritty.nix
+│   │       ├── tmux.nix
+│   │       ├── ghostty.nix
+│   │       ├── wireguard.nix
+│   │       ├── linux-packages.nix
+│   │       ├── mac-packages.nix
+│   │       ├── aerospace.nix  # macOS WM
+│   │       └── hypr/
+│   │           ├── hyprland.nix
+│   │           ├── walker.nix
+│   │           └── waybar.nix
 │   └── devshells/      # Separate dev environment flake
 │       └── flake.nix
 ├── bin/
@@ -334,24 +362,41 @@ cd ~/.dotfiles
 bin/symlinkmanager link all
 ```
 
-## Architecture: Unified Flake Design
+## Architecture: Modular Nix Configuration
 
-This configuration uses a **single unified flake** (`nix/flake.nix`) that:
+This configuration uses a **fully modular, opt-in architecture** with toggleable modules that can be enabled/disabled per host.
 
-- Defines all system configurations (NixOS x86/ARM + Darwin)
+For detailed architecture documentation, see [nix/ARCHITECTURE.md](nix/ARCHITECTURE.md)
+
+### Key Design Principles
+
+**Unified Flake Design:**
+- Single unified flake for all hosts (NixOS x86/ARM + Darwin)
 - Integrates home-manager as a module in system configs
-- Also exports standalone home-manager configurations
+- Exports standalone home-manager configurations for fast iteration
 - Shares a single `flake.lock` for consistency across all hosts
 
-### Benefits
+**Modular System:**
+- All modules follow a consistent opt-in pattern with `enable` options
+- Modules can have nested sub-options for fine-grained control
+- Modules can auto-enable their dependencies with smart defaults
+- DRY principle: Common configuration is defined once and reused
 
-✅ **Single source of truth** - All configurations in one place
-✅ **Consistent package versions** - Shared flake.lock ensures same nixpkgs version
-✅ **Home-manager integrated** - System rebuilds include home config
-✅ **Fast iteration option** - Standalone home-manager for quick changes
-✅ **Clean separation** - hosts/ vs home/ directories
-✅ **Multiple hardware configs** - Each system's hardware-configuration.nix versioned separately
-✅ **No git stash dance** - Can version different hardware configs for different machines
+### Module Pattern
+
+All modules follow this structure:
+
+```nix
+{config, lib, pkgs, ...}: {
+  options = {
+    module-name.enable = lib.mkEnableOption "description";
+  };
+
+  config = lib.mkIf config.module-name.enable {
+    # Configuration here
+  };
+}
+```
 
 ### The Hybrid Approach
 
@@ -360,10 +405,30 @@ This configuration uses a **single unified flake** (`nix/flake.nix`) that:
 - Creates new system generation
 - Use for: System-level changes, major updates
 
+```bash
+sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-amd
+# Or use alias: nos
+```
+
 **Home-Manager Only** (faster, targeted):
 - Updates only home configuration
 - Doesn't create system generation
 - Use for: Dotfile tweaks, package additions, alias changes
+
+```bash
+home-manager switch --flake ~/.dotfiles/nix#ericus-laptop-amd
+# Or use alias: hm
+```
+
+### Adding a New Host
+
+1. Create host directory: `hosts/nixos/new-host/`
+2. Create `configuration.nix` with enabled modules
+3. Create `home.nix` with enabled modules
+4. Add to `flake.nix` using `mkSystem` helper
+5. Copy `hardware-configuration.nix` after installation
+
+See [nix/ARCHITECTURE.md](nix/ARCHITECTURE.md) for detailed examples and module documentation.
 
 ##  Documentation
 
