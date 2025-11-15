@@ -110,50 +110,7 @@
     fish
 
     wireguard-tools
-
-    # Gaming
-    mangohud
-    protonup-ng
-
-    # Steam GameScope launcher
-    (makeDesktopItem {
-      name = "steam-gamescope";
-      desktopName = "Steam (GameScope)";
-      comment = "Launch Steam in GameScope for optimized gaming";
-      exec = "/run/wrappers/bin/gamescope -e -- steam -gamepadui";
-      icon = "steam";
-      categories = ["Game"];
-      prefersNonDefaultGPU = true;
-    })
   ];
-  # Game config
-  programs.gamescope = {
-    enable = true;
-    capSysNice = true;
-    args = [
-      "-W 3840" # Width
-      "-H 2160" # Height
-      "-w 3840" # Game width
-      "-h 2160" # Game height
-      "-r 60" # Refresh rate (adjust to your display's max)
-      # "-f" # Fullscreen
-      "--adaptive-sync"
-      "--hdr-enabled"
-      "--rt"
-    ];
-  };
-  # Enable in settings -> inteface -> Enable GPU acceleration for web views, to get Bigpicture mode working in 4k
-  programs.steam = {
-    enable = true;
-    gamescopeSession.enable = true;
-    remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-    dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-    localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game transfers
-  };
-  programs.gamemode.enable = true;
-  environment.sessionVariables = {
-    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "\${HOME}/.steam/root/compatibilitytools.d";
-  };
 
   # Fonts
   fonts.packages = with pkgs; [

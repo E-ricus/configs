@@ -75,6 +75,7 @@
         determinate = true;
         extraModules = [
           nixos-hardware.nixosModules.lenovo-legion-15ach6h
+          ./modules/gaming.nix
         ];
       };
 
