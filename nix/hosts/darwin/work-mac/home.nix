@@ -13,6 +13,17 @@
     username = "ericpuentes";
     homeDirectory = "/Users/ericpuentes";
     stateVersion = "25.05";
+
+    # Ensure nix and homebrew paths are in PATH for all shells
+    # This is needed because nix.enable = false in darwin configuration
+    # TODO: Verify why it stopped working
+    sessionPath = [
+      "/nix/var/nix/profiles/default/bin" # determinate's nix binaries
+      "/etc/profiles/per-user/ericpuentes/bin" # Home-manager packages
+      "/run/current-system/sw/bin" # Darwin system packages
+      "/opt/homebrew/bin" # Homebrew packages
+      "/opt/homebrew/sbin" # Homebrew system binaries
+    ];
   };
 
   programs.home-manager.enable = true;
