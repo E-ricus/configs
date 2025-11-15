@@ -127,8 +127,8 @@
 
     # Restart elephant service after home-manager activation
     # This ensures walker picks up new desktop applications
-    home.activation.restartElephant = config.lib.dag.entryAfter ["writeBoundary"] ''
-      $DRY_RUN_CMD systemctl --user restart elephant.service || true
+    home.activation.restartElephant = config.lib.dag.entryAfter ["reloadSystemd"] ''
+      $DRY_RUN_CMD ${pkgs.systemd}/bin/systemctl --user restart elephant.service
     '';
   };
 }
