@@ -4,7 +4,7 @@
   user,
   darwin ? false,
   determinate ? false,
-  extraModules ? [],
+  modules ? [],
 }: let
   pkgs = import inputs.nixpkgs {
     inherit system;
@@ -35,11 +35,11 @@
     then ../hosts/nixos/${hostname}/hardware-configuration.nix
     else null;
 
-  # Home-manager config based on user
+  # Home-manager config based on hostname
   homeConfig =
-    if user == "ericus"
-    then ../home/linux.nix
-    else ../home/mac.nix;
+    if !darwin
+    then ../hosts/nixos/${hostname}/home.nix
+    else ../hosts/darwin/${hostname}/home.nix;
 in
   systemFunc {
     inherit system;
@@ -48,34 +48,36 @@ in
       inherit inputs hostname user;
     };
 
-    modules = [
-      # Add hardware config for NixOS
-      (
-        if hardwareConfig != null
-        then hardwareConfig
-        else {}
-      )
+    modules =
+      [
+        # Add hardware config for NixOS
+        (
+          if hardwareConfig != null
+          then hardwareConfig
+          else {}
+        )
 
-      systemConfig
+        systemConfig
 
-      # Add dterminate system's nix
-      (
-        if determinate
-        then inputs.determinate.nixosModules.default
-        else {}
-      )
+        # Add determinate system's nix
+        (
+          if determinate
+          then inputs.determinate.nixosModules.default
+          else {}
+        )
 
-      # Integrate home-manager
-      home-manager-module
-      {
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
-        home-manager.users.${user} = import homeConfig;
-        home-manager.extraSpecialArgs = {
-          inherit inputs;
-          walker = inputs.walker or null;
-        };
-      }
-    ]
-    ++ extraModules;
+        # Integrate home-manager
+        home-manager-module
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.users.${user} = import homeConfig;
+          home-manager.extraSpecialArgs = {
+            inherit inputs;
+            walker = inputs.walker or null;
+          };
+        }
+      ]
+      ++ modules;
+    # Note: modules parameter is for extraModules specified in flake.nix
   }

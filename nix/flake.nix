@@ -63,8 +63,8 @@
         hostname = "laptop-amd";
         user = "ericus";
         determinate = true;
-        extraModules = [
-          ./modules/virtualization.nix
+        modules = [
+          ./modules
         ];
       };
 
@@ -73,9 +73,9 @@
         hostname = "laptop-lenovo";
         user = "ericus";
         determinate = true;
-        extraModules = [
+        modules = [
           nixos-hardware.nixosModules.lenovo-legion-15ach6h
-          ./modules/gaming.nix
+          ./modules
         ];
       };
 
@@ -83,6 +83,9 @@
         system = "aarch64-linux";
         hostname = "vm-aarch64";
         user = "ericus";
+        modules = [
+          ./modules
+        ];
       };
     };
 
@@ -97,19 +100,30 @@
     };
 
     # Standalone home-manager configurations (for quick iteration)
+    # Format: username-hostname
     homeConfigurations = {
-      "ericus" = home-manager.lib.homeManagerConfiguration {
-        # Dynamically select pkgs based on current system, fallback to x86_64-linux
-        pkgs = pkgsFor.${builtins.currentSystem or "x86_64-linux"};
+      "ericus-laptop-amd" = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor."x86_64-linux";
         extraSpecialArgs = {inherit inputs walker;};
-        modules = [./home/linux.nix];
+        modules = [./hosts/nixos/laptop-amd/home.nix];
       };
 
-      "ericpuentes" = home-manager.lib.homeManagerConfiguration {
-        # Dynamically select pkgs based on current system, fallback to aarch64-darwin
-        pkgs = pkgsFor.${builtins.currentSystem or "aarch64-darwin"};
+      "ericus-laptop-lenovo" = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor."x86_64-linux";
+        extraSpecialArgs = {inherit inputs walker;};
+        modules = [./hosts/nixos/laptop-lenovo/home.nix];
+      };
+
+      "ericus-vm-aarch64" = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor."aarch64-linux";
+        extraSpecialArgs = {inherit inputs walker;};
+        modules = [./hosts/nixos/vm-aarch64/home.nix];
+      };
+
+      "ericpuentes-work-mac" = home-manager.lib.homeManagerConfiguration {
+        pkgs = pkgsFor."aarch64-darwin";
         extraSpecialArgs = {inherit inputs;};
-        modules = [./home/mac.nix];
+        modules = [./hosts/darwin/work-mac/home.nix];
       };
     };
   };

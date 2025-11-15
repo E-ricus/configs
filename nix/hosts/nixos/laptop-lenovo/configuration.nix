@@ -9,7 +9,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Networking
-  networking.hostName = "nixos-${hostname}";
+  networking.hostName = "${hostname}";
   networking.networkmanager.enable = true;
 
   # Time zone and locale
@@ -146,6 +146,9 @@
     dates = "weekly";
     options = "--delete-older-than 2d";
   };
+
+  # Enable modules
+  gaming-config.enable = true;
 
   # System state version
   system.stateVersion = "25.05";

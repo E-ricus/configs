@@ -1,45 +1,53 @@
 {
   config,
   pkgs,
+  lib,
   ...
 }: {
-  programs.zsh = {
-    enable = true;
+  options = {
+    zsh-config.enable =
+      lib.mkEnableOption "enables zsh shell configuration";
+  };
 
-    shellAliases = {
-      e = "nvim";
-      czsh = "nvim ~/.zshrc";
-      cnvim = "cd $XDG_CONFIG_HOME/nvim/ && nvim";
-      ls = "eza -lh --group-directories-first --icons=auto";
-      lsa = "ls -a";
-      lt = "eza --tree --level=2 --long --icons --git";
-      lta = "lt -a";
-      ff = "fzf --preview 'bat --style=numbers --color=always {}'";
+  config = lib.mkIf config.zsh-config.enable {
+    programs.zsh = {
+      enable = true;
 
-      # Home-manager (standalone - fast iteration)
-      hm = "home-manager switch --flake ~/.dotfiles/nix#$USER";
-      hmu = "cd ~/.dotfiles/nix && nix flake update && home-manager switch --flake .#$USER";
+      shellAliases = {
+        e = "nvim";
+        czsh = "nvim ~/.zshrc";
+        cnvim = "cd $XDG_CONFIG_HOME/nvim/ && nvim";
+        ls = "eza -lh --group-directories-first --icons=auto";
+        lsa = "ls -a";
+        lt = "eza --tree --level=2 --long --icons --git";
+        lta = "lt -a";
+        ff = "fzf --preview 'bat --style=numbers --color=always {}'";
 
-      # System rebuilds (includes home-manager)
-      # Change laptop-amd to your host: laptop-amd, laptop-lenovo, or vm-aarch64
-      nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#laptop-lenovo";
-      nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#work-mac";
+        # Home-manager (standalone - fast iteration)
+        hm = "home-manager switch --flake ~/.dotfiles/nix#$USER-$HOST";
+        hmu = "cd ~/.dotfiles/nix && nix flake update && home-manager switch --flake .#$USER-$HOST";
 
-      # Combined (update flake + rebuild system)
-      nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#laptop-amd";
+        # System rebuilds (includes home-manager)
+        # Automatically uses current hostname
+        nos = "sudo nixos-rebuild switch --flake ~/.dotfiles/nix#$HOST";
+        nom = "sudo darwin-rebuild switch --flake ~/.dotfiles/nix#$HOST";
 
-      ngc = "nix-collect-garbage --delete-older-than 2d";
+        # Combined (update flake + rebuild system)
+        nosu = "cd ~/.dotfiles/nix && nix flake update && sudo nixos-rebuild switch --flake .#$HOST";
+
+        ngc = "nix-collect-garbage --delete-older-than 2d";
+      };
+
+      history = {
+        size = 5000;
+        path = "$HOME/.zsh_history";
+        ignoreDups = true;
+        ignoreSpace = true;
+        share = true;
+      };
+
+      # Import from external file (includes zinit!)
+      initContent = builtins.readFile ../config/zsh/init.zsh;
     };
-
-    history = {
-      size = 5000;
-      path = "$HOME/.zsh_history";
-      ignoreDups = true;
-      ignoreSpace = true;
-      share = true;
-    };
-
-    # Import from external file (includes zinit!)
-    initContent = builtins.readFile ../config/zsh/init.zsh;
   };
 }

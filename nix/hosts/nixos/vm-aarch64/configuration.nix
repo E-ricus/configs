@@ -9,7 +9,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Networking
-  networking.hostName = "nixos-${hostname}";
+  networking.hostName = "${hostname}";
   networking.networkmanager.enable = true;
 
   # Time zone and locale

@@ -1,0 +1,78 @@
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
+  options = {
+    linux-packages.enable =
+      lib.mkEnableOption "enables Linux-common packages and configuration";
+  };
+
+  config = lib.mkIf config.linux-packages.enable {
+    # Linux only packages
+    home.packages = with pkgs; [
+      # File managers
+      nautilus
+
+      # Browsers
+      firefox
+      brave
+      # Editors
+      # Neovim in common
+
+      # Theming
+      papirus-icon-theme
+
+      # Fonts
+      font-awesome
+
+      btop
+      vlc
+
+      # C/C++ nightmare
+      gcc
+      gnumake
+      #Develpment
+      podman-compose
+    ];
+
+    # linux only programs
+    programs.firefox.enable = true;
+    programs.nix-index = {
+      enable = true;
+      enableFishIntegration = true;
+      enableZshIntegration = true;
+    };
+
+    gtk = {
+      enable = true;
+      theme = {
+        name = "adw-gtk3-dark";
+        package = pkgs.adw-gtk3;
+      };
+      iconTheme = {
+        name = "Papirus-Dark";
+        package = pkgs.papirus-icon-theme;
+      };
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+    };
+
+    dconf = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
+      settings = {
+        "org/gnome/desktop/interface" = {
+          color-scheme = "prefer-dark";
+        };
+      };
+    };
+
+    qt = {
+      enable = true;
+      platformTheme.name = "gtk";
+    };
+    # Dev only linux
+    services.podman.enable = true;
+  };
+}
