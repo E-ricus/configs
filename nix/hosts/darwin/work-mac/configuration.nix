@@ -1,6 +1,7 @@
 {
   pkgs,
   user,
+  hostname,
   ...
 }: {
   # Override fish to skip tests on macOS due to regression (https://github.com/NixOS/nixpkgs/issues/461406)
@@ -68,6 +69,7 @@
     ];
   };
 
+  networking.hostName = "${hostname}";
   users.knownUsers = [user];
   system.primaryUser = user;
   users.users.${user} = {

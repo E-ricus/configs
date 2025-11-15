@@ -16,6 +16,9 @@ else
     eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/lib.sh)"
 fi
 
+# Configuration
+TARGET_USER="ericus"  # Change this if you use a different username in your flake
+
 CONFIGS_DIR="$HOME/configs"
 
 setup_nixos() {
@@ -36,29 +39,25 @@ setup_nixos() {
     # Prompt user for architecture/system selection
     echo
     log_info "Select your system configuration:"
-    echo "  1) laptop-amd (Intel/AMD 64-bit)"
-    echo "  2) laptop-lenovo (Intel/AMD 64-bit) and nvidia graphics"
+    echo "  1) laptop-amd (AMD 64-bit)"
+    echo "  2) laptop-lenovo (AMD 64-bit and nvidia graphics)"
     echo "  3) vm-aarch64 (ARM 64-bit)"
     echo
 
     local flake_config=""
-    local hw_config_dest=""
     while true; do
         read -p "Enter selection (1, 2, or 3): " arch_selection
         case $arch_selection in
             1)
                 flake_config="laptop-amd"
-                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/laptop-amd/hardware-configuration.nix"
                 break
                 ;;
             2)
                 flake_config="laptop-lenovo"
-                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/laptop-lenovo/hardware-configuration.nix"
                 break
                 ;;
             3)
                 flake_config="vm-aarch64"
-                hw_config_dest="$CONFIGS_DIR/nix/hosts/nixos/vm-aarch64/hardware-configuration.nix"
                 break
                 ;;
             *)
@@ -68,24 +67,6 @@ setup_nixos() {
     done
 
     log_info "Using flake configuration: $flake_config"
-    echo
-
-    # Copy hardware-configuration.nix from /etc/nixos to configs
-    log_info "Copying hardware-configuration.nix to configs..."
-    if [ -f /etc/nixos/hardware-configuration.nix ]; then
-        # Ensure destination directory exists
-        mkdir -p "$(dirname "$hw_config_dest")"
-        cp /etc/nixos/hardware-configuration.nix "$hw_config_dest"
-        log_success "Hardware configuration copied to configs"
-    else
-        log_error "Hardware configuration not found at /etc/nixos/hardware-configuration.nix"
-        log_error "Cannot proceed without hardware configuration"
-        exit 1
-    fi
-
-    echo
-    log_info "Hardware configuration is now in:"
-    log_info "  $hw_config_dest"
     echo
 
     # Rebuild using flake
@@ -106,29 +87,29 @@ setup_nixos() {
 
     # Set user password
     echo
-    log_info "Setting password for user 'ericus'..."
-    if passwd ericus; then
+    log_info "Setting password for user '$TARGET_USER'..."
+    if passwd "$TARGET_USER"; then
         log_success "User password set successfully"
     else
-        log_warning "Failed to set user password. You can set it later with: passwd ericus"
+        log_warning "Failed to set user password. You can set it later with: passwd $TARGET_USER"
     fi
 
     # Clone configs to user's home and set permissions
     echo
     log_info "Setting up configs in user home directory..."
 
-    USER_CONFIGS="/home/ericus/configs"
+    USER_CONFIGS="/home/$TARGET_USER/configs"
     if [ ! -d "$USER_CONFIGS" ]; then
-        log_info "Cloning configs to /home/ericus/configs..."
+        log_info "Cloning configs to /home/$TARGET_USER/configs..."
         git clone https://github.com/e-ricus/configs.git "$USER_CONFIGS"
 
         # Set ownership to user
-        chown -R ericus:users "$USER_CONFIGS"
-        log_success "Configs cloned and ownership set to ericus"
+        chown -R "$TARGET_USER:users" "$USER_CONFIGS"
+        log_success "Configs cloned and ownership set to $TARGET_USER"
     else
         log_info "Configs already exist at $USER_CONFIGS"
         # Ensure correct ownership anyway
-        chown -R ericus:users "$USER_CONFIGS"
+        chown -R "$TARGET_USER:users" "$USER_CONFIGS"
     fi
 
     # Clean up root's configs
@@ -139,8 +120,8 @@ setup_nixos() {
     fi
 
     echo
-    log_success "Setup complete! Configs are ready at /home/ericus/configs"
-    log_info "When you login as ericus, you can use the 'hm' and 'nos' aliases"
+    log_success "Setup complete! Configs are ready at /home/$TARGET_USER/configs"
+    log_info "When you login as $TARGET_USER, you can use the 'hm' and 'nos' aliases"
 }
 
 setup_darwin() {
@@ -200,69 +181,12 @@ setup_linux() {
     #   1. Check if Nix is installed, if not fail and prompt to install with Determinate Systems
     #   2. Ensure git is installed
     #   3. Clone configs repository if not present
-    #   4. Set up standalone home-manager configuration
-    #   5. Apply home-manager switch --flake ~/configs/nix#ericus
+    #   4. Apply standalone home-manager switch --flake ~/configs/nix#{target-home-config}
 
     log_error "Other Linux distributions are not yet supported in this bootstrap script"
     log_info "Please install Nix manually using Determinate Systems installer:"
     log_info "  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
     exit 1
-}
-
-setup_home_manager() {
-    local system=$(detect_system)
-
-    # For NixOS and Darwin, home-manager is integrated in system rebuild
-    if [ "$system" = "nixos" ] || [ "$system" = "darwin" ]; then
-        log_info "=== Home-manager setup ==="
-        log_success "home-manager is already integrated in your system configuration"
-        log_info "It was included in the system rebuild"
-        echo
-        log_info "Optional: You can also use standalone home-manager for quick iterations:"
-        log_info "  home-manager switch --flake ~/configs/nix#$(get_hm_user)"
-        echo
-        return 0
-    fi
-
-    # For regular Linux, set up standalone home-manager
-    log_info "=== Setting up standalone home-manager ==="
-
-    # Check if unified flake exists
-    if [ ! -f "$CONFIGS_DIR/nix/flake.nix" ]; then
-        log_error "Unified flake not found at $CONFIGS_DIR/nix/flake.nix"
-        log_error "Cannot proceed with home-manager setup"
-        return 1
-    fi
-
-    # Determine which user configuration to use
-    local hm_user=$(get_hm_user)
-    log_info "Using home-manager configuration for: $hm_user"
-
-    # Check if the user configuration exists
-    local user_config=""
-    case $system in
-        linux)
-            user_config="$CONFIGS_DIR/nix/home/linux.nix"
-            ;;
-    esac
-
-    if [ ! -f "$user_config" ]; then
-        log_error "User configuration not found: $user_config"
-        return 1
-    fi
-
-    # Apply home-manager configuration directly from unified flake
-    log_info "Applying home-manager configuration..."
-    log_info "This may take several minutes on first run..."
-    echo
-
-    if home-manager switch --flake "$CONFIGS_DIR/nix#$hm_user"; then
-        log_success "home-manager configured successfully"
-    else
-        log_error "home-manager switch failed!"
-        log_info "You can try manually with: home-manager switch --flake ~/configs/nix#$hm_user"
-        return 1
-    fi
 }
 
 setup_symlinks() {
@@ -319,20 +243,9 @@ main() {
             exit 1
             ;;
     esac
-    
+
     echo
 
-    # Setup home-manager (integrated for NixOS/Darwin, standalone for Linux)
-    if ! setup_home_manager; then
-        log_error "home-manager setup failed!"
-        log_warning "You may need to fix configuration errors and run manually"
-        echo
-        log_info "After fixing, run: home-manager switch --flake ~/configs/nix#$(get_hm_user)"
-        exit 1
-    fi
-    
-    echo
-    
     # Setup config symlinks (common for all hosts)
     if ! setup_symlinks; then
         log_error "Config symlinking failed!"

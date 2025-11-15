@@ -17,7 +17,7 @@ else
 fi
 
 # Configuration
-TARGET_USER="ericus"
+TARGET_USER="ericus"  # Change this if you use a different username in your flake
 TARGET_UID="1000"
 TARGET_GID="100"
 GITHUB_USER="e-ricus"
@@ -228,7 +228,7 @@ mount_partitions() {
 generate_hardware_config() {
     log_info "=== Generating Hardware Configuration ==="
     echo
-    
+
     log_info "Running nixos-generate-config..."
     if nixos-generate-config --root /mnt; then
         log_success "Configuration generated successfully"
@@ -236,20 +236,108 @@ generate_hardware_config() {
         log_error "Failed to generate configuration!"
         exit 1
     fi
-    
+
     echo
     log_info "Verifying generated files..."
-    
+
     if [ ! -f /mnt/etc/nixos/hardware-configuration.nix ]; then
         log_error "hardware-configuration.nix not found!"
         exit 1
     fi
     log_success "✓ /mnt/etc/nixos/hardware-configuration.nix"
-    
+
     echo
     log_info "Generated hardware configuration contains:"
     echo
     grep -E "(fileSystems|swapDevices|boot\.loader)" /mnt/etc/nixos/hardware-configuration.nix || true
+    echo
+}
+
+configure_wifi() {
+    log_info "=== WiFi Configuration ==="
+    echo
+
+    log_info "WiFi configuration is needed if:"
+    log_info "  • You're installing on a laptop or device without ethernet"
+    log_info "  • You need network access after the first reboot"
+    echo
+    log_info "WiFi is NOT needed if:"
+    log_info "  • Installing on a VM"
+    log_info "  • Installing on a device with ethernet connection"
+    echo
+
+    if confirm "Do you need WiFi configured for the installed system?"; then
+        echo
+        read -p "Enter WiFi network SSID: " WIFI_SSID
+
+        if [ -z "$WIFI_SSID" ]; then
+            log_error "SSID cannot be empty!"
+            exit 1
+        fi
+
+        read -sp "Enter WiFi password: " WIFI_PSK
+        echo
+
+        if [ -z "$WIFI_PSK" ]; then
+            log_error "Password cannot be empty!"
+            exit 1
+        fi
+
+        log_success "WiFi will be configured for network: $WIFI_SSID"
+        CONFIGURE_WIFI=true
+    else
+        log_info "Skipping WiFi configuration"
+        CONFIGURE_WIFI=false
+    fi
+}
+
+add_wifi_to_config() {
+    if [ "$CONFIGURE_WIFI" = false ]; then
+        return
+    fi
+
+    log_info "=== Adding WiFi to Configuration ==="
+    echo
+
+    local config_file="/mnt/etc/nixos/configuration.nix"
+
+    if [ ! -f "$config_file" ]; then
+        log_error "Configuration file not found: $config_file"
+        exit 1
+    fi
+
+    # Create WiFi configuration snippet
+    local wifi_config="  # WiFi configuration
+  networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.wireless.networks = {
+    \"$WIFI_SSID\" = {
+      psk = \"$WIFI_PSK\";
+    };
+  };"
+
+    # Find the line with "networking.hostName" (commented or not) and add WiFi config after it
+    # If that line doesn't exist, add it after the boot.loader section
+    if grep -q "networking.hostName" "$config_file"; then
+        # Add after networking.hostName line
+        sed -i "/networking\.hostName/a\\
+$wifi_config" "$config_file"
+    elif grep -q "boot\.loader" "$config_file"; then
+        # Add after the last boot.loader line
+        local last_boot_line=$(grep -n "boot\.loader" "$config_file" | tail -1 | cut -d: -f1)
+        sed -i "${last_boot_line}a\\
+\\
+$wifi_config" "$config_file"
+    else
+        # Fallback: add after the imports section closing bracket
+        sed -i "/];/a\\
+\\
+$wifi_config" "$config_file"
+    fi
+
+    log_success "WiFi configuration added to $config_file"
+    echo
+    log_info "WiFi section added:"
+    echo "$wifi_config"
     echo
 }
 
@@ -306,6 +394,7 @@ main() {
     log_info "  • Help you partition your disk interactively"
     log_info "  • Format and mount all partitions"
     log_info "  • Generate hardware configuration"
+    log_info "  • Optionally configure WiFi for the installed system"
     log_info "  • Install NixOS with generated config"
     echo
     
@@ -351,6 +440,16 @@ main() {
     log_info "=== Phase 2: Hardware Configuration ==="
     echo
     generate_hardware_config
+
+    echo
+
+    # Phase 3.5: Configure WiFi (optional)
+    configure_wifi
+
+    echo
+
+    # Add WiFi to configuration if needed
+    add_wifi_to_config
 
     echo
 

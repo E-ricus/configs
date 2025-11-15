@@ -80,31 +80,14 @@ nix/
 ├── modules/                     # NixOS system modules
 │   ├── default.nix             # Imports all modules + sets defaults
 │   ├── base-system.nix         # Core system (bootloader, networking, nix)
-│   ├── locale-time.nix         # Locale and timezone
-│   ├── desktop-wayland.nix     # Wayland desktop (Hyprland, greetd, etc.)
-│   ├── media.nix               # Audio (PipeWire) + Bluetooth
-│   ├── graphics.nix            # Graphics drivers
-│   ├── minimal-packages.nix    # Essential packages + fonts
-│   ├── gaming.nix              # Gaming (Steam, GameScope, etc.)
-│   └── virtualization.nix      # QEMU/KVM virtualization
+│   ├── (other system modules)
 ├── home/                        # Home-manager configuration
 │   ├── default.nix             # Imports all modules + sets defaults
 │   ├── common.nix              # Common packages (tools, dev tools)
 │   ├── modules/
 │   │   ├── git.nix             # Git configuration
 │   │   ├── fish.nix            # Fish shell
-│   │   ├── zsh.nix             # Zsh shell
-│   │   ├── alacritty.nix       # Alacritty terminal
-│   │   ├── tmux.nix            # Tmux
-│   │   ├── ghostty.nix         # Ghostty terminal
-│   │   ├── wireguard.nix       # WireGuard VPN helpers
-│   │   ├── linux-packages.nix  # Linux-specific packages
-│   │   ├── mac-packages.nix    # macOS-specific packages
-│   │   ├── aerospace.nix       # Aerospace (macOS WM)
-│   │   └── hypr/
-│   │       ├── hyprland.nix    # Hyprland config (imports walker + waybar)
-│   │       ├── walker.nix      # Walker launcher
-│   │       └── waybar.nix      # Waybar status bar
+│   │   ├── (other home modules)
 │   └── config/                 # External config files
 └── hosts/
     ├── nixos/
@@ -112,8 +95,7 @@ nix/
     │   │   ├── configuration.nix    # NixOS system config
     │   │   ├── home.nix            # Home-manager config
     │   │   └── hardware-configuration.nix
-    │   ├── laptop-amd/
-    │   └── vm-aarch64/
+    │   ├── (other hosts)
     └── darwin/
         └── work-mac/
             ├── configuration.nix
@@ -209,12 +191,7 @@ In `/modules/default.nix`:
 - `minimal-packages` - Essential packages + fonts
 
 **Disabled by Default:**
-- `desktop-wayland` - Wayland desktop environment
-- `graphics-config` - Graphics drivers
-- `media-config.audio` - PipeWire audio
-- `media-config.bluetooth` - Bluetooth
-- `gaming-config` - Gaming setup
-- `virtualization-config` - QEMU/KVM
+all other modules
 
 ### Module Descriptions
 
@@ -434,21 +411,7 @@ Automatically constructs paths:
    feature-config.enable = true;
    ```
 
-## Key Design Decisions
-
-### Why This Architecture?
-
-1. **DRY (Don't Repeat Yourself):** Common configuration is defined once and reused
-2. **Explicit over Implicit:** Each host clearly declares what it needs
-3. **Flexibility:** Easy to enable/disable features per host
-4. **Scalability:** Adding new hosts or modules is straightforward
-5. **Maintainability:** Changes to common config propagate automatically
-
-### Module Granularity
-
-- **Larger modules** for tightly coupled features (e.g., media = audio + bluetooth)
-- **Smaller modules** for independently useful features (e.g., git, tmux)
-- **Sub-options** for optional parts of a feature (e.g., graphics.enable32Bit)
+## important notes
 
 ### Imports in Conditional Blocks
 
