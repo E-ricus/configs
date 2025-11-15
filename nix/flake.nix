@@ -63,6 +63,9 @@
         hostname = "laptop-amd";
         user = "ericus";
         determinate = true;
+        extraModules = [
+          ./modules/virtualization.nix
+        ];
       };
 
       laptop-lenovo = mkSystem {

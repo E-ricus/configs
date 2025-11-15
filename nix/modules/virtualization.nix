@@ -12,10 +12,6 @@
       package = pkgs.qemu_kvm;
       runAsRoot = false;
       swtpm.enable = true; # TPM emulation for Windows 11
-      ovmf = {
-        enable = true; # UEFI support
-        packages = [pkgs.OVMFFull.fd];
-      };
     };
   };
 
@@ -30,7 +26,7 @@
     spice # SPICE protocol for better graphics
     spice-gtk # SPICE client
     spice-protocol
-    win-virtio # Windows VirtIO drivers ISO
+    virtio-win # Windows VirtIO drivers ISO
     win-spice # Windows SPICE tools
   ];
 
