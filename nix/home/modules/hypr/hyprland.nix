@@ -42,7 +42,10 @@
         enable = true;
         package = pkgs.hyprland;
         xwayland.enable = true;
-        systemd.enable = true;
+        systemd = {
+          enable = true;
+          variables = ["--all"];
+        };
         settings = {
           "$mod" = "SUPER";
           "$terminal" = "alacritty";
@@ -57,7 +60,8 @@
           exec-once = [
             "waybar"
             "hyprpaper"
-            # for walker menu, it might not be needed.
+            # for walker menu, it might not be needed:
+            "elephant"
             "walker --gapplication-service"
           ];
 
@@ -177,15 +181,21 @@
         };
       };
 
+      wayland.windowManager.hyprland.settings.env =
+        [
+          # TODO: This is specific for the lenovo laptop, make it configurable if needed
+          "WLR_DRM_DEVICES,/dev/dri/card1" #Prefer iGPU
+        ]
+        ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable [
+          "GDK_SCALE,2"
+          "QT_SCALE_FACTOR,2"
+          "XCURSOR_SIZE,32"
+        ];
+
       # Conditional XWayland zero scaling
       wayland.windowManager.hyprland.settings.xwayland = lib.mkIf config.hyprland-config.xwayland-zero-scale.enable {
         force_zero_scaling = true;
       };
-      wayland.windowManager.hyprland.settings.env = lib.mkIf config.hyprland-config.xwayland-zero-scale.enable [
-        "GDK_SCALE,2"
-        "QT_SCALE_FACTOR,2"
-        "XCURSOR_SIZE,32"
-      ];
 
       # Nice common actions (volume, brightness)
       services.swayosd.enable = true;
@@ -197,35 +207,27 @@
       services.mako = {
         enable = true;
         settings = {
-          "actionable=true" = {
-            anchor = "top-left";
-          };
           actions = true;
-          iconPath = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
+          icon-path = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
           font = "JetBrainsMono Nerd Font 10";
           width = 300;
           height = 100;
           margin = "20,30";
           padding = "10";
           anchor = "top-right";
-          backgroundColor = "#1e1e2e";
-          textColor = "#cdd6f4";
-          borderColor = "#89b4fa";
-          borderSize = 2;
-          defaultTimeout = 10000;
+          background-color = "#1e1e2e";
+          text-color = "#cdd6f4";
+          border-color = "#89b4fa";
+          default-timeout = 10000;
 
           "urgency=low" = {
-            backgroundColor = "#1e1e2e";
-            textColor = "#cdd6f4";
-            borderColor = "#89b4fa";
-            defaultTimeout = 5000;
+            default-timeout = 5000;
           };
 
           "urgency=critical" = {
-            backgroundColor = "#1e1e2e";
-            textColor = "#f38ba8";
-            borderColor = "#f38ba8";
-            defaultTimeout = 20000;
+            text-color = "#f38ba8";
+            border-color = "#f38ba8";
+            default-timeout = 20000;
           };
         };
       };

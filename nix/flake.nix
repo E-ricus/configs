@@ -15,8 +15,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
-
     # Custom inputs
     elephant.url = "github:abenz1267/elephant";
     walker = {
@@ -32,7 +30,6 @@
     determinate,
     home-manager,
     nix-darwin,
-    nixos-hardware,
     walker,
     ...
   } @ inputs: let
@@ -74,7 +71,6 @@
         user = "ericus";
         determinate = true;
         modules = [
-          nixos-hardware.nixosModules.lenovo-legion-15ach6h
           ./modules
         ];
       };

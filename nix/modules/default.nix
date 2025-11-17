@@ -11,6 +11,7 @@
     # Optional features
     ./gaming.nix
     ./virtualization.nix
+    ./hybrid-gpu.nix
   ];
 
   # Set module defaults
@@ -31,4 +32,9 @@
   # Optional features (disabled by default)
   gaming-config.enable = lib.mkDefault false;
   virtualization-config.enable = lib.mkDefault false;
+
+  # Hybrid GPU configuration (disabled by default)
+  hybrid-gpu.enable = lib.mkDefault false;
+  hybrid-gpu.nvidiaOnly.enable = lib.mkDefault true;
+  hybrid-gpu.batterySaver.enable = lib.mkDefault true;
 }
