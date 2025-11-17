@@ -16,6 +16,8 @@
 
   config = let
     sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
+
+    brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/hypr/brightness-control.sh);
   in
     lib.mkIf config.hyprland-config.enable {
       # Enable walker and waybar by default when hyprland is enabled
@@ -32,6 +34,8 @@
         hyprpaper
         networkmanagerapplet
         pavucontrol
+        brightnessctl
+        libnotify
       ];
 
       wayland.windowManager.hyprland = {
@@ -52,10 +56,9 @@
 
           exec-once = [
             "waybar"
-            "dunst"
             "hyprpaper"
             # for walker menu, it might not be needed.
-            # "walker --gapplication-service"
+            "walker --gapplication-service"
           ];
 
           general = {
@@ -160,8 +163,11 @@
             ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
 
             # Brightness
-            ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-            ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
+            # swayosd not working nicely with multiple gpus
+            # ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
+            # ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
+            ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"
+            ", XF86MonBrightnessDown, exec, ${brightnessScript} lower"
           ];
 
           bindm = [
@@ -188,38 +194,38 @@
       programs.satty.enable = true;
 
       # Notifications
-      services.dunst = {
+      services.mako = {
         enable = true;
-        iconTheme = {
-          name = "Papirus-Dark";
-          package = pkgs.papirus-icon-theme;
-        };
         settings = {
-          global = {
-            font = "JetBrainsMono Nerd Font 10";
-            geometry = "300x5-30+20";
-            origin = "top-right";
-            transparency = 10;
-            frame_color = "#89b4fa";
-            frame_width = 2;
+          "actionable=true" = {
+            anchor = "top-left";
+          };
+          actions = true;
+          iconPath = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
+          font = "JetBrainsMono Nerd Font 10";
+          width = 300;
+          height = 100;
+          margin = "20,30";
+          padding = "10";
+          anchor = "top-right";
+          backgroundColor = "#1e1e2e";
+          textColor = "#cdd6f4";
+          borderColor = "#89b4fa";
+          borderSize = 2;
+          defaultTimeout = 10000;
+
+          "urgency=low" = {
+            backgroundColor = "#1e1e2e";
+            textColor = "#cdd6f4";
+            borderColor = "#89b4fa";
+            defaultTimeout = 5000;
           };
 
-          urgency_low = {
-            background = "#1e1e2e";
-            foreground = "#cdd6f4";
-            timeout = 5;
-          };
-
-          urgency_normal = {
-            background = "#1e1e2e";
-            foreground = "#cdd6f4";
-            timeout = 10;
-          };
-
-          urgency_critical = {
-            background = "#1e1e2e";
-            foreground = "#f38ba8";
-            timeout = 20;
+          "urgency=critical" = {
+            backgroundColor = "#1e1e2e";
+            textColor = "#f38ba8";
+            borderColor = "#f38ba8";
+            defaultTimeout = 20000;
           };
         };
       };
