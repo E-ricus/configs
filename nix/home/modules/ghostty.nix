@@ -12,6 +12,7 @@
   config = lib.mkIf config.ghostty-config.enable {
     programs.ghostty = {
       enable = true;
+      package = if pkgs.stdenv.isLinux then pkgs.ghostty else null;
 
       # Enable shell integration
       enableFishIntegration = true;

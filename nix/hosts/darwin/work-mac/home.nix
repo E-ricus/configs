@@ -33,6 +33,7 @@
   fish-config.enable = true;
   zsh-config.enable = true;
   alacritty-config.enable = true;
+  ghostty-config.enable = true;
   tmux-config.enable = true;
   mac-packages.enable = true;
   aerospace-config.enable = true;
