@@ -6,6 +6,12 @@ set -x EDITOR nvim
 set -x KUBE_EDITOR nvim
 set -x FZF_DEFAULT_COMMAND 'fd --type file --hidden --no-ignore'
 
+# Add default fish completions to path (including git completions)
+# Workaround for fish 4.2.0 regression where nix doesn't add this by default
+# See: https://github.com/NixOS/nixpkgs/issues/462025
+if test -d "$__fish_data_dir/completions"
+    set -gx fish_complete_path "$__fish_data_dir/completions" $fish_complete_path
+end
 
 # TODO: Integrate better with nix these
 function add_to_path -a path
