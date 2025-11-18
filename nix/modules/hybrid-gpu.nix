@@ -30,10 +30,6 @@ in {
           Find yours with: lspci | grep VGA
         '';
       };
-
-      # Enable battery saver mode specialization (AMD only)
-      batterySaver.enable = lib.mkEnableOption "battery saver mode specialization (AMD iGPU only)";
-
       # Enable nvidia-only mode specialization
       nvidiaOnly.enable = lib.mkEnableOption "nvidia-only mode specialization";
     };
@@ -118,27 +114,6 @@ in {
               reverseSync.enable = lib.mkForce false;
             };
           };
-        };
-      };
-
-      # BATTERY SAVER MODE
-      battery-saver = lib.mkIf cfg.batterySaver.enable {
-        inheritParentConfig = true;
-        configuration = {
-          system.nixos.tags = ["battery-saver"];
-          services.xserver.videoDrivers = lib.mkForce ["modesetting"];
-          hardware.nvidia = {
-            prime = {
-              offload.enable = lib.mkForce false;
-              offload.enableOffloadCmd = lib.mkForce false;
-            };
-            powerManagement = {
-              enable = lib.mkForce false;
-              finegrained = lib.mkForce false;
-            };
-          };
-          # Blacklist NVIDIA modules to prevent loading
-          boot.blacklistedKernelModules = ["nvidia" "nvidia_drm" "nvidia_modeset" "nvidia_uvm" "nouveau"];
         };
       };
     };

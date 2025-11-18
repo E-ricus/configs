@@ -18,6 +18,7 @@
     sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
 
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/hypr/brightness-control.sh);
+    volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/hypr/volume-control.sh);
   in
     lib.mkIf config.hyprland-config.enable {
       # Enable walker and waybar by default when hyprland is enabled
@@ -162,14 +163,11 @@
             "SHIFT, Print, exec, grim - | ${sattyCmd}"
 
             # Volume
-            ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
-            ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
-            ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
+            ", XF86AudioRaiseVolume, exec, ${volumeScript} raise"
+            ", XF86AudioLowerVolume, exec, ${volumeScript} lower"
+            ", XF86AudioMute, exec, ${volumeScript} toggle-mute"
 
             # Brightness
-            # swayosd not working nicely with multiple gpus
-            # ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-            # ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
             ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"
             ", XF86MonBrightnessDown, exec, ${brightnessScript} lower"
           ];
@@ -196,9 +194,6 @@
       wayland.windowManager.hyprland.settings.xwayland = lib.mkIf config.hyprland-config.xwayland-zero-scale.enable {
         force_zero_scaling = true;
       };
-
-      # Nice common actions (volume, brightness)
-      services.swayosd.enable = true;
 
       # Screenshots
       programs.satty.enable = true;

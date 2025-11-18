@@ -36,5 +36,4 @@
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;
   hybrid-gpu.nvidiaOnly.enable = lib.mkDefault true;
-  hybrid-gpu.batterySaver.enable = lib.mkDefault true;
 }
