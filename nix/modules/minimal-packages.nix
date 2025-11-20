@@ -19,6 +19,7 @@
       home-manager
       fish
       wireguard-tools
+      usbutils
     ];
 
     # Enable fish shell system-wide

@@ -32,4 +32,17 @@
     nvidiaOnly.enable = true; # Boot into nvidia-only mode when needed
   };
   gaming-config.enable = true;
+
+  # Fingerprint
+  security.polkit.enable = true;
+  services.fprintd = {
+    enable = true;
+    tod.enable = true;
+    # driver for elantech sensor
+    tod.driver = pkgs.libfprint-2-tod1-elan;
+  };
+  security.pam.services = {
+    sudo.fprintAuth = true;
+    hyprlock.fprintAuth = true;
+  };
 }
