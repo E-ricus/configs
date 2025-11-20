@@ -19,6 +19,8 @@
 
   # Enable modules for this host
   git-config.enable = true;
+  editors.enable = true;
+  langs.enable = true;
   fish-config.enable = true;
   zsh-config.enable = true;
   alacritty-config.enable = true;

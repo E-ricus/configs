@@ -23,6 +23,8 @@
     enable = true;
     xwayland-zero-scale.enable = true;
   }; # Also enables walker and waybar by default
+  editors.enable = true;
+  langs.enable = true;
   fish-config.enable = true;
   zsh-config.enable = true;
   alacritty-config.enable = true;

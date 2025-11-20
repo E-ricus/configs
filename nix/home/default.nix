@@ -1,11 +1,15 @@
 {lib, ...}: {
   imports = [
-    # Common configuration
-    ./common.nix
-
     # Platform-specific packages
     ./modules/linux-packages.nix
     ./modules/mac-packages.nix
+
+    # Development tools
+    ./modules/dev.nix
+    ./modules/git.nix
+    ./modules/tmux.nix
+    ./modules/editors.nix
+    ./modules/langs.nix
 
     # Terminal emulators
     ./modules/alacritty.nix
@@ -14,10 +18,6 @@
     # Shell configurations
     ./modules/fish.nix
     ./modules/zsh.nix
-
-    # Development tools
-    ./modules/git.nix
-    ./modules/tmux.nix
 
     # Hyprland (imports walker and waybar automatically)
     ./modules/hypr/hyprland.nix
@@ -30,8 +30,7 @@
   ];
 
   # Set module defaults
-  # Common is enabled by default, everything else is opt-in
-  common-packages.enable = lib.mkDefault true;
+  dev-packages.enable = lib.mkDefault true;
 
   # Platform-specific packages
   linux-packages.enable = lib.mkDefault false;
@@ -48,6 +47,18 @@
   # Development tools
   git-config.enable = lib.mkDefault false;
   tmux-config.enable = lib.mkDefault false;
+
+  # Editors
+  editors.enable = lib.mkDefault false;
+  # Lower priority, editors enables it by default
+  editors.zed.enable = lib.mkOptionDefault false;
+
+  # langs
+  langs.enable = lib.mkDefault false;
+  # Lower priority, langs enables it by default
+  langs.fmt.enable = lib.mkOptionDefault false;
+  langs.lsp.enable = lib.mkOptionDefault false;
+  langs.llm.enable = lib.mkOptionDefault false;
 
   # Hyprland
   hyprland-config.enable = lib.mkDefault false;
