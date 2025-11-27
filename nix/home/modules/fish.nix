@@ -51,15 +51,6 @@
             sha256 = "1hqqppna8iwjnm8135qdjbd093583qd2kbq8pj507zpb1wn9ihjg";
           };
         }
-        {
-          name = "fifc";
-          src = pkgs.fetchFromGitHub {
-            owner = "gazorby";
-            repo = "fifc";
-            rev = "7e6f4dc8e0f7059c0dd90fd5e6c201cc35b7b88e";
-            sha256 = "1zk3z75cdqrjmp9anz4sdpc2cprxh8y9f4vclmr1hkrl8v1bdwrw";
-          };
-        }
       ];
 
       # Import from external file

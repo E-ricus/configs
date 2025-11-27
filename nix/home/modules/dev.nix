@@ -23,6 +23,7 @@
       htop
       stow
       jq
+      hexyl
       tree-sitter
       gh
       just

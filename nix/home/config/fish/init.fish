@@ -25,8 +25,6 @@ add_to_path $HOME/.cargo/bin
 # Vim keybindings
 fish_vi_key_bindings
 
-set -Ux fifc_editor nvim
-
 # Enhanced cd function
 function cd --description "Enhanced cd with zoxide integration"
     if test (count $argv) -eq 0
