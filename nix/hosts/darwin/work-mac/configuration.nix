@@ -4,15 +4,6 @@
   hostname,
   ...
 }: {
-  # Override fish to skip tests on macOS due to regression (https://github.com/NixOS/nixpkgs/issues/461406)
-  # TODO: Remove this when the fish regression is fixed
-  nixpkgs.overlays = [
-    (final: prev: {
-      fish = prev.fish.overrideAttrs (old: {
-        doCheck = false;
-      });
-    })
-  ];
   # List packages installed in system profile. To search by name, run:
   # $ nix-env -qaP | grep wget
   environment.systemPackages = [

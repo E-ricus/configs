@@ -119,20 +119,7 @@
       "ericpuentes-work-mac" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."aarch64-darwin";
         extraSpecialArgs = {inherit inputs walker;};
-        modules = [
-          ./hosts/darwin/work-mac/home.nix
-          # Override fish to skip tests on macOS due to regression (https://github.com/NixOS/nixpkgs/issues/461406)
-          # TODO: Remove this when the fish regression is fixed
-          {
-            nixpkgs.overlays = [
-              (final: prev: {
-                fish = prev.fish.overrideAttrs (old: {
-                  doCheck = false;
-                });
-              })
-            ];
-          }
-        ];
+        modules = [./hosts/darwin/work-mac/home.nix];
       };
     };
   };
