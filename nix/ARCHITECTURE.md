@@ -127,8 +127,10 @@ In `/home/default.nix`:
 - `tmux-config` - Tmux configuration
 
 **Desktop Environment:**
-- `hyprland-config` - Hyprland window manager
-  - Auto-enables: `walker-config`, `waybar-config`
+- `wayland` - Wayland configuration (parent module)
+  - Sub-option `compositor`: Choose between "hyprland" or "niri"
+  - Provides shared Wayland packages and Mako notifications
+  - Auto-enables compositor-specific dependencies (walker, waybar, swaybg)
 - `aerospace-config` - Aerospace (macOS)
 
 **Development:**
@@ -136,6 +138,66 @@ In `/home/default.nix`:
 
 **Networking:**
 - `wireguard-config` - WireGuard VPN helpers
+
+### Wayland Module Architecture
+
+The wayland configuration uses a hierarchical module structure with a parent `wayland` module that manages compositor selection and shared configuration.
+
+**Parent Module (`wayland.nix`):**
+- Main option: `wayland.enable` - Enables Wayland support
+- Compositor selection: `wayland.compositor` - Enum ["hyprland" | "niri"]
+- Shared packages: wl-clipboard, networkmanagerapplet, pavucontrol, brightnessctl, libnotify
+- Mako notification daemon with Catppuccin theme
+- Imports compositor-specific modules: hyprland.nix, niri.nix
+
+**Compositor Modules:**
+- `hyprland.nix` - Activates when `wayland.compositor == "hyprland"`
+  - Auto-enables: `walker-config`, `waybar-config`
+  - Provides: Hyprland, hyprlock, hyprpaper, hypridle, screenshot tools
+  - Optional sub-option: `hyprland-config.xwayland-zero-scale.enable` for 4K scaling
+- `niri.nix` - Activates when `wayland.compositor == "niri"`
+  - Auto-enables: `walker-config`, `waybar-config`, `swaybg-config`
+  - Provides: Niri config, hyprlock (lock screen), swayidle, fuzzel, satty
+  - Uses swaybg for wallpaper management
+  - Config file templating with script and wallpaper path substitution
+
+**Supporting Modules:**
+- `walker-config` - App launcher (shared between compositors)
+  - Auto-enabled by both hyprland and niri (priority: `lib.mkOptionDefault`)
+- `waybar-config` - Status bar (compositor-aware)
+  - Auto-enabled by both hyprland and niri (priority: `lib.mkOptionDefault`)
+  - Different workspace modules: `hyprland/workspaces` vs `cffi/niri-taskbar`
+  - Adapts power menu commands based on compositor
+- `swaybg-config` - Wallpaper management
+  - Auto-enabled by niri (priority: `lib.mkOptionDefault`)
+  - Supports NixOS artwork presets or custom wallpapers
+  - Exposes `selectedWallpaperPath` for use in niri config and hyprlock
+
+**Priority System:**
+The auto-enabled modules use `lib.mkOptionDefault false` (priority 1500), allowing:
+- Compositors to auto-enable them with `lib.mkDefault true` (priority 1000)
+- Users to explicitly disable them if needed (highest priority)
+
+**Example Usage:**
+```nix
+# Enable Hyprland
+wayland = {
+  enable = true;
+  compositor = "hyprland";
+};
+hyprland-config.xwayland-zero-scale.enable = true;
+
+# Or enable Niri
+wayland = {
+  enable = true;
+  compositor = "niri";
+};
+swaybg-config.wallpaper.preset = "dracula";
+
+# Both auto-enable walker and waybar
+# To disable a dependency:
+waybar-config.enable = lib.mkForce false;
+```
 
 ### Shell Aliases Auto-Detection
 
@@ -170,10 +232,12 @@ nos = "sudo nixos-rebuild switch --flake ~/configs/nix#$HOST"
 
   # Enable modules
   git-config.enable = true;
-  hyprland-config = {
+  wayland = {
     enable = true;
-    xwayland-zero-scale.enable = true;  # Sub-option
+    compositor = "niri";  # or "hyprland"
   };
+  swaybg-config.wallpaper.preset = "mosaic-blue";  # Optional wallpaper
+  hyprland-config.xwayland-zero-scale.enable = true;  # Hyprland-specific option
   fish-config.enable = true;
   linux-packages.enable = true;
 }
@@ -207,10 +271,12 @@ all other modules
 - Locale (en_US.UTF-8 + extra locales)
 
 **desktop-wayland.nix:**
-- Hyprland program
-- greetd + tuigreet login manager
-- XDG Portal
-- Polkit, dconf
+- Sub-option `compositor`: Choose between "hyprland" or "niri"
+- Conditionally enables Hyprland or Niri programs based on compositor choice
+- greetd + tuigreet login manager (adapts to compositor)
+- XDG Portal (gtk for Hyprland, gnome for Niri)
+- Polkit, dconf, gnome-keyring
+- Niri also installs xwayland-satellite for Xwayland support
 
 **media.nix:**
 Sub-options for audio and bluetooth:
@@ -267,7 +333,10 @@ graphics-config = {
   };
 
   # Enable modules
-  desktop-wayland.enable = true;
+  desktop-wayland = {
+    enable = true;
+    compositor = "niri";  # or "hyprland"
+  };
   graphics-config = {
     enable = true;
     enable32Bit = true;  # Needed for gaming
@@ -475,9 +544,17 @@ Modules can auto-enable their dependencies:
 
 ```nix
 # In hyprland.nix
-config = lib.mkIf config.hyprland-config.enable {
+config = lib.mkIf (config.wayland.enable && config.wayland.compositor == "hyprland") {
   walker-config.enable = lib.mkDefault true;
   waybar-config.enable = lib.mkDefault true;
+  # User can still override these to false
+};
+
+# In niri.nix
+config = lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
+  walker-config.enable = lib.mkDefault true;
+  waybar-config.enable = lib.mkDefault true;
+  swaybg-config.enable = lib.mkDefault true;
   # User can still override these to false
 };
 ```

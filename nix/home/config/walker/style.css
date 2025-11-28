@@ -91,7 +91,7 @@ child {
   padding: 10px;
 }
 
-child:hover .item-box,
+/* child:hover .item-box, */
 child:selected .item-box {
   background: alpha(@accent_bg_color, 0.25);
 }
@@ -151,14 +151,17 @@ child:selected .item-box {
   -gtk-icon-size: 64px;
 }
 
-.keybinds-wrapper {
+.keybinds {
   border-top: 1px solid @surface0;
   font-size: 12px;
   opacity: 0.5;
   color: @theme_fg_color;
 }
 
-.keybinds {
+.global-keybinds {
+}
+
+.item-keybinds {
 }
 
 .keybind {

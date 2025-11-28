@@ -20,8 +20,7 @@
     ./modules/zsh.nix
 
     # Wayland
-    ./modules/wayland/hyprland.nix
-    ./modules/wayland/niri.nix
+    ./modules/wayland/wayland.nix
 
     # macOS window manager
     ./modules/aerospace.nix
@@ -61,14 +60,13 @@
   langs.lsp.enable = lib.mkOptionDefault false;
   langs.llm.enable = lib.mkOptionDefault false;
 
-  # Hyprland (uses wayland)
-  hyprland-config.enable = lib.mkDefault false;
-  # Niri (uses wayland)
-  niri-config.enable = lib.mkDefault false;
+  # Wayland (by default uses hyprland)
+  wayland.enable = lib.mkDefault false;
   hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
-  # Lower priority, as wayland enables them by default
+  # Lower priority, as each compositor enables them by default
   walker-config.enable = lib.mkOptionDefault false;
   waybar-config.enable = lib.mkOptionDefault false;
+  swaybg-config.enable = lib.mkOptionDefault false;
 
   # macOS window manager
   aerospace-config.enable = lib.mkDefault false;

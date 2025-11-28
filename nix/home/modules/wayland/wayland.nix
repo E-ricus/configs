@@ -1,7 +1,27 @@
-{pkgs, ...}: {
-  imports = [./walker.nix ./waybar.nix];
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [
+    ./hyprland.nix
+    ./niri.nix
+  ];
 
-  config = {
+  options = {
+    wayland = {
+      enable = lib.mkEnableOption "enables Wayland configuration";
+
+      compositor = lib.mkOption {
+        type = lib.types.enum ["hyprland" "niri"];
+        default = "hyprland";
+        description = "Which Wayland compositor to use (mutually exclusive)";
+      };
+    };
+  };
+
+  config = lib.mkIf config.wayland.enable {
     home.packages = with pkgs; [
       wl-clipboard
       networkmanagerapplet

@@ -4,12 +4,12 @@
   lib,
   ...
 }: {
-  imports = [./wayland.nix];
-
+  imports = [
+    ./walker.nix
+    ./waybar.nix
+  ];
   options = {
     hyprland-config = {
-      enable = lib.mkEnableOption "enables hyprland window manager configuration";
-
       xwayland-zero-scale.enable = lib.mkEnableOption "enables XWayland zero scaling (fixes 4K scaling issues)";
     };
   };
@@ -20,7 +20,7 @@
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
   in
-    lib.mkIf config.hyprland-config.enable {
+    lib.mkIf (config.wayland.enable && config.wayland.compositor == "hyprland") {
       # Enable walker and waybar by default when hyprland is enabled
       walker-config.enable = lib.mkDefault true;
       waybar-config.enable = lib.mkDefault true;

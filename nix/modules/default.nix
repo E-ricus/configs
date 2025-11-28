@@ -22,8 +22,6 @@
 
   # Desktop and hardware (disabled by default)
   desktop-wayland.enable = lib.mkDefault false;
-  desktop-wayland.hyprland.enable = lib.mkDefault false;
-  desktop-wayland.niri.enable = lib.mkDefault false;
   graphics-config.enable = lib.mkDefault false;
   graphics-config.enable32Bit = lib.mkDefault false;
 

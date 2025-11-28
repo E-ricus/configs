@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}: {
+{...}: {
   imports = [
     ../../../home/default.nix
   ];
@@ -19,10 +14,11 @@
 
   # Enable modules for this host
   git-config.enable = true;
-  hyprland-config = {
+  wayland = {
     enable = true;
-    xwayland-zero-scale.enable = true;
-  }; # Also enables walker and waybar by default
+    compositor = "niri";
+  };
+  swaybg-config.wallpaper.preset = "mosaic-blue";
   editors.enable = true;
   langs.enable = true;
   fish-config.enable = true;

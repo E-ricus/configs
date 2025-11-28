@@ -162,7 +162,15 @@ This approach ensures:
 - **Standalone Home-Manager**: Also available as derivations for fast iteration
 
 ### Home Manager
-check `nix/home/default.nix` for all avilable modules
+Check `nix/home/default.nix` for all available modules.
+
+**Key modules:**
+- **Wayland**: Compositor selection (Hyprland or Niri) with shared config
+- **Development**: Git, editors (Zed), language tools (LSP, formatters, LLMs)
+- **Shell**: Fish, Zsh configurations
+- **Terminal**: Alacritty, Ghostty, Tmux
+
+For detailed module documentation, see [nix/ARCHITECTURE.md](nix/ARCHITECTURE.md)
 
 ## Making Changes
 
@@ -392,9 +400,10 @@ See [nix/ARCHITECTURE.md](nix/ARCHITECTURE.md) for detailed examples and module 
 
 **Note**: If using different usernames across hosts, update the `TARGET_USER` variable in both `bootstrap/0` and `bootstrap/1` scripts before running them.
 
-##  Documentation
+## Documentation
 
 - [NixOS Manual](https://nixos.org/manual/nixos/stable/)
 - [Home Manager Manual](https://nix-community.github.io/home-manager/)
 - [Hyprland Wiki](https://wiki.hyprland.org/)
+- [Niri Documentation](https://github.com/YaLTeR/niri)
 - [Nix Pills](https://nixos.org/guides/nix-pills/)

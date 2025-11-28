@@ -13,7 +13,6 @@
   };
 
   config = lib.mkIf config.walker-config.enable {
-
     programs.walker = {
       enable = true;
       runAsService = true;
@@ -80,9 +79,9 @@
       themes = {
         "catppuccin" = {
           # Catppuccin Mocha themed style
-          style = builtins.readFile (../../config/walker/style.css);
+          style = builtins.readFile ../../config/walker/style.css;
           layouts = {
-            "layout" = builtins.readFile (../../config/walker/layout.xml);
+            "layout" = builtins.readFile ../../config/walker/layout.xml;
             #add more provider-specific layouts here if needed:
             # "item_calc" = builtins.readFile (../../config/walker/item_calc.xml);
             # "item_files" = builtins.readFile (../../config/walker/item_files.xml);

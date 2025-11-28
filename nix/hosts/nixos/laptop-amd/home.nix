@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}: {
+{...}: {
   imports = [
     ../../../home/default.nix
   ];
@@ -22,7 +17,7 @@
   git-config.enable = true;
   editors.enable = true;
   langs.enable = true;
-  hyprland-config.enable = true; # Also enables walker and waybar by default
+  wayland.enable = true; # Hyprland by default
   fish-config.enable = true;
   zsh-config.enable = true;
   alacritty-config.enable = true;

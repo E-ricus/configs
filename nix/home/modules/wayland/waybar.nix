@@ -24,7 +24,11 @@
               loginctl lock-session
               ;;
           "🚪 Logout")
-              hyprctl dispatch exit
+              ${
+        if config.wayland.compositor == "hyprland"
+        then "hyprctl dispatch exit"
+        else "niri msg action quit"
+      }
               ;;
           "💤 Suspend")
               systemctl suspend
@@ -40,11 +44,31 @@
               ;;
       esac
     '';
+
+    niri-taskbar = pkgs.rustPlatform.buildRustPackage {
+      pname = "niri-taskbar";
+      version = "unstable-2025-09-19";
+
+      src = pkgs.fetchFromGitHub {
+        owner = "lawngnome";
+        repo = "niri-taskbar";
+        rev = "874ed92a1711422bcaaf635c7c3316edfc6a9d31";
+        hash = "sha256-P1ZD1cxlU/0s73h7qHGCbV29fsAt6r4+9X4PEZ+mOiM=";
+      };
+
+      cargoHash = "sha256-Ql9iqbbS3DY7o5/PR96c2t4VXKoS1kjZ9k3SfhNdbzE=";
+
+      nativeBuildInputs = with pkgs; [pkg-config];
+      buildInputs = with pkgs; [wayland pango atk gdk-pixbuf gtk3];
+    };
+
+    workspaceModules =
+      if config.wayland.compositor == "niri"
+      then ["cffi/niri-taskbar" "niri/window"]
+      else ["hyprland/workspaces" "hyprland/window"];
   in
     lib.mkIf config.waybar-config.enable {
-      home.packages = with pkgs; [
-        powerMenuScript
-      ];
+      home.packages = [powerMenuScript] ++ lib.optionals (config.wayland.compositor == "niri") [niri-taskbar];
 
       services.blueman-applet.enable = true;
 
@@ -56,7 +80,7 @@
             position = "top";
             height = 30;
 
-            modules-left = ["hyprland/workspaces" "hyprland/window"];
+            modules-left = workspaceModules;
             modules-center = ["clock"];
             modules-right = ["group/tray-expander" "pulseaudio" "network" "battery" "cpu" "custom/power"];
 
@@ -79,6 +103,10 @@
 
             "hyprland/workspaces" = {
               format = "{id}";
+            };
+
+            "cffi/niri-taskbar" = {
+              module_path = "${niri-taskbar}/lib/libniri_taskbar.so";
             };
 
             "clock" = {
