@@ -144,7 +144,7 @@
             };
           };
         };
-        style = builtins.readFile ../../config/hypr/waybar-style.css;
+        style = builtins.readFile ../../config/wayland/waybar-style.css;
       };
     };
 }

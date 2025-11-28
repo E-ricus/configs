@@ -1,5 +1,4 @@
 {
-  config,
   pkgs,
   user,
   ...
@@ -13,7 +12,11 @@
   };
 
   # Enable modules
-  desktop-wayland.enable = true;
+  desktop-wayland = {
+    enable = true;
+    hyprland.enable = true;
+    niri.enable = true;
+  };
   graphics-config = {
     enable = true;
     enable32Bit = true;
@@ -34,7 +37,6 @@
   gaming-config.enable = true;
 
   # Fingerprint
-  security.polkit.enable = true;
   services.fprintd = {
     enable = true;
     tod.enable = true;
@@ -44,5 +46,7 @@
   security.pam.services = {
     sudo.fprintAuth = true;
     hyprlock.fprintAuth = true;
+    swaylock.fprintAuth = true;
+    gtklock.fprintAuth = true;
   };
 }

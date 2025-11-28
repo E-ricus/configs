@@ -4,7 +4,7 @@
   lib,
   ...
 }: {
-  imports = [./walker.nix ./waybar.nix];
+  imports = [./wayland.nix];
 
   options = {
     hyprland-config = {
@@ -17,8 +17,8 @@
   config = let
     sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
 
-    brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/hypr/brightness-control.sh);
-    volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/hypr/volume-control.sh);
+    brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
+    volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
   in
     lib.mkIf config.hyprland-config.enable {
       # Enable walker and waybar by default when hyprland is enabled
@@ -29,14 +29,9 @@
 
       home.packages = with pkgs; [
         hyprlock
-        wl-clipboard
+        hyprpaper
         grim
         slurp
-        hyprpaper
-        networkmanagerapplet
-        pavucontrol
-        brightnessctl
-        libnotify
       ];
 
       wayland.windowManager.hyprland = {
@@ -197,35 +192,6 @@
 
       # Screenshots
       programs.satty.enable = true;
-
-      # Notifications
-      services.mako = {
-        enable = true;
-        settings = {
-          actions = true;
-          icon-path = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
-          font = "JetBrainsMono Nerd Font 10";
-          width = 300;
-          height = 100;
-          margin = "20,30";
-          padding = "10";
-          anchor = "top-right";
-          background-color = "#1e1e2e";
-          text-color = "#cdd6f4";
-          border-color = "#89b4fa";
-          default-timeout = 10000;
-
-          "urgency=low" = {
-            default-timeout = 5000;
-          };
-
-          "urgency=critical" = {
-            text-color = "#f38ba8";
-            border-color = "#f38ba8";
-            default-timeout = 20000;
-          };
-        };
-      };
 
       # Idle management
       services.hypridle = {

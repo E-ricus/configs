@@ -19,8 +19,9 @@
     ./modules/fish.nix
     ./modules/zsh.nix
 
-    # Hyprland (imports walker and waybar automatically)
-    ./modules/hypr/hyprland.nix
+    # Wayland
+    ./modules/wayland/hyprland.nix
+    ./modules/wayland/niri.nix
 
     # macOS window manager
     ./modules/aerospace.nix
@@ -60,10 +61,12 @@
   langs.lsp.enable = lib.mkOptionDefault false;
   langs.llm.enable = lib.mkOptionDefault false;
 
-  # Hyprland
+  # Hyprland (uses wayland)
   hyprland-config.enable = lib.mkDefault false;
+  # Niri (uses wayland)
+  niri-config.enable = lib.mkDefault false;
   hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
-  # Lower priority, as hyprland enables them by default
+  # Lower priority, as wayland enables them by default
   walker-config.enable = lib.mkOptionDefault false;
   waybar-config.enable = lib.mkOptionDefault false;
 

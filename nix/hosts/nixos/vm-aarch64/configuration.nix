@@ -13,7 +13,10 @@
   };
 
   # Enable modules
-  desktop-wayland.enable = true;
+  desktop-wayland = {
+    enable = true;
+    hyprland.enable = true;
+  };
   graphics-config.enable = true;
   media-config = {
     audio.enable = true;
