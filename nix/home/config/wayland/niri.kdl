@@ -17,7 +17,7 @@ input {
     }
     trackpoint {
     }
-    focus-follows-mouse max-scroll-amount="95%"
+    focus-follows-mouse max-scroll-amount="90%"
 }
 
 // TODO: Check why not working
@@ -90,7 +90,6 @@ layout {
     }
 }
 
-spawn-at-startup "waybar"
 spawn-at-startup "elephant"
 spawn-sh-at-startup "walker --gapplication-service"
 spawn-sh-at-startup "swaybg -i @WALLPAPER_PATH@ -m fill"
@@ -190,11 +189,6 @@ binds {
     Mod+Shift+J     { move-window-down; }
     Mod+Shift+K     { move-window-up; }
     Mod+Shift+L     { move-column-right; }
-
-    Mod+Alt+H { set-column-width "-10"; }
-    Mod+Alt+J { set-window-height "+10"; }
-    Mod+Alt+K { set-window-height "-10"; }
-    Mod+Alt+L { set-column-width "+10"; }
 
     Mod+Home { focus-column-first; }
     Mod+End  { focus-column-last; }

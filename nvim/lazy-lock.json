@@ -43,6 +43,6 @@
   "vim-test": { "branch": "master", "commit": "bbdc7f5d6280a047c3b1a951614454555a566356" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "xbase": { "branch": "master", "commit": "30ed3e638434ee7a09d7dad46562fc6925300145" },
-  "yazi.nvim": { "branch": "main", "commit": "3f81faf0cf838acb312f0f0d75ac1a8ac69166ed" },
+  "yazi.nvim": { "branch": "main", "commit": "d666962582840f889161109cf970d311c7a447d0" },
   "zig.vim": { "branch": "master", "commit": "1a1112eec20e28c832a06ddb1d0060f6ce652372" }
 }

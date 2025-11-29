@@ -74,8 +74,8 @@
         };
       };
 
-      # Check out the default css theme as an example https://github.com/abenz1267/walker/blob/master/resources/themes/default/style.css
-      # Check out the default layouts for examples https://github.com/abenz1267/walker/tree/master/resources/themes/default
+      # default css theme as an example https://github.com/abenz1267/walker/blob/master/resources/themes/default/style.css
+      # default layouts for examples https://github.com/abenz1267/walker/tree/master/resources/themes/default
       themes = {
         "catppuccin" = {
           # Catppuccin Mocha themed style

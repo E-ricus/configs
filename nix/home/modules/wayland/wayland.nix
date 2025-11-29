@@ -16,7 +16,7 @@
       compositor = lib.mkOption {
         type = lib.types.enum ["hyprland" "niri"];
         default = "hyprland";
-        description = "Which Wayland compositor to use (mutually exclusive)";
+        description = "Which Wayland compositor to use";
       };
     };
   };
@@ -27,6 +27,7 @@
       networkmanagerapplet
       pavucontrol
       brightnessctl
+      playerctl
       libnotify
     ];
 
