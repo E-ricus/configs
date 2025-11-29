@@ -23,7 +23,7 @@
   "no-neck-pain.nvim": { "branch": "main", "commit": "d871043474c06995c062413c91c987d0cb602632" },
   "noice.nvim": { "branch": "main", "commit": "7bfd942445fb63089b59f97ca487d605e715f155" },
   "nui.nvim": { "branch": "main", "commit": "de740991c12411b663994b2860f1a4fd0937c130" },
-  "nvim-lspconfig": { "branch": "master", "commit": "07f4e93de92e8d4ea7ab99602e3a8c9ac0fb778a" },
+  "nvim-lspconfig": { "branch": "master", "commit": "effe4bf2e1afb881ea67291c648b68dd3dfc927a" },
   "nvim-metals": { "branch": "main", "commit": "40f7b9ea6ded898319136f4d6a94da9487584309" },
   "nvim-treesitter": { "branch": "master", "commit": "42fc28ba918343ebfd5565147a42a26580579482" },
   "nvim-treesitter-context": { "branch": "master", "commit": "660861b1849256398f70450afdf93908d28dc945" },
@@ -32,7 +32,7 @@
   "plenary.nvim": { "branch": "master", "commit": "b9fd5226c2f76c951fc8ed5923d85e4de065e509" },
   "render-markdown.nvim": { "branch": "main", "commit": "6e0e8902dac70fecbdd8ce557d142062a621ec38" },
   "roc.vim": { "branch": "master", "commit": "a4b2edc029b349f05221249a6ab922d2787d2962" },
-  "rustaceanvim": { "branch": "master", "commit": "37f362b3d554633d5c9d65268932c3ce5d3652fb" },
+  "rustaceanvim": { "branch": "master", "commit": "4ddf7842f560b35cf0619efdd8d30ec24f1056e6" },
   "snacks.nvim": { "branch": "main", "commit": "fe7cfe9800a182274d0f868a74b7263b8c0c020b" },
   "tokyonight.nvim": { "branch": "main", "commit": "00d92e6009671493fceeb0e4baf644f5b983e6e4" },
   "trouble.nvim": { "branch": "main", "commit": "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
@@ -43,6 +43,6 @@
   "vim-test": { "branch": "master", "commit": "bbdc7f5d6280a047c3b1a951614454555a566356" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "xbase": { "branch": "master", "commit": "30ed3e638434ee7a09d7dad46562fc6925300145" },
-  "yazi.nvim": { "branch": "main", "commit": "3f81faf0cf838acb312f0f0d75ac1a8ac69166ed" },
+  "yazi.nvim": { "branch": "main", "commit": "d666962582840f889161109cf970d311c7a447d0" },
   "zig.vim": { "branch": "master", "commit": "1a1112eec20e28c832a06ddb1d0060f6ce652372" }
 }

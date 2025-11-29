@@ -54,9 +54,8 @@
           ];
 
           exec-once = [
-            "waybar"
             "hyprpaper"
-            # for walker menu, it might not be needed:
+            # for walker menu, it might not be useful:
             "elephant"
             "walker --gapplication-service"
           ];
