@@ -12,8 +12,9 @@
   config = lib.mkIf config.aerospace-config.enable {
     programs.aerospace = {
       enable = true;
+      launchd.enable = true;
 
-      userSettings = {
+      settings = {
         # Startup and login
         start-at-login = true;
         after-login-command = [];
