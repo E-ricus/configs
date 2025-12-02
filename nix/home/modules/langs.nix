@@ -37,6 +37,7 @@
       ++ lib.optionals config.langs.lsp.enable [
         opencode
         claude-code
+        codex
       ];
   };
 }

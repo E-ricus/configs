@@ -98,17 +98,17 @@
         events = [
           {
             event = "before-sleep";
-            command = "${pkgs.hyprlock}/bin/hyprlock";
+            command = "${pkgs.systemd}/bin/loginctl lock-session";
           }
           {
             event = "lock";
-            command = "${pkgs.hyprlock}/bin/hyprlock";
+            command = "${pkgs.systemd}/bin/loginctl lock-session";
           }
         ];
         timeouts = [
           {
             timeout = 300;
-            command = "${pkgs.hyprlock}/bin/hyprlock";
+            command = "${pkgs.systemd}/bin/loginctl lock-session";
           }
           {
             timeout = 600;
