@@ -13,6 +13,9 @@
   config = let
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
+    lockScript = pkgs.writeShellScript "lock-screen" ''
+      ${pkgs.hyprlock}/bin/hyprlock &
+    '';
   in
     lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
       # Enable walker and waybar by default when niri is enabled
@@ -95,20 +98,15 @@
 
       services.swayidle = {
         enable = true;
-        events = [
-          {
-            event = "before-sleep";
-            command = "${pkgs.systemd}/bin/loginctl lock-session";
-          }
-          {
-            event = "lock";
-            command = "${pkgs.systemd}/bin/loginctl lock-session";
-          }
-        ];
+        systemdTarget = "niri-session.target";
+        events = {
+          "before-sleep" = "${lockScript}";
+          "lock" = "${lockScript}";
+        };
         timeouts = [
           {
             timeout = 300;
-            command = "${pkgs.systemd}/bin/loginctl lock-session";
+            command = "${lockScript}";
           }
           {
             timeout = 600;
