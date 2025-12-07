@@ -37,7 +37,7 @@
         "-w 3840" # Game width
         "-h 2160" # Game height
         "-r 60" # Refresh rate (adjust to your display's max)
-        # "-f" # Fullscreen
+        "-f" # Fullscreen
         "--adaptive-sync"
         "--hdr-enabled"
         "--rt"
