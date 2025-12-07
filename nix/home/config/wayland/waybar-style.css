@@ -43,6 +43,12 @@ window {
   border-radius: 4px;
 }
 
+.niri-taskbar button.focused {
+  background-color: rgba(137, 180, 250, 0.3);
+  color: #89b4fa;
+  border-radius: 4px;
+}
+
 #workspaces button.active * {
   background-color: transparent;
   color: #89b4fa;

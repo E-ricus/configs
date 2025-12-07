@@ -47,16 +47,16 @@
 
     niri-taskbar = pkgs.rustPlatform.buildRustPackage {
       pname = "niri-taskbar";
-      version = "unstable-2025-09-19";
+      version = "unstable-2025-12-05";
 
       src = pkgs.fetchFromGitHub {
         owner = "lawngnome";
         repo = "niri-taskbar";
-        rev = "874ed92a1711422bcaaf635c7c3316edfc6a9d31";
-        hash = "sha256-P1ZD1cxlU/0s73h7qHGCbV29fsAt6r4+9X4PEZ+mOiM=";
+        rev = "c530349fae638141ec58a9d4db0816d950a9295a";
+        hash = "sha256-PN+7s3KnbIdUSs+PmY3A80x//tIQu2aqaW/vN7gXTRU=";
       };
 
-      cargoHash = "sha256-Ql9iqbbS3DY7o5/PR96c2t4VXKoS1kjZ9k3SfhNdbzE=";
+      cargoHash = "sha256-WRc1+ZVhiIfmLHaczAPq21XudI08CgVhlIhVcf0rmSw=";
 
       nativeBuildInputs = with pkgs; [pkg-config];
       buildInputs = with pkgs; [wayland pango atk gdk-pixbuf gtk3];
@@ -108,6 +108,9 @@
 
             "cffi/niri-taskbar" = {
               module_path = "${niri-taskbar}/lib/libniri_taskbar.so";
+              notifications = {
+                enabled = true;
+              };
             };
 
             "clock" = {
