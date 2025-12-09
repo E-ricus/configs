@@ -77,6 +77,7 @@ in
             inherit inputs;
             walker = inputs.walker or null;
             noctalia = inputs.noctalia or null;
+            niri = inputs.niri or null;
           };
         }
       ]

@@ -2,8 +2,13 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }: {
+  imports = [
+    inputs.niri.nixosModules.niri
+  ];
+
   options = {
     desktop-wayland = {
       enable =
@@ -19,6 +24,11 @@
 
   config = lib.mkMerge [
     (lib.mkIf config.desktop-wayland.enable {
+      # Add niri overlay for niri-stable/niri-unstable packages
+      nixpkgs.overlays = [
+        inputs.niri.overlays.niri
+      ];
+
       # Display manager - greetd with tuigreet
       services.greetd = {
         enable = true;
@@ -61,7 +71,10 @@
         enable = true;
         extraPortals = [pkgs.xdg-desktop-portal-gnome];
       };
-      programs.niri.enable = true;
+      programs.niri = {
+        enable = true;
+        package = pkgs.niri-unstable;
+      };
       environment.systemPackages = with pkgs; [
         xwayland-satellite # xwayland support
       ];
