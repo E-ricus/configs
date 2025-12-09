@@ -22,6 +22,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.elephant.follows = "elephant";
     };
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -31,6 +35,7 @@
     home-manager,
     nix-darwin,
     walker,
+    noctalia,
     ...
   } @ inputs: let
     # Helper to create system configurations
@@ -100,25 +105,25 @@
     homeConfigurations = {
       "ericus-laptop-amd" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."x86_64-linux";
-        extraSpecialArgs = {inherit inputs walker;};
+        extraSpecialArgs = {inherit inputs walker noctalia;};
         modules = [./hosts/nixos/laptop-amd/home.nix];
       };
 
       "ericus-laptop-lenovo" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."x86_64-linux";
-        extraSpecialArgs = {inherit inputs walker;};
+        extraSpecialArgs = {inherit inputs walker noctalia;};
         modules = [./hosts/nixos/laptop-lenovo/home.nix];
       };
 
       "ericus-vm-aarch64" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."aarch64-linux";
-        extraSpecialArgs = {inherit inputs walker;};
+        extraSpecialArgs = {inherit inputs walker noctalia;};
         modules = [./hosts/nixos/vm-aarch64/home.nix];
       };
 
       "ericpuentes-work-mac" = home-manager.lib.homeManagerConfiguration {
         pkgs = pkgsFor."aarch64-darwin";
-        extraSpecialArgs = {inherit inputs walker;};
+        extraSpecialArgs = {inherit inputs walker noctalia;};
         modules = [./hosts/darwin/work-mac/home.nix];
       };
     };

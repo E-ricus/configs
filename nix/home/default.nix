@@ -67,6 +67,7 @@
   walker-config.enable = lib.mkOptionDefault false;
   waybar-config.enable = lib.mkOptionDefault false;
   swaybg-config.enable = lib.mkOptionDefault false;
+  noctalia-config.enable = lib.mkOptionDefault false;
 
   # macOS window manager
   aerospace-config.enable = lib.mkDefault false;

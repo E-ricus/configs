@@ -92,7 +92,7 @@ layout {
 
 spawn-at-startup "elephant"
 spawn-sh-at-startup "walker --gapplication-service"
-spawn-sh-at-startup "swaybg -i @WALLPAPER_PATH@ -m fill"
+@SHELL_STARTUP@
 
 hotkey-overlay {
     skip-at-startup
@@ -145,17 +145,15 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     Mod+Return { spawn "alacritty"; }
-    Mod+D { spawn "walker"; }
+    @LAUNCHER_KEYBIND@
     Mod+E { spawn "nautilus"; }
     Mod+V { toggle-window-floating; }
     Mod+Shift+V { switch-focus-between-floating-and-tiling; }
-    Super+Alt+L { spawn "hyprlock"; }
+    @LOCK_KEYBIND@
 
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
 
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "@VOLUME_SCRIPT@" "raise"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "@VOLUME_SCRIPT@" "lower"; }
-    XF86AudioMute        allow-when-locked=true { spawn "@VOLUME_SCRIPT@" "toggle-mute"; }
+    @VOLUME_KEYBINDS@
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
     // Example media keys mapping using playerctl.

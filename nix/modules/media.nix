@@ -47,8 +47,6 @@
           };
         };
       };
-
-      services.blueman.enable = true;
     })
   ];
 }

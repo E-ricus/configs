@@ -68,7 +68,7 @@
       else ["hyprland/workspaces" "hyprland/window"];
   in
     lib.mkIf config.waybar-config.enable {
-      home.packages = [powerMenuScript] ++ lib.optionals (config.wayland.compositor == "niri") [niri-taskbar];
+      home.packages = with pkgs; [powerMenuScript networkmanagerapplet] ++ lib.optionals (config.wayland.compositor == "niri") [niri-taskbar];
 
       services.blueman-applet.enable = true;
 

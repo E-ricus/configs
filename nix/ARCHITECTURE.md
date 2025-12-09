@@ -283,7 +283,7 @@ Sub-options for audio and bluetooth:
 ```nix
 media-config = {
   audio.enable = true;      # PipeWire
-  bluetooth.enable = true;  # Bluetooth + blueman
+  bluetooth.enable = true;  # Bluetooth
 };
 ```
 

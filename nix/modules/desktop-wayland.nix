@@ -65,6 +65,8 @@
       environment.systemPackages = with pkgs; [
         xwayland-satellite # xwayland support
       ];
+      services.upower.enable = true;
+      services.tuned.enable = true;
     })
   ];
 }

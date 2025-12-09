@@ -18,7 +18,10 @@
     enable = true;
     compositor = "niri";
   };
-  swaybg-config.wallpaper.preset = "mosaic-blue";
+  # Use noctalia shell instead of waybar + swaybg
+  noctalia-config.enable = true;
+  waybar-config.enable = false;
+  swaybg-config.enable = false;
   editors.enable = true;
   langs.enable = true;
   fish-config.enable = true;

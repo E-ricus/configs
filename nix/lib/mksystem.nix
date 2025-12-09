@@ -72,9 +72,11 @@ in
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.users.${user} = import homeConfig;
+          home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = {
             inherit inputs;
             walker = inputs.walker or null;
+            noctalia = inputs.noctalia or null;
           };
         }
       ]

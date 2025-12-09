@@ -26,12 +26,3 @@ if [ "$ACTION" = "raise" ]; then
 elif [ "$ACTION" = "lower" ]; then
   brightnessctl $DEVICE set 5%-
 fi
-
-# Get current brightness percentage
-BRIGHTNESS=$(brightnessctl $DEVICE get)
-MAX=$(brightnessctl $DEVICE max)
-PERCENT=$((BRIGHTNESS * 100 / MAX))
-
-# Send notification
-notify-send -u low -h string:x-canonical-private-synchronous:brightness \
-  -h int:value:$PERCENT "Brightness" "$PERCENT%"

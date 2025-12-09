@@ -24,16 +24,15 @@
   config = lib.mkIf config.wayland.enable {
     home.packages = with pkgs; [
       wl-clipboard
-      networkmanagerapplet
       pavucontrol
       brightnessctl
       playerctl
       libnotify
     ];
 
-    # Notifications
+    # Notifications (can be overridden by noctalia or other modules)
     services.mako = {
-      enable = true;
+      enable = lib.mkDefault true;
       settings = {
         actions = true;
         icon-path = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";

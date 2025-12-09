@@ -8,93 +8,66 @@
     ./walker.nix
     ./waybar.nix
     ./swaybg.nix
+    ./noctalia.nix
   ];
 
   config = let
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
-    lockScript = pkgs.writeShellScript "lock-screen" ''
-      ${pkgs.hyprlock}/bin/hyprlock &
-    '';
+
+    # Use different lock commands based on whether noctalia is enabled
+    lockScript =
+      if config.noctalia-config.enable
+      then
+        pkgs.writeShellScript "lock-screen" ''
+          noctalia-shell ipc call lockScreen toggle
+        ''
+      else
+        pkgs.writeShellScript "lock-screen" ''
+          ${pkgs.hyprlock}/bin/hyprlock &
+        '';
   in
     lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
-      # Enable walker and waybar by default when niri is enabled
+      # Enable walker and waybar by default when niri is enabled (unless noctalia is used)
       walker-config.enable = lib.mkDefault true;
-      waybar-config.enable = lib.mkDefault true;
-      swaybg-config.enable = lib.mkDefault true;
+      waybar-config.enable = lib.mkDefault (!config.noctalia-config.enable);
+      swaybg-config.enable = lib.mkDefault (!config.noctalia-config.enable);
 
       xdg.configFile."niri/config.kdl".text = let
         configText = builtins.readFile ../../config/wayland/niri.kdl;
+        shellStartup =
+          if config.noctalia-config.enable
+          then ''spawn-sh-at-startup "noctalia-shell"''
+          else ''spawn-sh-at-startup "swaybg -i ${config.swaybg-config.selectedWallpaperPath} -m fill"'';
+        lockKeybind =
+          if config.noctalia-config.enable
+          then ''Super+Alt+L { spawn-sh "noctalia-shell ipc call lockScreen toggle"; }''
+          else ''Super+Alt+L { spawn "hyprlock"; }'';
+        volumeKeybinds =
+          if config.noctalia-config.enable
+          then ''
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "noctalia-shell ipc call volume increase"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "noctalia-shell ipc call volume decrease"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "noctalia-shell ipc call volume muteOutput"; }''
+          else ''
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "${volumeScript}" "raise"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "${volumeScript}" "lower"; }
+    XF86AudioMute        allow-when-locked=true { spawn "${volumeScript}" "toggle-mute"; }'';
+        launcherKeybind =
+          if config.noctalia-config.enable
+          then ''Mod+D { spawn-sh "noctalia-shell ipc call launcher toggle"; }''
+          else ''Mod+D { spawn "walker"; }'';
       in
         builtins.replaceStrings
-        ["@BRIGHTNESS_SCRIPT@" "@VOLUME_SCRIPT@" "@WALLPAPER_PATH@"]
-        ["${brightnessScript}" "${volumeScript}" "${config.swaybg-config.selectedWallpaperPath}"]
+        ["@BRIGHTNESS_SCRIPT@" "@VOLUME_SCRIPT@" "@WALLPAPER_PATH@" "@SHELL_STARTUP@" "@LOCK_KEYBIND@" "@VOLUME_KEYBINDS@" "@LAUNCHER_KEYBIND@"]
+        ["${brightnessScript}" "${volumeScript}" "${config.swaybg-config.selectedWallpaperPath}" shellStartup lockKeybind volumeKeybinds launcherKeybind]
         configText;
 
-      home.packages = with pkgs; [
+      home.packages = lib.optionals (!config.noctalia-config.enable) (with pkgs; [
         hyprlock
-      ];
+      ]);
       programs.fuzzel.enable = true; # backup app launcher
       programs.satty.enable = true; # screenshot annotation
-
-      xdg.configFile."hypr/hyprlock.conf".text = ''
-        general {
-          disable_loading_bar = true
-          grace = 2
-          hide_cursor = true
-          no_fade_in = false
-        }
-
-        background {
-          monitor =
-          path = ${config.swaybg-config.selectedWallpaperPath}
-          blur_passes = 3
-          blur_size = 8
-        }
-
-        input-field {
-          monitor =
-          size = 200, 50
-          outline_thickness = 3
-          dots_size = 0.33
-          dots_spacing = 0.15
-          dots_center = false
-          dots_rounding = -1
-          outer_color = rgb(45475a)
-          inner_color = rgb(1e1e2e)
-          font_color = rgb(cdd6f4)
-          fade_on_empty = true
-          fade_timeout = 1000
-          placeholder_text = <i>Input Password...</i>
-          hide_input = false
-          rounding = -1
-          check_color = rgb(89b4fa)
-          fail_color = rgb(f38ba8)
-          fail_text = <i>$FAIL <b>($ATTEMPTS)</b></i>
-          fail_transition = 300
-          capslock_color = -1
-          numlock_color = -1
-          bothlock_color = -1
-          invert_numlock = false
-          swap_font_color = false
-          position = 0, -20
-          halign = center
-          valign = center
-        }
-
-        label {
-          monitor =
-          text = Hi there, $USER
-          text_align = center
-          color = rgb(cdd6f4)
-          font_size = 32
-          font_family = Noto Sans
-          rotate = 0
-          position = 0, 80
-          halign = center
-          valign = center
-        }
-      '';
 
       services.swayidle = {
         enable = true;
