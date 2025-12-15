@@ -2,12 +2,17 @@
   config,
   lib,
   pkgs,
+  niri ? null,
   ...
 }: {
-  imports = [
-    ./hyprland.nix
-    ./niri.nix
-  ];
+  imports =
+    [
+      ./hyprland.nix
+      ./niri.nix
+    ]
+    ++ lib.optionals (niri != null) [
+      niri.homeModules.niri
+    ];
 
   options = {
     wayland = {

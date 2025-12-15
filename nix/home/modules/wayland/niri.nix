@@ -11,7 +11,7 @@
     ./noctalia.nix
   ];
 
-  config = let
+  config = lib.mkIf pkgs.stdenv.isLinux (let
     noctalia = cmd:
       [
         "noctalia-shell"
@@ -418,5 +418,6 @@
           }
         ];
       };
-    };
+    }
+  );
 }
