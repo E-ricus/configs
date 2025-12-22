@@ -74,7 +74,7 @@ in
           home-manager.users.${user} = import homeConfig;
           home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = {
-            inherit inputs;
+            inherit inputs darwin;
             walker = inputs.walker or null;
             noctalia = inputs.noctalia or null;
             niri = inputs.niri or null;

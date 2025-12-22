@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  darwin ? false,
   niri ? null,
   ...
 }: {
@@ -10,7 +11,7 @@
       ./hyprland.nix
       ./niri.nix
     ]
-    ++ lib.optionals (niri != null) [
+    ++ lib.optionals (niri != null && darwin) [
       niri.homeModules.niri
     ];
 
