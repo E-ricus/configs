@@ -23,6 +23,7 @@
         go
         rustup
         zig
+        typst
       ]
       #Formatters
       ++ lib.optionals config.langs.fmt.enable [
