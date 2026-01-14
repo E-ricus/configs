@@ -33,9 +33,10 @@
       #LSPs
       ++ lib.optionals config.langs.lsp.enable [
         nixd
+        tinymist
       ]
       # LLMs
-      ++ lib.optionals config.langs.lsp.enable [
+      ++ lib.optionals config.langs.llm.enable [
         opencode
         claude-code
         codex

@@ -15,6 +15,7 @@ end
 
 local servers = {
   -- rust-analyzer is handled by rustacean.nvim in rustacean.lua
+  tinymist = {},
   nixd = {},
   pylsp = {},
   c3_lsp = {},
