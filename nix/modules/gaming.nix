@@ -14,6 +14,7 @@
     environment.systemPackages = with pkgs; [
       mangohud
       protonup-ng
+      heroic
 
       # Steam GameScope launcher
       (makeDesktopItem {

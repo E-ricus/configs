@@ -41,7 +41,7 @@
   "vim-fugitive": { "branch": "master", "commit": "61b51c09b7c9ce04e821f6cf76ea4f6f903e3cf4" },
   "vim-matchup": { "branch": "master", "commit": "0fb1e6b7cea34e931a2af50b8ad565c5c4fd8f4d" },
   "vim-surround": { "branch": "master", "commit": "3d188ed2113431cf8dac77be61b842acb64433d9" },
-  "vim-test": { "branch": "master", "commit": "aaaff58ab897211b9c9bd9967c1340a6fd15d42d" },
+  "vim-test": { "branch": "master", "commit": "8f682546ccb2c44da78719ee318121b0da30d4f3" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
   "xbase": { "branch": "master", "commit": "30ed3e638434ee7a09d7dad46562fc6925300145" },
   "yazi.nvim": { "branch": "main", "commit": "4a8bd3284708e11e48bcd865892902a46abdcce0" },
