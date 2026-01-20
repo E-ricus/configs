@@ -12,6 +12,8 @@
     ./gaming.nix
     ./virtualization.nix
     ./hybrid-gpu.nix
+    # Software
+    ./jetbrains.nix
   ];
 
   # Set module defaults
@@ -36,4 +38,7 @@
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;
   hybrid-gpu.nvidiaOnly.enable = lib.mkDefault true;
+
+  # Software
+  jetbrains.enable = lib.mkDefault false;
 }

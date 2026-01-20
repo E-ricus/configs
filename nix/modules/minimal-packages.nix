@@ -31,6 +31,8 @@
       noto-fonts-cjk-sans
       noto-fonts-color-emoji
       font-awesome
+      source-sans
+      roboto
       pkgs.nerd-fonts.jetbrains-mono
       pkgs.nerd-fonts.fira-code
       pkgs.nerd-fonts.hack

@@ -24,6 +24,7 @@
         rustup
         zig
         typst
+        odin
       ]
       #Formatters
       ++ lib.optionals config.langs.fmt.enable [
@@ -34,6 +35,8 @@
       ++ lib.optionals config.langs.lsp.enable [
         nixd
         tinymist
+        llvmPackages_20.clang-tools
+        ols
       ]
       # LLMs
       ++ lib.optionals config.langs.llm.enable [

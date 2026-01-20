@@ -48,4 +48,6 @@
     swaylock.fprintAuth = true;
     gtklock.fprintAuth = true;
   };
+
+  jetbrains.enable = true;
 }
