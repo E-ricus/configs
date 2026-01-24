@@ -23,7 +23,7 @@
       userSettings = {
         theme = "Gruvbox Dark Soft";
         vim_mode = true;
-        relative_line_numbers = true;
+        relative_line_numbers = "enabled";
       };
       userKeymaps = [
         {

@@ -35,7 +35,7 @@
       ++ lib.optionals config.langs.lsp.enable [
         nixd
         tinymist
-        llvmPackages_20.clang-tools
+        clang-tools
         ols
       ]
       # LLMs

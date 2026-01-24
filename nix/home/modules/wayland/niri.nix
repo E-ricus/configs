@@ -398,7 +398,7 @@
 
         services.swayidle = {
           enable = true;
-          systemdTarget = "niri-session.target";
+          systemdTarget = "graphical-session.target";
           events = {
             "before-sleep" = "${lockScript}";
             "lock" = "${lockScript}";
