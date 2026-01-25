@@ -33,6 +33,7 @@
 
   # Optional features (disabled by default)
   gaming-config.enable = lib.mkDefault false;
+  gaming-config.minecraft.enable = lib.mkDefault false;
   virtualization-config.enable = lib.mkDefault false;
 
   # Hybrid GPU configuration (disabled by default)

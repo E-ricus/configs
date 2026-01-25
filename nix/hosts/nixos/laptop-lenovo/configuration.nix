@@ -33,7 +33,10 @@
     # Enable specializations for different modes
     nvidiaOnly.enable = true; # Boot into nvidia-only mode when needed
   };
-  gaming-config.enable = true;
+  gaming-config = {
+    enable = true;
+    minecraft.enable = true;
+  };
 
   # Fingerprint
   services.fprintd = {
