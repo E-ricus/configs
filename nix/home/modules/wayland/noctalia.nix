@@ -2,6 +2,7 @@
   config,
   lib,
   noctalia,
+  pkgs,
   ...
 }: {
   imports = [noctalia.homeModules.default];
@@ -12,16 +13,21 @@
   };
 
   config = lib.mkIf config.noctalia-config.enable {
+    home.packages = with pkgs; [
+      gpu-screen-recorder
+    ];
+
     programs.noctalia-shell = {
       enable = true;
+
       settings = {
-        settingsVersion = 26;
+        settingsVersion = 37;
         bar = {
           position = "top";
           backgroundOpacity = 1;
           monitors = [];
           density = "default";
-          showCapsule = true;
+          showCapsule = false;
           capsuleOpacity = 1;
           floating = false;
           marginVertical = 0.25;
@@ -31,21 +37,19 @@
           widgets = {
             left = [
               {
-                icon = "rocket";
-                id = "CustomButton";
-                leftClickExec = "noctalia-shell ipc call launcher toggle";
+                id = "ControlCenter";
               }
               {
                 id = "Workspace";
-              }
-              {
-                id = "SystemMonitor";
               }
               {
                 id = "ActiveWindow";
               }
               {
                 id = "MediaMini";
+              }
+              {
+                id = "plugin:catwalk";
               }
             ];
             center = [
@@ -56,13 +60,13 @@
             ];
             right = [
               {
-                id = "ScreenRecorder";
+                id = "plugin:screen-recorder";
               }
               {
                 id = "Tray";
               }
               {
-                id = "NotificationHistory";
+                id = "SystemMonitor";
               }
               {
                 id = "Battery";
@@ -71,10 +75,10 @@
                 id = "Volume";
               }
               {
-                id = "WiFi";
+                id = "Network";
               }
               {
-                id = "ControlCenter";
+                id = "NotificationHistory";
               }
             ];
           };
@@ -110,7 +114,7 @@
           tooltipsEnabled = true;
           panelBackgroundOpacity = 1;
           panelsAttachedToBar = true;
-          settingsPanelAttachToBar = false;
+          settingsPanelMode = "centered";
         };
         location = {
           name = "Berlin";
@@ -144,28 +148,17 @@
             }
           ];
         };
-        screenRecorder = {
-          directory = "";
-          frameRate = 60;
-          audioCodec = "opus";
-          videoCodec = "h264";
-          quality = "very_high";
-          colorRange = "limited";
-          showCursor = true;
-          audioSource = "default_output";
-          videoSource = "portal";
-        };
         wallpaper = {
           enabled = true;
           overviewEnabled = false;
           directory = "";
           monitorDirectories = [];
           enableMultiMonitorDirectories = false;
-          recursiveSearch = false;
+          viewMode = "single";
           setWallpaperOnAllMonitors = true;
           fillMode = "crop";
           fillColor = "#000000";
-          randomEnabled = false;
+          automationEnabled = false;
           randomIntervalSec = 300;
           transitionDuration = 1500;
           transitionType = "random";
@@ -189,7 +182,7 @@
           pinnedExecs = [];
           useApp2Unit = false;
           sortByMostUsed = true;
-          terminalCommand = "xterm -e";
+          terminalCommand = "ghostty -e";
           customLaunchPrefixEnabled = false;
           customLaunchPrefix = "";
           viewMode = "list";
@@ -200,16 +193,16 @@
           shortcuts = {
             left = [
               {
-                id = "WiFi";
+                id = "Network";
               }
               {
                 id = "Bluetooth";
               }
               {
-                id = "ScreenRecorder";
+                id = "WallpaperSelector";
               }
               {
-                id = "WallpaperSelector";
+                id = "NoctaliaPerformance";
               }
             ];
             right = [
@@ -325,8 +318,8 @@
           backgroundOpacity = 1;
           respectExpireTimeout = false;
           lowUrgencyDuration = 3;
-          normalUrgencyDuration = 8;
-          criticalUrgencyDuration = 15;
+          normalUrgencyDuration = 5;
+          criticalUrgencyDuration = 10;
           enableKeyboardLayoutToast = true;
           sounds = {
             enabled = false;
@@ -368,7 +361,7 @@
         };
         colorSchemes = {
           useWallpaperColors = false;
-          predefinedScheme = "Noctalia (default)";
+          predefinedScheme = "Catppuccin";
           darkMode = true;
           schedulingMode = "off";
           manualSunrise = "06:30";
@@ -411,6 +404,33 @@
           enabled = false;
           wallpaperChange = "";
           darkModeChange = "";
+        };
+      };
+      plugins = {
+        sources = [
+          {
+            enabled = true;
+            name = "Official Noctalia Plugins";
+            url = "https://github.com/noctalia-dev/noctalia-plugins";
+          }
+        ];
+        states = {
+          catwalk = {
+            enabled = true;
+            sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+          };
+          screen-recorder = {
+            enabled = true;
+            sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+          };
+        };
+        version = 1;
+      };
+
+      pluginSettings = {
+        catwalk = {
+          minimumThreshold = 25;
+          hideBackground = true;
         };
       };
     };

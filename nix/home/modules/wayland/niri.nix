@@ -28,7 +28,7 @@
         if config.noctalia-config.enable
         then
           pkgs.writeShellScript "lock-screen" ''
-            noctalia-shell ipc call lockScreen lock
+            ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock
           ''
         else
           pkgs.writeShellScript "lock-screen" ''
@@ -61,6 +61,10 @@
           cursor = {
             theme = "Adwaita";
             size = 24;
+          };
+
+          gestures = {
+            hot-corners.enable = false;
           };
 
           outputs."eDP-1" = {
@@ -121,6 +125,9 @@
           hotkey-overlay.skip-at-startup = true;
 
           animations = {};
+          overview = {
+            backdrop-color = "#26233a";
+          };
 
           window-rules = [
             {
