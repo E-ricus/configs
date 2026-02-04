@@ -38,7 +38,7 @@
         # Combined (update flake + rebuild system)
         nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#(hostname)";
 
-        ngc = "nix-collect-garbage --delete-older-than 2d";
+        ngc = "sudo nix-collect-garbage --delete-older-than 2d";
       };
 
       plugins = [

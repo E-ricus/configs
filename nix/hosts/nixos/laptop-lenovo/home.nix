@@ -26,6 +26,7 @@
   langs.enable = true;
   fish-config.enable = true;
   zsh-config.enable = true;
+  nushell.enable = true;
   alacritty-config.enable = true;
   tmux-config.enable = true;
   linux-packages.enable = true;

@@ -1,9 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}: {
+{...}: {
   imports = [
     ../../../home/default.nix
   ];
@@ -37,6 +32,7 @@
   langs.enable = true;
   fish-config.enable = true;
   zsh-config.enable = true;
+  nushell.enable = true;
   alacritty-config.enable = true;
   ghostty-config.enable = true;
   tmux-config.enable = true;

@@ -40,6 +40,8 @@
     programs.direnv = {
       enable = true;
       enableZshIntegration = true;
+      enableNushellIntegration = true;
+      enableFishIntegration = true;
       # fish enabled by default
       nix-direnv.enable = true;
       config = {

@@ -8,6 +8,8 @@ return {
   },
   {
     "nvim-mini/mini.pairs",
+    -- it's being annoying
+    enabled = false,
     event = "VeryLazy",
     opts = {
       -- skip autopair when next character is one of these
@@ -20,9 +22,6 @@ return {
       -- better deal with markdown code blocks
       markdown = true,
     },
-    -- init = function()
-    --   require("mini.pairs").setup()
-    -- end,
   },
   {
     "nvim-mini/mini.icons",

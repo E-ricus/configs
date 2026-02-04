@@ -18,6 +18,7 @@
     # Shell configurations
     ./modules/fish.nix
     ./modules/zsh.nix
+    ./modules/nu.nix
 
     # Wayland
     ./modules/wayland/wayland.nix
@@ -43,6 +44,7 @@
   # Shell configurations
   fish-config.enable = lib.mkDefault false;
   zsh-config.enable = lib.mkDefault false;
+  nushell.enable = lib.mkDefault false;
 
   # Development tools
   git-config.enable = lib.mkDefault false;
