@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   lib,
   ...
 }: {
@@ -9,6 +10,9 @@
   };
 
   config = lib.mkIf config.nushell.enable {
+    home.packages = with pkgs; [
+      nu_scripts
+    ];
     programs.nushell = {
       enable = true;
       shellAliases = {
@@ -32,7 +36,26 @@
         ngc = "sudo nix-collect-garbage --delete-older-than 2d";
       };
 
-      settings = {};
+      settings = {
+        edit_mode = "vi";
+        completions = {
+          quick = true;
+          partial = true;
+          algorithm = "fuzzy";
+          external = {
+            enable = true;
+          };
+        };
+      };
+      plugins = [
+        pkgs.nushellPlugins.query
+      ];
+      envFile.source = ../config/nu/env.nu;
+      configFile.source = ../config/nu/config.nu;
+      extraConfig = ''
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/git/git-completions.nu *
+
+      '';
     };
   };
 }

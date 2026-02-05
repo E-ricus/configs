@@ -5,7 +5,7 @@
     ./modules/mac-packages.nix
 
     # Development tools
-    ./modules/dev.nix
+    ./modules/basic.nix
     ./modules/git.nix
     ./modules/tmux.nix
     ./modules/editors.nix
@@ -31,7 +31,7 @@
   ];
 
   # Set module defaults
-  dev-packages.enable = lib.mkDefault true;
+  basic.enable = lib.mkDefault true;
 
   # Platform-specific packages
   linux-packages.enable = lib.mkDefault false;

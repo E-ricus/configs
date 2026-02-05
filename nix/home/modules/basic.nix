@@ -5,11 +5,11 @@
   ...
 }: {
   options = {
-    dev-packages.enable =
-      lib.mkEnableOption "enables common dev packages and configuration";
+    basic.enable =
+      lib.mkEnableOption "enables common basic packages and configuration";
   };
 
-  config = lib.mkIf config.dev-packages.enable {
+  config = lib.mkIf config.basic.enable {
     home.packages = with pkgs; [
       # Essentials
       eza
@@ -20,6 +20,7 @@
       zoxide
 
       # Goodies
+      starship
       htop
       stow
       jq
