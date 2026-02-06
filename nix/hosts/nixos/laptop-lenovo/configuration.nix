@@ -8,7 +8,7 @@
     isNormalUser = true;
     description = "Eric";
     extraGroups = ["networkmanager" "wheel" "video" "audio"];
-    shell = pkgs.fish;
+    shell = pkgs.nushell;
   };
 
   # Enable modules
