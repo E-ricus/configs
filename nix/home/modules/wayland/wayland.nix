@@ -2,8 +2,8 @@
   config,
   lib,
   pkgs,
+  inputs,
   darwin ? false,
-  niri ? null,
   ...
 }: {
   imports =
@@ -11,8 +11,8 @@
       ./hyprland.nix
       ./niri.nix
     ]
-    ++ lib.optionals (niri != null && darwin) [
-      niri.homeModules.niri
+    ++ lib.optionals (inputs ? niri && darwin) [
+      inputs.niri.homeModules.niri
     ];
 
   options = {

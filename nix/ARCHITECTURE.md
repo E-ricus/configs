@@ -199,21 +199,25 @@ swaybg-config.wallpaper.preset = "dracula";
 waybar-config.enable = lib.mkForce false;
 ```
 
-### Shell Aliases Auto-Detection
+### Shell Aliases for System Management
 
-Shell configurations use hostname detection for dynamic commands:
+Shell configurations use hostname detection for dynamic rebuild commands:
 
 **Fish:**
 ```fish
-hm = "home-manager switch --flake ~/configs/nix#$USER-(hostname)"
 nos = "sudo nixos-rebuild switch --flake ~/configs/nix#(hostname)"
+nom = "sudo darwin-rebuild switch --flake ~/configs/nix#(hostname)"
+nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#(hostname)"
 ```
 
 **Zsh:**
 ```zsh
-hm = "home-manager switch --flake ~/configs/nix#$USER-$HOST"
 nos = "sudo nixos-rebuild switch --flake ~/configs/nix#$HOST"
+nom = "sudo darwin-rebuild switch --flake ~/configs/nix#$HOST"
+nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#$HOST"
 ```
+
+**Note:** Home-manager is integrated into system configurations, so there are no standalone `home-manager switch` commands. All changes (system and home) are applied together via `nixos-rebuild` or `darwin-rebuild`.
 
 ### Example: Host-Specific Home Configuration
 
@@ -351,43 +355,146 @@ graphics-config = {
 
 ## Flake Structure
 
-### NixOS Configurations
+### System Configurations
 
+All system configurations use the `mkSystem` helper which integrates home-manager automatically.
+
+**NixOS Example:**
 ```nix
 nixosConfigurations = {
   laptop-lenovo = mkSystem {
     system = "x86_64-linux";
     hostname = "laptop-lenovo";
     user = "ericus";
-    determinate = true;
+    determinate = true;  # Use Determinate Systems' nix
     modules = [
-      nixos-hardware.nixosModules.lenovo-legion-15ach6h
       ./modules  # Imports default.nix
     ];
   };
 };
 ```
 
-### Home-Manager Configurations
-
-Format: `username-hostname`
-
+**Darwin Example:**
 ```nix
-homeConfigurations = {
-  "ericus-laptop-lenovo" = home-manager.lib.homeManagerConfiguration {
-    pkgs = pkgsFor."x86_64-linux";
-    extraSpecialArgs = {inherit inputs walker;};
-    modules = [./hosts/nixos/laptop-lenovo/home.nix];
+darwinConfigurations = {
+  work-mac = mkSystem {
+    system = "aarch64-darwin";
+    hostname = "work-mac";
+    user = "ericpuentes";
+    darwin = true;
   };
 };
 ```
 
 ### mksystem.nix Helper
 
-Automatically constructs paths:
+The `mkSystem` function handles all the complexity of creating a unified system configuration:
+
+**What it does:**
+- Selects the appropriate builder (`nixosSystem` or `darwinSystem`)
+- Integrates home-manager as a module (no standalone configs needed)
+- Automatically constructs config file paths based on hostname
+- Passes all flake inputs to both system and home-manager modules
+- Enables Determinate Systems' nix if requested
+
+**Automatically constructed paths:**
 - System config: `hosts/{nixos|darwin}/${hostname}/configuration.nix`
-- Home config: `hosts/{nixos|darwin}/${hostname}/home.nix`
-- Hardware config: `hosts/nixos/${hostname}/hardware-configuration.nix`
+- Home config: `hosts/{nixos|darwin}/${hostname}/home.nix` (integrated via home-manager module)
+- Hardware config: `hosts/nixos/${hostname}/hardware-configuration.nix` (NixOS only)
+
+**Special args available in modules:**
+- `inputs` - All flake inputs (nixpkgs, home-manager, walker, noctalia, niri, etc.)
+- `hostname` - Current system hostname
+- `user` - Primary username
+- `darwin` - Boolean flag (true for macOS, false for Linux)
+
+**Accessing custom inputs in home modules:**
+
+All flake inputs are available via the `inputs` parameter in home-manager modules. This is the clean, unified way to access any flake input:
+
+```nix
+# In any home-manager module
+{inputs, pkgs, lib, config, ...}: {
+  # Import home-manager modules from flake inputs
+  imports = [
+    inputs.walker.homeManagerModules.default
+    inputs.noctalia.homeModules.default
+  ];
+  
+  # Access packages from custom inputs
+  home.packages = [
+    inputs.walker.packages.${pkgs.system}.default
+  ];
+  
+  # Conditionally import based on availability
+  imports = lib.optionals (inputs ? niri) [
+    inputs.niri.homeModules.niri
+  ];
+}
+```
+
+**Which inputs are currently used:**
+
+The following custom flake inputs are used by home-manager modules:
+
+- `inputs.walker` - Used by `walker.nix` (imports `inputs.walker.homeManagerModules.default`)
+  - Application launcher with GTK UI
+  - Auto-enabled by hyprland and niri compositors
+
+- `inputs.noctalia` - Used by `noctalia.nix` (imports `inputs.noctalia.homeModules.default`)
+  - Shell/notification system for Niri
+  - Optional alternative to walker/waybar/swaybg
+
+- `inputs.niri` - Used by `wayland.nix` (conditionally imports `inputs.niri.homeModules.niri`)
+  - Provides the Niri compositor home-manager module
+  - Only imported on Darwin (Linux uses nixpkgs version)
+
+All other inputs (`nixpkgs`, `home-manager`, `nix-darwin`, `determinate`, `elephant`, `sqlit`) are used at the flake/system level and don't need to be accessed directly in home modules.
+
+**Note:** All modules use `inputs.<name>` instead of expecting the input as a direct parameter. This is cleaner and avoids the need to explicitly pass each input in `extraSpecialArgs`.
+
+## Workflow
+
+### Making Changes
+
+All configuration changes (both system and home-manager) are applied together using the system rebuild commands:
+
+**NixOS:**
+```bash
+sudo nixos-rebuild switch --flake .#hostname
+```
+
+**macOS (nix-darwin):**
+```bash
+darwin-rebuild switch --flake .#hostname
+```
+
+### Quick Iteration
+
+For rapid development and testing:
+
+**Test without modifying boot profile (NixOS):**
+```bash
+sudo nixos-rebuild test --flake .#hostname
+```
+This activates changes immediately without adding a boot entry. Perfect for testing configurations.
+
+**Immediate cleanup after testing:**
+```bash
+sudo nix-collect-garbage --delete-older-than 2d
+```
+Use the shell aliases `nos` (NixOS switch) or `nom` (Darwin switch) for convenience.
+
+### Updating Inputs
+
+Update all flake inputs and rebuild:
+```bash
+cd ~/configs/nix
+nix flake update
+sudo nixos-rebuild switch --flake .#hostname
+```
+
+Or use the combined alias `nosu` which does both steps.
 
 ## Usage Examples
 
@@ -398,9 +505,14 @@ Automatically constructs paths:
    mkdir -p hosts/nixos/new-host
    ```
 
-2. **Create configuration.nix:**
+2. **Generate hardware config (NixOS only):**
+   ```bash
+   nixos-generate-config --show-hardware-config > hosts/nixos/new-host/hardware-configuration.nix
+   ```
+
+3. **Create configuration.nix:**
    ```nix
-   {user, ...}: {
+   {user, pkgs, ...}: {
      users.users.${user} = {
        isNormalUser = true;
        description = "Name";
@@ -408,14 +520,19 @@ Automatically constructs paths:
        shell = pkgs.fish;
      };
 
-     desktop-wayland.enable = true;
+     # Enable system modules
+     desktop-wayland = {
+       enable = true;
+       compositor = "hyprland";  # or "niri"
+     };
      graphics-config.enable = true;
+     media-config.audio.enable = true;
    }
    ```
 
-3. **Create home.nix:**
+4. **Create home.nix:**
    ```nix
-   {
+   {...}: {
      imports = [ ../../../home/default.nix ];
 
      home = {
@@ -426,26 +543,30 @@ Automatically constructs paths:
 
      programs.home-manager.enable = true;
 
+     # Enable home modules
      git-config.enable = true;
      fish-config.enable = true;
+     wayland = {
+       enable = true;
+       compositor = "hyprland";  # or "niri"
+     };
    }
    ```
 
-4. **Add to flake.nix:**
+5. **Add to flake.nix:**
    ```nix
    nixosConfigurations.new-host = mkSystem {
      system = "x86_64-linux";
      hostname = "new-host";
      user = "username";
+     determinate = true;  # optional
      modules = [./modules];
    };
+   ```
 
-   homeConfigurations."username-new-host" =
-     home-manager.lib.homeManagerConfiguration {
-       pkgs = pkgsFor."x86_64-linux";
-       extraSpecialArgs = {inherit inputs walker;};
-       modules = [./hosts/nixos/new-host/home.nix];
-     };
+6. **Build and switch:**
+   ```bash
+   sudo nixos-rebuild switch --flake .#new-host
    ```
 
 ### Creating a New Module

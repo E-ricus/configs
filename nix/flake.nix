@@ -30,38 +30,15 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sqlit = {
+      url = "github:Maxteabag/sqlit";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    determinate,
-    home-manager,
-    nix-darwin,
-    walker,
-    noctalia,
-    niri,
-    ...
-  } @ inputs: let
+  outputs = inputs: let
     # Helper to create system configurations
     mkSystem = import ./lib/mksystem.nix {inherit inputs;};
-
-    # Define supported systems
-    systems = [
-      "x86_64-linux"
-      "aarch64-linux"
-      "aarch64-darwin"
-    ];
-
-    # Helper to generate an attribute set for all systems
-    forAllSystems = nixpkgs.lib.genAttrs systems;
-
-    # Generate pkgs for each system with allowUnfree enabled
-    pkgsFor = forAllSystems (system:
-      import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-      });
   in {
     # NixOS configurations
     nixosConfigurations = {
@@ -102,34 +79,6 @@
         hostname = "work-mac";
         user = "ericpuentes";
         darwin = true;
-      };
-    };
-
-    # Standalone home-manager configurations (for quick iteration)
-    # Format: username-hostname
-    homeConfigurations = {
-      "ericus-laptop-amd" = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor."x86_64-linux";
-        extraSpecialArgs = {inherit inputs walker noctalia niri;};
-        modules = [./hosts/nixos/laptop-amd/home.nix];
-      };
-
-      "ericus-laptop-lenovo" = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor."x86_64-linux";
-        extraSpecialArgs = {inherit inputs walker noctalia niri;};
-        modules = [./hosts/nixos/laptop-lenovo/home.nix];
-      };
-
-      "ericus-vm-aarch64" = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor."aarch64-linux";
-        extraSpecialArgs = {inherit inputs walker noctalia niri;};
-        modules = [./hosts/nixos/vm-aarch64/home.nix];
-      };
-
-      "ericpuentes-work-mac" = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsFor."aarch64-darwin";
-        extraSpecialArgs = {inherit inputs walker noctalia niri;};
-        modules = [./hosts/darwin/work-mac/home.nix];
       };
     };
   };

@@ -2,10 +2,10 @@
   config,
   pkgs,
   lib,
-  walker,
+  inputs,
   ...
 }: {
-  imports = [walker.homeManagerModules.default];
+  imports = [inputs.walker.homeManagerModules.default];
 
   options = {
     walker-config.enable =

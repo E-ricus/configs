@@ -15,7 +15,7 @@
   # Enable modules
   desktop-wayland = {
     enable = true;
-    hyprland.enable = true;
+    compositor = "hyprland";
   };
   graphics-config.enable = true;
   media-config = {

@@ -1,11 +1,11 @@
 {
   config,
   lib,
-  noctalia,
+  inputs,
   pkgs,
   ...
 }: {
-  imports = [noctalia.homeModules.default];
+  imports = [inputs.noctalia.homeModules.default];
 
   options = {
     noctalia-config.enable =

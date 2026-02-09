@@ -22,6 +22,7 @@
         e = "nvim";
         vimdiff = "nvim -d";
         ngc = "sudo nix-collect-garbage --delete-older-than 2d";
+        fg = "job unfreeze";
       };
 
       settings = {
@@ -42,9 +43,14 @@
       ];
       envFile.source = ../config/nu/env.nu;
       configFile.source = ../config/nu/config.nu;
+      # TODO: Is there a better way to have this? maybe all
       extraConfig = ''
         use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/git/git-completions.nu *
-
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/nix/nix-completions.nu *
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/cargo/cargo-completions.nu *
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/aws/aws-completions.nu *
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/jj/jj-completions.nu *
+        use ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/just/just-completions.nu *
       '';
     };
   };

@@ -26,11 +26,7 @@
         lta = "lt -a";
         ff = "fzf --preview 'bat --style=numbers --color=always {}'";
 
-        # Home-manager (standalone - fast iteration)
-        hm = "home-manager switch --flake ~/configs/nix#$USER-(hostname)";
-        hmu = "cd ~/configs/nix && nix flake update && home-manager switch --flake .#$USER-(hostname)";
-
-        # System rebuilds (includes home-manager)
+        # System rebuilds (includes home-manager integrated)
         # Automatically uses current hostname
         nos = "sudo nixos-rebuild switch --flake ~/configs/nix#(hostname)";
         nom = "sudo darwin-rebuild switch --flake ~/configs/nix#(hostname)";
