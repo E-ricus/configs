@@ -46,11 +46,13 @@
     };
     taps = [
       "nikitabobko/tap" # Required for aerospace
+      "withgraphite/tap"
     ];
     brews = [
       "cargo-binstall"
       "reattach-to-user-namespace"
       "openssl@3"
+      "withgraphite/tap/graphite"
     ];
     casks = [
       "alacritty"

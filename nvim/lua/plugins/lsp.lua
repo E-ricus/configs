@@ -101,6 +101,13 @@ return {
       end,
       desc = "LSP go to next diagnostic",
     },
+    {
+      "ih",
+      function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+      end,
+      desc = "LSP toggle inlay hints",
+    },
     { "<leader>df", vim.diagnostic.open_float, desc = "LSP diagnostic float" },
     { "<leader>dh", hide_diagnostics, desc = "LSP hide diagnostics" },
     { "<leader>ds", show_diagnostics, desc = "LSP show diagnostics" },
