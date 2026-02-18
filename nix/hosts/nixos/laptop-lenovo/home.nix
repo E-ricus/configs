@@ -23,7 +23,10 @@
   waybar-config.enable = false;
   swaybg-config.enable = false;
   editors.enable = true;
-  langs.enable = true;
+  langs = {
+    enable = true;
+    pm.enable = true;
+  };
   fish-config.enable = true;
   zsh-config.enable = true;
   nushell.enable = true;
