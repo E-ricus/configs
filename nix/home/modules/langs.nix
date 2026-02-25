@@ -39,7 +39,7 @@
         nixd
         tinymist
         clang-tools
-        ols
+        #ols TODO: check why is failing to build
       ]
       # LLMs
       ++ lib.optionals config.langs.llm.enable [
