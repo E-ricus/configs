@@ -25,6 +25,13 @@
       vpn-toggle = "vpn toggle";
     };
 
+    programs.nushell.shellAliases = lib.mkIf config.programs.nushell.enable {
+      vpn-up = "vpn up";
+      vpn-down = "vpn down";
+      vpn-status = "vpn status";
+      vpn-toggle = "vpn toggle";
+    };
+
     # Optional: Create helper scripts
     home.packages = [
       (pkgs.writeShellScriptBin "vpn" ''

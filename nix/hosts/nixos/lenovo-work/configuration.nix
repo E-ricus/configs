@@ -24,4 +24,8 @@
     audio.enable = true;
     bluetooth.enable = true;
   };
+
+  jetbrains.enable = true;
+  virtualization-config.enable = true;
+  work.enable = true;
 }

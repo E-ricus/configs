@@ -14,6 +14,7 @@
     ./hybrid-gpu.nix
     # Software
     ./jetbrains.nix
+    ./work.nix
   ];
 
   # Set module defaults
@@ -42,4 +43,5 @@
 
   # Software
   jetbrains.enable = lib.mkDefault false;
+  work.enable = lib.mkDefault false;
 }
