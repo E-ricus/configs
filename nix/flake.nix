@@ -62,6 +62,16 @@
         ];
       };
 
+      lenovo-work = mkSystem {
+        system = "x86_64-linux";
+        hostname = "lenovo-work";
+        user = "ericus";
+        determinate = true;
+        modules = [
+          ./modules
+        ];
+      };
+
       vm-aarch64 = mkSystem {
         system = "aarch64-linux";
         hostname = "vm-aarch64";

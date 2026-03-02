@@ -42,11 +42,12 @@ setup_nixos() {
     echo "  1) laptop-amd (AMD 64-bit)"
     echo "  2) laptop-lenovo (AMD 64-bit and nvidia graphics)"
     echo "  3) vm-aarch64 (ARM 64-bit)"
+    echo "  4) lenovo-work (Intel 64-bit)"
     echo
 
     local flake_config=""
     while true; do
-        read -p "Enter selection (1, 2, or 3): " arch_selection
+        read -p "Enter selection (1, 2, 3 or 4): " arch_selection
         case $arch_selection in
             1)
                 flake_config="laptop-amd"
@@ -58,6 +59,10 @@ setup_nixos() {
                 ;;
             3)
                 flake_config="vm-aarch64"
+                break
+                ;;
+            4)
+                flake_config="lenovo-work"
                 break
                 ;;
             *)
