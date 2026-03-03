@@ -12,6 +12,8 @@
   config = lib.mkIf config.jetbrains.enable {
     environment.systemPackages = with pkgs; [
       slack
+      graphite-cli
+      awscli2
     ];
   };
 }

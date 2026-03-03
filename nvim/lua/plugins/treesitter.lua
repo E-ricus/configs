@@ -3,13 +3,9 @@ return {
   event = "VeryLazy",
   build = ":TSUpdate",
   config = function()
-    require("nvim-treesitter.configs").setup({
-      ensure_installed = { "c", "go", "lua", "python", "rust", "typescript", "comment", "zig" },
-      auto_install = true,
-      highlight = { enable = true },
-      folds = { enable = true },
-      indent = { enable = false },
-      matchup = { enable = false },
+    -- v1.0: configs.setup() is gone; highlighting is neovim built-in
+    require("nvim-treesitter.install").install({
+      "c", "go", "lua", "python", "rust", "typescript", "comment", "zig", "nix", "nu",
     })
   end,
   dependencies = { "nvim-treesitter/nvim-treesitter-context", "nvim-treesitter/nvim-treesitter-textobjects" },

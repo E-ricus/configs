@@ -31,9 +31,5 @@ def --env z [path?: string] {
 
  # nix goodies
  def nos [] {
-  sudo nixos-rebuild switch --flake $"~/configs/nix#(hostname)"
-}
-
-def nom [] {
-  sudo darwin-rebuild switch --flake $"~/configs/nix#(hostname)"
+  sudo nixos-rebuild switch --flake $"($nu.home-dir)/configs/nix#(hostname)"
 }
