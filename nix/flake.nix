@@ -34,6 +34,7 @@
       url = "github:Maxteabag/sqlit";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-jetbrains-plugins.url = "github:nix-community/nix-jetbrains-plugins";
   };
 
   outputs = inputs: let
