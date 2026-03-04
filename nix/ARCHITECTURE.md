@@ -50,6 +50,35 @@ config = lib.mkIf config.module-name.enable {
 };
 ```
 
+### Enum Options Pattern
+
+For mutually exclusive choices, use enum types:
+
+```nix
+options = {
+  module-name = {
+    enable = lib.mkEnableOption "feature";
+    type = lib.mkOption {
+      type = lib.types.enum ["option-a" "option-b"];
+      default = "option-a";
+      description = "Which variant to use.";
+    };
+  };
+};
+
+config = lib.mkIf cfg.enable {
+  # Common config
+  some-setting = cfg.type == "option-a";  # Boolean from comparison
+
+  # Variant-specific config
+  other-setting = lib.mkIf (cfg.type == "option-b") {
+    # ...
+  };
+};
+```
+
+This pattern is used by `boot-config.nix` (systemd-boot vs lanzaboote) and `desktop-wayland.nix` (hyprland vs niri).
+
 ## Priority Levels
 
 The configuration uses NixOS's priority system to allow defaults at different levels:
@@ -79,11 +108,11 @@ nix/
 │   └── mksystem.nix            # Helper to create system configurations
 ├── modules/                     # NixOS system modules
 │   ├── default.nix             # Imports all modules + sets defaults
-│   ├── base-system.nix         # Core system (bootloader, networking, nix)
+│   ├── base-system.nix         # Core system (networking, nix settings)
+│   ├── boot-config.nix         # Bootloader (systemd-boot or lanzaboote)
 │   ├── (other system modules)
 ├── home/                        # Home-manager configuration
 │   ├── default.nix             # Imports all modules + sets defaults
-│   ├── common.nix              # Common packages (tools, dev tools)
 │   ├── modules/
 │   │   ├── git.nix             # Git configuration
 │   │   ├── fish.nix            # Fish shell
@@ -91,11 +120,14 @@ nix/
 │   └── config/                 # External config files
 └── hosts/
     ├── nixos/
-    │   ├── laptop-lenovo/
-    │   │   ├── configuration.nix    # NixOS system config
-    │   │   ├── home.nix            # Home-manager config
+    │   ├── lenovo-work/
+    │   │   ├── configuration.nix        # NixOS system config
+    │   │   ├── disko.nix                # Disk layout (LUKS + btrfs)
+    │   │   ├── home.nix                 # Home-manager config
     │   │   └── hardware-configuration.nix
-    │   ├── (other hosts)
+    │   ├── laptop-amd/
+    │   ├── laptop-lenovo/
+    │   └── vm-aarch64/
     └── darwin/
         └── work-mac/
             ├── configuration.nix
@@ -173,32 +205,6 @@ The wayland configuration uses a hierarchical module structure with a parent `wa
   - Supports NixOS artwork presets or custom wallpapers
   - Exposes `selectedWallpaperPath` for use in niri config and hyprlock
 
-**Priority System:**
-The auto-enabled modules use `lib.mkOptionDefault false` (priority 1500), allowing:
-- Compositors to auto-enable them with `lib.mkDefault true` (priority 1000)
-- Users to explicitly disable them if needed (highest priority)
-
-**Example Usage:**
-```nix
-# Enable Hyprland
-wayland = {
-  enable = true;
-  compositor = "hyprland";
-};
-hyprland-config.xwayland-zero-scale.enable = true;
-
-# Or enable Niri
-wayland = {
-  enable = true;
-  compositor = "niri";
-};
-swaybg-config.wallpaper.preset = "dracula";
-
-# Both auto-enable walker and waybar
-# To disable a dependency:
-waybar-config.enable = lib.mkForce false;
-```
-
 ### Shell Aliases for System Management
 
 Shell configurations use hostname detection for dynamic rebuild commands:
@@ -216,8 +222,6 @@ nos = "sudo nixos-rebuild switch --flake ~/configs/nix#$HOST"
 nom = "sudo darwin-rebuild switch --flake ~/configs/nix#$HOST"
 nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#$HOST"
 ```
-
-**Note:** Home-manager is integrated into system configurations, so there are no standalone `home-manager switch` commands. All changes (system and home) are applied together via `nixos-rebuild` or `darwin-rebuild`.
 
 ### Example: Host-Specific Home Configuration
 
@@ -254,7 +258,8 @@ nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flak
 In `/modules/default.nix`:
 
 **Always Enabled:**
-- `base-system` - Core (bootloader, networking, nix, GC)
+- `base-system` - Core (networking, nix settings, GC)
+- `boot-config` - Bootloader (systemd-boot by default)
 - `locale-time` - Locale and timezone
 - `minimal-packages` - Essential packages + fonts
 
@@ -264,11 +269,31 @@ all other modules
 ### Module Descriptions
 
 **base-system.nix:**
-- Bootloader (systemd-boot)
 - Networking (NetworkManager, hostname from flake)
 - Nix settings (flakes, allowUnfree)
 - Garbage collection
 - System state version
+- Firmware updates (fwupd)
+
+**boot-config.nix:**
+Bootloader configuration with mutually exclusive options:
+- `boot-config.enable` - Enable boot configuration (default: true)
+- `boot-config.type` - Enum: `"systemd-boot"` (default) or `"lanzaboote"`
+- `boot-config.pkiBundle` - Path to lanzaboote PKI bundle (default: `/var/lib/sbctl`)
+- `boot-config.autoEnrollKeys` - Auto-generate and enroll Secure Boot keys (default: true)
+
+When `type = "systemd-boot"`: enables systemd-boot (standard NixOS bootloader).
+When `type = "lanzaboote"`: disables systemd-boot, enables lanzaboote for Secure Boot, includes `sbctl` package, and optionally auto-provisions Secure Boot keys on first boot.
+
+```nix
+# In host configuration.nix:
+
+# Standard boot (default, no need to set explicitly)
+boot-config.type = "systemd-boot";
+
+# Secure Boot
+boot-config.type = "lanzaboote";
+```
 
 **locale-time.nix:**
 - Time zone (Europe/Berlin)
@@ -317,39 +342,162 @@ graphics-config = {
 - USB redirection
 - Adds user to libvirtd group
 
+## Disk Configuration (Disko)
+
+Hosts that require declarative disk management use [disko](https://github.com/nix-community/disko). The disk layout is defined in a `disko.nix` file within the host directory.
+
+### How It Works
+
+- Disko declares the entire disk layout in Nix: partitions, filesystems, encryption, subvolumes
+- During installation, the `bootstrap/install` script runs disko to partition, format, and mount the disk
+- Disko also generates the necessary `fileSystems` and `swapDevices` NixOS options automatically, so `hardware-configuration.nix` does not need filesystem declarations for disko-managed hosts
+- The disko NixOS module must be included in the host's flake modules: `inputs.disko.nixosModules.disko`
+
+### Example: LUKS + btrfs Layout
+
+```nix
+# hosts/nixos/lenovo-work/disko.nix
+{lib, ...}: {
+  disko.devices = {
+    disk = {
+      vdb = {
+        type = "disk";
+        device = lib.mkDefault "/dev/nvme0n1";
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              size = "512M";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = ["defaults"];
+              };
+            };
+            luks = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "crypted";
+                settings.allowDiscards = true;
+                content = {
+                  type = "btrfs";
+                  extraArgs = ["-f"];
+                  subvolumes = {
+                    "/root" = {
+                      mountpoint = "/";
+                      mountOptions = ["compress=zstd" "noatime"];
+                    };
+                    "/home" = {
+                      mountpoint = "/home";
+                      mountOptions = ["compress=zstd" "noatime"];
+                    };
+                    "/nix" = {
+                      mountpoint = "/nix";
+                      mountOptions = ["compress=zstd" "noatime"];
+                    };
+                    "/swap" = {
+                      mountpoint = "/.swapvol";
+                      swap.swapfile.size = "32G";
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}
+```
+
+Key points:
+- `lib.mkDefault` on the device path allows overriding during install
+- LUKS with no `passwordFile`/`keyFile` means interactive password prompt during installation
+- `allowDiscards = true` enables TRIM for NVMe SSDs
+- btrfs subvolumes separate `/`, `/home`, `/nix`, and swap for flexibility
+- `compress=zstd` and `noatime` are good defaults for btrfs on SSDs
+
+### TPM2 + Secure Boot Integration
+
+For full disk encryption with passwordless boot, hosts can combine:
+
+1. **LUKS** (disk encryption, via disko)
+2. **TPM2** (auto-unlock, enrolled after first boot)
+3. **Lanzaboote** (Secure Boot, prevents TPM2 key release if boot chain is tampered)
+
+```nix
+# In host configuration.nix:
+imports = [./disko.nix];
+
+# Secure Boot bootloader
+boot-config.type = "lanzaboote";
+
+# Required for TPM2 unlock
+boot.initrd.systemd.enable = true;
+
+# TPM2 support
+security.tpm2 = {
+  enable = true;
+  pkcs11.enable = true;
+  tctiEnvironment.enable = true;
+};
+```
+
+Note: `boot.initrd.luks.devices` is NOT needed -- disko generates those declarations automatically from `disko.devices`.
+
 ### Example: Host-Specific NixOS Configuration
 
 ```nix
-# hosts/nixos/laptop-lenovo/configuration.nix
+# hosts/nixos/lenovo-work/configuration.nix
 {
-  config,
   pkgs,
-  hostname,
   user,
   ...
 }: {
+  imports = [./disko.nix];
+
+  # Secure Boot via lanzaboote
+  boot-config.type = "lanzaboote";
+
+  # LUKS / initrd - required for TPM2 unlock
+  boot.initrd.systemd.enable = true;
+
+  # TPM2
+  security.tpm2 = {
+    enable = true;
+    pkcs11.enable = true;
+    tctiEnvironment.enable = true;
+  };
+
   # User account (uses ${user} from flake)
   users.users.${user} = {
     isNormalUser = true;
     description = "Eric";
     extraGroups = ["networkmanager" "wheel" "video" "audio"];
-    shell = pkgs.fish;
+    shell = pkgs.nushell;
   };
 
   # Enable modules
   desktop-wayland = {
     enable = true;
-    compositor = "niri";  # or "hyprland"
+    compositor = "niri";
   };
   graphics-config = {
     enable = true;
-    enable32Bit = true;  # Needed for gaming
+    enable32Bit = true;
   };
   media-config = {
     audio.enable = true;
     bluetooth.enable = true;
   };
-  gaming-config.enable = true;
+
+  jetbrains.enable = true;
+  virtualization-config.enable = true;
+  work.enable = true;
 }
 ```
 
@@ -362,13 +510,24 @@ All system configurations use the `mkSystem` helper which integrates home-manage
 **NixOS Example:**
 ```nix
 nixosConfigurations = {
-  laptop-lenovo = mkSystem {
+  laptop-amd = mkSystem {
     system = "x86_64-linux";
-    hostname = "laptop-lenovo";
+    hostname = "laptop-amd";
     user = "ericus";
-    determinate = true;  # Use Determinate Systems' nix
     modules = [
       ./modules  # Imports default.nix
+    ];
+  };
+
+  # Host with disko + lanzaboote
+  lenovo-work = mkSystem {
+    system = "x86_64-linux";
+    hostname = "lenovo-work";
+    user = "ericus";
+    modules = [
+      ./modules
+      inputs.disko.nixosModules.disko
+      inputs.lanzaboote.nixosModules.lanzaboote
     ];
   };
 };
@@ -395,7 +554,13 @@ The `mkSystem` function handles all the complexity of creating a unified system 
 - Integrates home-manager as a module (no standalone configs needed)
 - Automatically constructs config file paths based on hostname
 - Passes all flake inputs to both system and home-manager modules
-- Enables Determinate Systems' nix if requested
+
+**Parameters:**
+- `system` - Architecture (e.g., `"x86_64-linux"`, `"aarch64-darwin"`)
+- `hostname` - System hostname (used to locate config files)
+- `user` - Primary username for home-manager
+- `darwin` - Whether this is a macOS system (default: `false`)
+- `modules` - Additional system modules to include (default: `[]`)
 
 **Automatically constructed paths:**
 - System config: `hosts/{nixos|darwin}/${hostname}/configuration.nix`
@@ -403,14 +568,14 @@ The `mkSystem` function handles all the complexity of creating a unified system 
 - Hardware config: `hosts/nixos/${hostname}/hardware-configuration.nix` (NixOS only)
 
 **Special args available in modules:**
-- `inputs` - All flake inputs (nixpkgs, home-manager, walker, noctalia, niri, etc.)
+- `inputs` - All flake inputs (nixpkgs, home-manager, walker, noctalia, niri, disko, lanzaboote, etc.)
 - `hostname` - Current system hostname
 - `user` - Primary username
 - `darwin` - Boolean flag (true for macOS, false for Linux)
 
 **Accessing custom inputs in home modules:**
 
-All flake inputs are available via the `inputs` parameter in home-manager modules. This is the clean, unified way to access any flake input:
+All flake inputs are available via the `inputs` parameter in home-manager modules:
 
 ```nix
 # In any home-manager module
@@ -432,24 +597,6 @@ All flake inputs are available via the `inputs` parameter in home-manager module
   ];
 }
 ```
-
-**Which inputs are currently used:**
-
-The following custom flake inputs are used by home-manager modules:
-
-- `inputs.walker` - Used by `walker.nix` (imports `inputs.walker.homeManagerModules.default`)
-  - Application launcher with GTK UI
-  - Auto-enabled by hyprland and niri compositors
-
-- `inputs.noctalia` - Used by `noctalia.nix` (imports `inputs.noctalia.homeModules.default`)
-  - Shell/notification system for Niri
-  - Optional alternative to walker/waybar/swaybg
-
-- `inputs.niri` - Used by `wayland.nix` (conditionally imports `inputs.niri.homeModules.niri`)
-  - Provides the Niri compositor home-manager module
-  - Only imported on Darwin (Linux uses nixpkgs version)
-
-All other inputs (`nixpkgs`, `home-manager`, `nix-darwin`, `determinate`, `elephant`, `sqlit`) are used at the flake/system level and don't need to be accessed directly in home modules.
 
 **Note:** All modules use `inputs.<name>` instead of expecting the input as a direct parameter. This is cleaner and avoids the need to explicitly pass each input in `extraSpecialArgs`.
 
@@ -505,14 +652,57 @@ Or use the combined alias `nosu` which does both steps.
    mkdir -p hosts/nixos/new-host
    ```
 
-2. **Generate hardware config (NixOS only):**
-   ```bash
-   nixos-generate-config --show-hardware-config > hosts/nixos/new-host/hardware-configuration.nix
+2. **Create disk configuration (if using disko):**
+   ```nix
+   # hosts/nixos/new-host/disko.nix
+   {lib, ...}: {
+     disko.devices = {
+       disk = {
+         vdb = {
+           type = "disk";
+           device = lib.mkDefault "/dev/nvme0n1";  # Adjust to your disk
+           content = {
+             type = "gpt";
+             partitions = {
+               ESP = { ... };
+               luks = { ... };
+             };
+           };
+         };
+       };
+     };
+   }
+   ```
+   See the lenovo-work `disko.nix` for a complete LUKS + btrfs example.
+
+3. **Create hardware-configuration.nix:**
+   For disko-managed hosts, only include kernel modules and hardware settings (no `fileSystems` or `swapDevices`):
+   ```nix
+   { config, lib, modulesPath, ... }: {
+     imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+     boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "usb_storage" "sd_mod" ];
+     boot.kernelModules = [ "kvm-intel" ];
+     # Filesystem and swap managed by disko
+     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+   }
    ```
 
-3. **Create configuration.nix:**
+4. **Create configuration.nix:**
    ```nix
    {user, pkgs, ...}: {
+     imports = [./disko.nix];
+
+     # Bootloader (use "lanzaboote" for Secure Boot, or omit for systemd-boot default)
+     boot-config.type = "lanzaboote";
+
+     # For LUKS + TPM2:
+     boot.initrd.systemd.enable = true;
+     security.tpm2 = {
+       enable = true;
+       pkcs11.enable = true;
+       tctiEnvironment.enable = true;
+     };
+
      users.users.${user} = {
        isNormalUser = true;
        description = "Name";
@@ -523,14 +713,14 @@ Or use the combined alias `nosu` which does both steps.
      # Enable system modules
      desktop-wayland = {
        enable = true;
-       compositor = "hyprland";  # or "niri"
+       compositor = "niri";
      };
      graphics-config.enable = true;
      media-config.audio.enable = true;
    }
    ```
 
-4. **Create home.nix:**
+5. **Create home.nix:**
    ```nix
    {...}: {
      imports = [ ../../../home/default.nix ];
@@ -538,7 +728,7 @@ Or use the combined alias `nosu` which does both steps.
      home = {
        username = "username";
        homeDirectory = "/home/username";
-       stateVersion = "25.05";
+       stateVersion = "25.11";
      };
 
      programs.home-manager.enable = true;
@@ -548,25 +738,28 @@ Or use the combined alias `nosu` which does both steps.
      fish-config.enable = true;
      wayland = {
        enable = true;
-       compositor = "hyprland";  # or "niri"
+       compositor = "niri";
      };
    }
    ```
 
-5. **Add to flake.nix:**
+6. **Add to flake.nix:**
    ```nix
    nixosConfigurations.new-host = mkSystem {
      system = "x86_64-linux";
      hostname = "new-host";
      user = "username";
-     determinate = true;  # optional
-     modules = [./modules];
+     modules = [
+       ./modules
+       inputs.disko.nixosModules.disko          # If using disko
+       inputs.lanzaboote.nixosModules.lanzaboote  # If using Secure Boot
+     ];
    };
    ```
 
-6. **Build and switch:**
+7. **Install:**
    ```bash
-   sudo nixos-rebuild switch --flake .#new-host
+   sudo bash bootstrap/install new-host
    ```
 
 ### Creating a New Module
@@ -601,18 +794,18 @@ Or use the combined alias `nosu` which does both steps.
    feature-config.enable = true;
    ```
 
-## important notes
+## Important Notes
 
 ### Imports in Conditional Blocks
 
-**❌ Wrong:**
+**Wrong:**
 ```nix
 config = lib.mkIf config.module.enable {
   imports = [...];  # ERROR: imports can't be conditional
 };
 ```
 
-**✅ Correct:**
+**Correct:**
 ```nix
 imports = [...];  # Always at top level
 
@@ -625,19 +818,19 @@ config = lib.mkIf config.module.enable {
 
 Within the same file, you can't declare the same attribute path twice:
 
-**❌ Wrong:**
+**Wrong:**
 ```nix
 wayland.windowManager.hyprland.settings = { ... };
 wayland.windowManager.hyprland.settings = { ... };  # ERROR!
 ```
 
-**✅ Correct - Use nested paths:**
+**Correct - Use nested paths:**
 ```nix
 wayland.windowManager.hyprland.settings = { ... };
 wayland.windowManager.hyprland.settings.xwayland = { ... };  # OK!
 ```
 
-**✅ Correct - Use lib.mkMerge:**
+**Correct - Use lib.mkMerge:**
 ```nix
 wayland.windowManager.hyprland.settings = lib.mkMerge [
   { ... }
@@ -720,9 +913,30 @@ The hostname comes from the flake, ensure:
 2. Using `"${hostname}"` (with quotes and interpolation)
 3. Not hardcoded in modules (should be in flake only)
 
+### LUKS / TPM2 issues after firmware update
+
+If TPM2 auto-unlock stops working (e.g., after BIOS update):
+1. Type your LUKS password at the boot prompt (the passphrase slot is never removed)
+2. Re-enroll TPM2: `sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p2`
+
+### Secure Boot verification
+
+```bash
+# Check if Secure Boot is active
+sudo sbctl status
+
+# List enrolled keys
+sudo sbctl list-enrolled-keys
+
+# Verify all signed files
+sudo sbctl verify
+```
+
 ## Additional Resources
 
 - [NixOS Module System](https://nixos.org/manual/nixos/stable/#sec-writing-modules)
 - [Home Manager Manual](https://nix-community.github.io/home-manager/)
+- [Disko Documentation](https://github.com/nix-community/disko)
+- [Lanzaboote Documentation](https://github.com/nix-community/lanzaboote)
 - [lib.mkDefault Priority](https://nixos.org/manual/nixos/stable/#sec-option-definitions-setting-priorities)
 - [Nix Language Basics](https://nixos.org/manual/nix/stable/language/)
