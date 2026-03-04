@@ -32,6 +32,7 @@
 
       # TUIs TODO: Maybe move to it's own module?
       inputs.sqlit.packages.${pkgs.stdenv.hostPlatform.system}.default
+      atac
     ];
 
     home.sessionPath = [
