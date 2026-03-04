@@ -11,10 +11,6 @@
   };
 
   config = lib.mkIf config.base-system.enable {
-    # Bootloader
-    boot.loader.systemd-boot.enable = true;
-    boot.loader.efi.canTouchEfiVariables = true;
-
     # Networking
     networking.hostName = "${hostname}";
     networking.networkmanager.enable = true;

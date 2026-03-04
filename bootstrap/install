@@ -1,0 +1,309 @@
+#!/usr/bin/env bash
+# NixOS Bootstrap Installer
+# Unified script: disko partitioning + nixos-install + post-install setup
+#
+# Usage:
+#   From NixOS live USB:
+#     curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/install > install.sh
+#     sudo bash install.sh <hostname>
+#
+#   Or from a local clone:
+#     sudo bash bootstrap/install <hostname>
+#
+# Examples:
+#   sudo bash install.sh lenovo-work
+#   sudo bash install.sh laptop-amd
+
+set -euo pipefail
+
+# Source shared functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib.sh" ]; then
+    source "$SCRIPT_DIR/lib.sh"
+else
+    eval "$(curl -fsSL https://raw.githubusercontent.com/e-ricus/configs/main/bootstrap/lib.sh)"
+fi
+
+# Configuration
+TARGET_USER="ericus"
+TARGET_UID="1000"
+TARGET_GID="100"
+CONFIGS_REPO="https://github.com/e-ricus/configs.git"
+NIX_FLAGS='--experimental-features "nix-command flakes"'
+
+# Where configs will live on the installed system
+CONFIGS_DIR="/mnt/home/$TARGET_USER/configs"
+
+#############################################
+# Validation
+#############################################
+
+validate_environment() {
+    if [ "$(id -u)" -ne 0 ]; then
+        log_error "This script must be run as root (sudo)"
+        exit 1
+    fi
+
+    if [ "$(detect_system)" != "nixos" ]; then
+        log_error "This script must be run from the NixOS live installer"
+        exit 1
+    fi
+
+    log_success "Running as root in NixOS installer environment"
+}
+
+validate_hostname() {
+    local hostname="$1"
+    local disko_path="nix/hosts/nixos/$hostname/disko.nix"
+
+    # Check if the host directory exists in configs
+    if [ -d "$CONFIGS_DIR" ]; then
+        if [ ! -f "$CONFIGS_DIR/$disko_path" ]; then
+            log_error "No disko.nix found at $CONFIGS_DIR/$disko_path"
+            log_error "Host '$hostname' either doesn't exist or has no disko configuration"
+            exit 1
+        fi
+    fi
+    # If configs aren't cloned yet, disko will fail later with a clear error
+}
+
+#############################################
+# Step 1: Disko - Partition & Format
+#############################################
+
+run_disko() {
+    local hostname="$1"
+
+    log_info "=== Step 1: Disko - Partition & Format ==="
+    echo
+
+    # Ensure git is available for cloning
+    ensure_git
+
+    # Clone configs if not already present
+    # Disko will mount partitions to /mnt, so we clone to /tmp first for the disko step
+    local tmp_configs="/tmp/configs"
+    if [ ! -d "$tmp_configs" ]; then
+        clone_configs "$tmp_configs"
+    else
+        log_success "Configs already at $tmp_configs"
+    fi
+
+    local disko_path="$tmp_configs/nix/hosts/nixos/$hostname/disko.nix"
+    if [ ! -f "$disko_path" ]; then
+        log_error "disko.nix not found at: $disko_path"
+        log_error "Verify host '$hostname' has a disko configuration"
+        exit 1
+    fi
+
+    echo
+    log_warning "This will DESTROY all data on the target disk!"
+    log_info "Disk configuration from: $disko_path"
+    echo
+
+    if ! confirm "Proceed with disk partitioning?"; then
+        log_info "Disko cancelled"
+        exit 0
+    fi
+
+    echo
+    log_info "Running disko (you will be prompted for the LUKS encryption password)..."
+    echo
+
+    if nix --experimental-features "nix-command flakes" \
+        run github:nix-community/disko/latest -- \
+        --mode destroy,format,mount \
+        "$disko_path"; then
+        log_success "Disko completed - disk partitioned, formatted, and mounted at /mnt"
+    else
+        log_error "Disko failed!"
+        log_info "Check the error above and re-run with:"
+        log_info "  sudo bash install $hostname"
+        log_info "  (select option 2 to retry disko)"
+        exit 1
+    fi
+
+    # Now that /mnt is mounted, clone configs to the final location
+    echo
+    log_info "Cloning configs to installed system..."
+    mkdir -p "/mnt/home/$TARGET_USER"
+    clone_configs "$CONFIGS_DIR"
+    chown -R "$TARGET_UID:$TARGET_GID" "/mnt/home/$TARGET_USER"
+    log_success "Configs ready at $CONFIGS_DIR"
+}
+
+#############################################
+# Step 2: NixOS Install
+#############################################
+
+run_nixos_install() {
+    local hostname="$1"
+
+    log_info "=== Step 2: NixOS Install ==="
+    echo
+
+    # Verify /mnt is mounted
+    if ! mountpoint -q /mnt; then
+        log_error "/mnt is not mounted!"
+        log_info "Run disko first (option 2) or mount partitions manually"
+        exit 1
+    fi
+
+    # Verify configs exist
+    if [ ! -f "$CONFIGS_DIR/nix/flake.nix" ]; then
+        log_error "Configs not found at $CONFIGS_DIR"
+        log_info "If disko already ran, clone configs manually:"
+        log_info "  git clone $CONFIGS_REPO $CONFIGS_DIR"
+        exit 1
+    fi
+
+    log_info "Installing NixOS with flake: $CONFIGS_DIR/nix#$hostname"
+    log_info "This may take 10-30 minutes..."
+    log_info "You will be prompted to set the root password."
+    echo
+
+    if nixos-install \
+        --flake "$CONFIGS_DIR/nix#$hostname" \
+        --option experimental-features "nix-command flakes"; then
+        echo
+        log_success "NixOS installation complete!"
+    else
+        echo
+        log_error "NixOS installation failed!"
+        log_info "Fix the issue and re-run with:"
+        log_info "  sudo bash install $hostname"
+        log_info "  (select option 3 to retry install, or option 4 for post-install)"
+        exit 1
+    fi
+}
+
+#############################################
+# Step 3: Post-install
+#############################################
+
+run_post_install() {
+    local hostname="$1"
+
+    log_info "=== Step 3: Post-install ==="
+    echo
+
+    # Verify /mnt is mounted
+    if ! mountpoint -q /mnt; then
+        log_error "/mnt is not mounted!"
+        exit 1
+    fi
+
+    # Set user password
+    log_info "Setting password for user '$TARGET_USER'..."
+    if nixos-enter --root /mnt -- passwd "$TARGET_USER"; then
+        log_success "User password set"
+    else
+        log_warning "Failed to set user password"
+        log_info "You can set it after boot with: passwd $TARGET_USER"
+    fi
+
+    # Fix ownership of configs
+    log_info "Fixing configs ownership..."
+    chown -R "$TARGET_UID:$TARGET_GID" "/mnt/home/$TARGET_USER"
+    log_success "Ownership set"
+
+    echo
+    log_success "============================================"
+    log_success "  Installation complete!"
+    log_success "============================================"
+    echo
+    log_info "After first boot, complete the following steps:"
+    echo
+    log_info "1. TPM2 enrollment (unlocks LUKS without password on boot):"
+    log_info "   sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p2"
+    echo
+    log_info "2. Secure Boot setup:"
+    log_info "   a. Reboot into UEFI firmware settings (hold F1 on Lenovo)"
+    log_info "   b. Go to Security > Secure Boot"
+    log_info "   c. Enable Secure Boot"
+    log_info "   d. Reset to Setup Mode (clear all Secure Boot keys)"
+    log_info "   e. Save and boot into NixOS"
+    log_info "   f. Lanzaboote will auto-generate and enroll keys, then reboot"
+    log_info "   g. Verify with: sudo sbctl status"
+    echo
+    log_info "3. After TPM2 + Secure Boot are both set up:"
+    log_info "   Re-enroll TPM2 with Secure Boot PCRs for full protection:"
+    log_info "   sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p2"
+    echo
+
+    if confirm "Reboot now?"; then
+        log_info "Rebooting..."
+        reboot
+    else
+        log_info "Remember to reboot when ready"
+    fi
+}
+
+#############################################
+# Main
+#############################################
+
+main() {
+    local hostname="${1:-}"
+
+    if [ -z "$hostname" ]; then
+        echo "Usage: sudo bash install <hostname>"
+        echo
+        echo "Available hosts are defined in nix/hosts/nixos/<hostname>/"
+        echo "Example: sudo bash install lenovo-work"
+        exit 1
+    fi
+
+    echo
+    log_info "============================================"
+    log_info "  NixOS Bootstrap Installer"
+    log_info "  Host: $hostname"
+    log_info "============================================"
+    echo
+
+    validate_environment
+
+    echo
+    log_info "Select starting step:"
+    echo "  1) Full bootstrap (disko -> install -> post-install)"
+    echo "  2) Disko only (partition & format)"
+    echo "  3) NixOS install only (skip partitioning)"
+    echo "  4) Post-install only (set passwords)"
+    echo
+
+    local start_step
+    while true; do
+        read -p "Enter selection (1-4): " start_step
+        case $start_step in
+            1|2|3|4) break ;;
+            *) log_error "Invalid selection" ;;
+        esac
+    done
+
+    echo
+
+    case $start_step in
+        1)
+            run_disko "$hostname"
+            echo
+            run_nixos_install "$hostname"
+            echo
+            run_post_install "$hostname"
+            ;;
+        2)
+            run_disko "$hostname"
+            echo
+            log_success "Disko complete. Re-run with option 3 for nixos-install."
+            ;;
+        3)
+            run_nixos_install "$hostname"
+            echo
+            run_post_install "$hostname"
+            ;;
+        4)
+            run_post_install "$hostname"
+            ;;
+    esac
+}
+
+main "$@"

@@ -2,6 +2,7 @@
   imports = [
     # System configuration modules
     ./base-system.nix
+    ./boot-config.nix
     ./locale-time.nix
     ./desktop-wayland.nix
     ./media.nix
@@ -20,6 +21,7 @@
   # Set module defaults
   # Core system (enabled by default)
   base-system.enable = lib.mkDefault true;
+  boot-config.enable = lib.mkDefault true;
   locale-time.enable = lib.mkDefault true;
   minimal-packages.enable = lib.mkDefault true;
 

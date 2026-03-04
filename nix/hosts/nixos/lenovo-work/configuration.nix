@@ -3,6 +3,21 @@
   user,
   ...
 }: {
+  imports = [./disko.nix];
+
+  # Bootloader - Secure Boot via lanzaboote
+  boot-config.type = "lanzaboote";
+
+  # LUKS / initrd - required for TPM2 unlock
+  boot.initrd.systemd.enable = true;
+
+  # TPM2
+  security.tpm2 = {
+    enable = true;
+    pkcs11.enable = true;
+    tctiEnvironment.enable = true;
+  };
+
   # User account
   users.users.${user} = {
     isNormalUser = true;

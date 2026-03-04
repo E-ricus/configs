@@ -3,7 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -35,6 +34,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-jetbrains-plugins.url = "github:nix-community/nix-jetbrains-plugins";
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.0.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs: let
@@ -47,7 +54,6 @@
         system = "x86_64-linux";
         hostname = "laptop-amd";
         user = "ericus";
-        determinate = true;
         modules = [
           ./modules
         ];
@@ -57,7 +63,6 @@
         system = "x86_64-linux";
         hostname = "laptop-lenovo";
         user = "ericus";
-        determinate = true;
         modules = [
           ./modules
         ];
@@ -67,9 +72,10 @@
         system = "x86_64-linux";
         hostname = "lenovo-work";
         user = "ericus";
-        determinate = true;
         modules = [
           ./modules
+          inputs.disko.nixosModules.disko
+          inputs.lanzaboote.nixosModules.lanzaboote
         ];
       };
 

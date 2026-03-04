@@ -15,7 +15,6 @@
 #   hostname: System hostname (used to locate config files)
 #   user: Primary username for home-manager
 #   darwin: Whether this is a macOS system (default: false)
-#   determinate: Whether to use Determinate Systems' nix (default: false)
 #   modules: Additional system modules to include (default: [])
 #
 # File structure expected:
@@ -27,7 +26,6 @@
   hostname,
   user,
   darwin ? false,
-  determinate ? false,
   modules ? [],
 }: let
   # Import nixpkgs with unfree packages enabled
@@ -86,13 +84,6 @@ in
 
         # Main system configuration
         systemConfig
-
-        # Determinate Systems' nix (optional, NixOS only)
-        (
-          if determinate
-          then inputs.determinate.nixosModules.default
-          else {}
-        )
 
         # Integrate home-manager into the system configuration
         home-manager-module
