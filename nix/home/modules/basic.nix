@@ -19,6 +19,7 @@
       fd
       ripgrep
       zoxide
+      fastfetch
 
       # Goodies
       starship

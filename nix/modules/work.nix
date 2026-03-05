@@ -19,5 +19,7 @@
     ];
     # For slack in wayland
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
+    # Sad
+    services.teamviewer.enable = true;
   };
 }
