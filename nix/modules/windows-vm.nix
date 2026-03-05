@@ -37,7 +37,30 @@
 #      SPICE guest agent (clipboard sharing, auto-resolution).
 #      No need to manually install individual drivers from step 4.
 #
-#   6. Once done, set isoPath = null and rebuild to detach the
+#   6. Enable SSH access from the host (inside the Windows VM):
+#      a. Open PowerShell as Administrator and run:
+#           Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+#           Start-Service sshd
+#           Set-Service -Name sshd -StartupType Automatic
+#      b. Allow SSH through Windows Firewall:
+#           New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+#      c. Find the VM's IP from the host:
+#           sudo virsh net-dhcp-leases default
+#         The VM has a static DHCP reservation at 192.168.122.129.
+#
+#   7. File transfer between host and VM (from the host terminal):
+#        scp myfile.txt <user>@192.168.122.129:C:/Users/<user>/Desktop/
+#        scp <user>@192.168.122.129:C:/Users/<user>/Documents/file.txt ./
+#      To avoid typing the password each time: ssh-copy-id <user>@192.168.122.129
+#
+#   8. Reaching host services from the VM:
+#      The host is reachable at 192.168.122.1 from inside the VM.
+#      For example, a service on host localhost:3000 is accessible at:
+#        http://192.168.122.1:3000
+#      The virtualization module opens the host firewall on virbr0 for this.
+#      VM traffic goes through the host network stack, including VPNs.
+#
+#   9. Once done, set isoPath = null and rebuild to detach the
 #      installer ISO from the VM definition if wanted.
 {
   config,
@@ -142,13 +165,38 @@ in {
           }
         ];
 
-        # NAT network bridge for the VM
+        # NAT network bridge for the VM with static DHCP reservation
         networks = [
           {
-            definition = nixvirt.lib.network.writeXML (nixvirt.lib.network.templates.bridge {
+            definition = nixvirt.lib.network.writeXML {
+              name = "default";
               uuid = networkUUID;
-              subnet_byte = 122; # 192.168.122.0/24, matches libvirt default
-            });
+              forward = {
+                mode = "nat";
+                nat = {
+                  port = {
+                    start = 1024;
+                    end = 65535;
+                  };
+                };
+              };
+              bridge = {name = "virbr0";};
+              ip = {
+                address = "192.168.122.1";
+                netmask = "255.255.255.0";
+                dhcp = {
+                  range = {
+                    start = "192.168.122.2";
+                    end = "192.168.122.254";
+                  };
+                  host = {
+                    mac = "52:54:00:62:cc:b0";
+                    name = "windows-vm";
+                    ip = "192.168.122.129";
+                  };
+                };
+              };
+            };
             active = true;
           }
         ];

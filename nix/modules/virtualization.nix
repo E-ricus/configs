@@ -39,6 +39,12 @@
     # Add your user to libvirtd group
     users.users.${user}.extraGroups = ["libvirtd"];
 
+    # Allow VMs on the NAT bridge to reach host services (e.g., localhost:8080).
+    # This is safe since virbr0 is a private NAT network only VMs use.
+    networking.firewall.interfaces."virbr0".allowedTCPPortRanges = [
+      {from = 1; to = 65535;}
+    ];
+
     # Optional: Enable dnsmasq for VM networking
     virtualisation.libvirtd.onBoot = "ignore"; # Don't auto-start VMs on boot
     virtualisation.libvirtd.onShutdown = "shutdown"; # Gracefully shutdown VMs
