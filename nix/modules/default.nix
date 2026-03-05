@@ -12,6 +12,7 @@
     # Optional features
     ./gaming.nix
     ./virtualization.nix
+    ./windows-vm.nix
     ./hybrid-gpu.nix
     # Software
     ./jetbrains.nix
@@ -38,6 +39,7 @@
   gaming-config.enable = lib.mkDefault false;
   gaming-config.minecraft.enable = lib.mkDefault false;
   virtualization-config.enable = lib.mkDefault false;
+  windows-vm.enable = lib.mkDefault false;
 
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;

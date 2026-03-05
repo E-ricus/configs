@@ -42,6 +42,10 @@
       url = "github:nix-community/lanzaboote/v1.0.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    NixVirt = {
+      url = "https://flakehub.com/f/AshleyYakeley/NixVirt/*.tar.gz";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs: let
@@ -78,6 +82,7 @@
           ./modules
           inputs.disko.nixosModules.disko
           inputs.lanzaboote.nixosModules.lanzaboote
+          inputs.NixVirt.nixosModules.default
         ];
       };
 

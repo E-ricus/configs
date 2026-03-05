@@ -54,5 +54,6 @@
 
   jetbrains.enable = true;
   virtualization-config.enable = true;
+  windows-vm.enable = true;
   work.enable = true;
 }
