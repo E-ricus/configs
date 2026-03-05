@@ -65,6 +65,8 @@
         user = "ericus";
         modules = [
           ./modules
+          # Only needed for the conditional, ideally this also uses it later.
+          inputs.lanzaboote.nixosModules.lanzaboote
         ];
       };
 

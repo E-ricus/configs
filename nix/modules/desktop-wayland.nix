@@ -29,20 +29,38 @@
         inputs.niri.overlays.niri
       ];
 
-      # Display manager - greetd with tuigreet
-      services.greetd = {
+      # Display manager - greetd with ReGreet (GTK4 graphical greeter)
+      programs.regreet = {
         enable = true;
+        cageArgs = ["-s" "-d"];
         settings = {
-          default_session = {
-            command = let
-              compositorCmd =
-                if config.desktop-wayland.compositor == "hyprland"
-                then "Hyprland"
-                else "niri-session";
-            in "${pkgs.tuigreet}/bin/tuigreet --time --cmd ${compositorCmd}";
-            user = "greeter";
-          };
+          GTK.application_prefer_dark_theme = true;
+          appearance.greeting_msg = "Welcome";
         };
+        theme = {
+          name = "adw-gtk3-dark";
+          package = pkgs.adw-gtk3;
+        };
+        iconTheme = {
+          name = "Papirus-Dark";
+          package = pkgs.papirus-icon-theme;
+        };
+        cursorTheme = {
+          name = "Adwaita";
+          package = pkgs.adwaita-icon-theme;
+        };
+        font = {
+          name = "JetBrainsMono Nerd Font";
+          package = pkgs.nerd-fonts.jetbrains-mono;
+          size = 14;
+        };
+        extraCss = builtins.readFile ./config/regreet-style.css;
+      };
+
+      # Fix 20-second GTK4 startup delay in greeter
+      systemd.services.greetd.environment = {
+        GTK_USE_PORTAL = "0";
+        GDK_DEBUG = "no-portals";
       };
       # Enable polkit (for privilege escalation)
       security.polkit.enable = true;

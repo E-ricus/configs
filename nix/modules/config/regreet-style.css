@@ -1,0 +1,90 @@
+/* Catppuccin Mocha theme for ReGreet */
+/* Matching the Noctalia + Niri desktop aesthetic */
+@define-color base #1e1e2e;
+@define-color mantle #181825;
+@define-color crust #11111b;
+@define-color text #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color blue #89b4fa;
+@define-color lavender #b4befe;
+@define-color red #f38ba8;
+@define-color green #a6e3a1;
+@define-color peach #fab387;
+
+window {
+  background-color: @base;
+}
+
+entry {
+  background-color: @surface0;
+  color: @text;
+  border: 1px solid @surface1;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+entry:focus {
+  border-color: @lavender;
+  box-shadow: 0 0 0 1px @lavender;
+}
+
+button {
+  background-color: @surface0;
+  color: @text;
+  border: 1px solid @surface1;
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+button:hover {
+  background-color: @surface1;
+  border-color: @surface2;
+}
+
+button.suggested-action {
+  background-color: @lavender;
+  color: @base;
+  border-color: @lavender;
+}
+
+button.suggested-action:hover {
+  background-color: @blue;
+  border-color: @blue;
+}
+
+button.destructive-action {
+  background-color: @red;
+  color: @base;
+  border-color: @red;
+}
+
+button.destructive-action:hover {
+  opacity: 0.85;
+}
+
+label {
+  color: @text;
+}
+
+.error label {
+  color: @red;
+}
+
+combobox button {
+  background-color: @surface0;
+  color: @text;
+  border-color: @surface1;
+}
+
+combobox button:hover {
+  background-color: @surface1;
+}
+
+headerbar {
+  background-color: @mantle;
+  color: @text;
+}
