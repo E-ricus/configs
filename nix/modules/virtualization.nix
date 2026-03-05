@@ -42,5 +42,16 @@
     # Optional: Enable dnsmasq for VM networking
     virtualisation.libvirtd.onBoot = "ignore"; # Don't auto-start VMs on boot
     virtualisation.libvirtd.onShutdown = "shutdown"; # Gracefully shutdown VMs
+
+    # Fix: upstream service hardcodes /usr/bin/sh which doesn't exist on NixOS.
+    # ExecStart in drop-ins requires clearing the original value first (empty string),
+    # then setting the new one. mkForce only affects NixOS module merging, not systemd.
+    systemd.services.virt-secret-init-encryption.serviceConfig.ExecStart = let
+      script = pkgs.writeShellScript "virt-secret-init-encryption" ''
+        umask 0077 && (dd if=/dev/random status=none bs=32 count=1 | ${pkgs.systemd}/bin/systemd-creds encrypt --name=secrets-encryption-key - /var/lib/libvirt/secrets/secrets-encryption-key)
+      '';
+    in
+      lib.mkForce ["" script];
+    ## delete this block when this issue: https://github.com/NixOS/nixpkgs/issues/496836 is resolved
   };
 }

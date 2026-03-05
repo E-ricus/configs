@@ -49,6 +49,9 @@
     gtklock.fprintAuth = true;
   };
 
+  # Backlight control - udev rules for video group write access
+  hardware.brillo.enable = true;
+
   jetbrains.enable = true;
   virtualization-config.enable = true;
   work.enable = true;
