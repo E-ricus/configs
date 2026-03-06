@@ -42,6 +42,14 @@
         swaybg-config.enable = lib.mkDefault (!config.noctalia-config.enable);
 
         programs.niri.settings = {
+          workspaces = {
+            "01".name = "1";
+            "02".name = "2";
+            "03".name = "3";
+            "04".name = "4";
+            "05".name = "5";
+          };
+
           input = {
             keyboard = {
               xkb = {
