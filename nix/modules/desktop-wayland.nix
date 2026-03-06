@@ -97,7 +97,7 @@
         xwayland-satellite # xwayland support
       ];
       services.upower.enable = true;
-      services.tuned.enable = true;
+      services.power-profiles-daemon.enable = true;
     })
   ];
 }

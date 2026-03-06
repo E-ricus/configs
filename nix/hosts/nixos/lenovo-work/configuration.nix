@@ -18,6 +18,9 @@
     tctiEnvironment.enable = true;
   };
 
+  # Taken from nixos-hardware
+  services.fstrim.enable = true;
+
   # User account
   users.users.${user} = {
     isNormalUser = true;
@@ -33,7 +36,10 @@
   };
   graphics-config = {
     enable = true;
-    enable32Bit = true;
+    intel = {
+      enable = true;
+      driver = "xe";
+    };
   };
   media-config = {
     audio.enable = true;

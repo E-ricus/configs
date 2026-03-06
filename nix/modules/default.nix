@@ -30,6 +30,7 @@
   desktop-wayland.enable = lib.mkDefault false;
   graphics-config.enable = lib.mkDefault false;
   graphics-config.enable32Bit = lib.mkDefault false;
+  graphics-config.intel.enable = lib.mkDefault false;
 
   # Media (disabled by default)
   media-config.audio.enable = lib.mkDefault false;
