@@ -77,6 +77,8 @@
   networkUUID = "3e9f8f79-67b8-4bd3-aeb9-3a50be2d610f";
   domainUUID = "8f1a52ac-750b-45ca-b939-0a456a178a78";
 in {
+  imports = [inputs.NixVirt.nixosModules.default];
+
   options.windows-vm = {
     enable = lib.mkEnableOption "declarative Windows 11 VM via NixVirt";
 

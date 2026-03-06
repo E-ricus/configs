@@ -2,10 +2,13 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }: let
   cfg = config.boot-config;
 in {
+  imports = [inputs.lanzaboote.nixosModules.lanzaboote];
+
   options.boot-config = {
     enable = lib.mkEnableOption "boot configuration";
 
