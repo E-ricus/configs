@@ -25,7 +25,7 @@
   users.users.${user} = {
     isNormalUser = true;
     description = "Eric";
-    extraGroups = ["networkmanager" "wheel" "video" "audio"];
+    extraGroups = ["networkmanager" "wheel" "video" "audio" "plugdev"];
     shell = pkgs.nushell;
   };
 
@@ -47,7 +47,9 @@
   };
 
   # Fingerprint (Synaptics 06cb:00f9, natively supported by libfprint)
-  services.fprintd.enable = true;
+  # Is sometimes flaky, and when using an external monitor and lid is close I don't have the sensor.
+  # TODO: Have password work in paralel
+  services.fprintd.enable = false;
   security.pam.services = {
     sudo.fprintAuth = true;
     hyprlock.fprintAuth = true;
@@ -58,6 +60,7 @@
   # Backlight control - udev rules for video group write access
   hardware.brillo.enable = true;
 
+  keyboards-config.zsa.enable = true;
   jetbrains.enable = true;
   virtualization-config.enable = true;
   windows-vm.enable = true;

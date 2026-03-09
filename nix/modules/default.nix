@@ -14,6 +14,8 @@
     ./virtualization.nix
     ./windows-vm.nix
     ./hybrid-gpu.nix
+    # Hardware
+    ./keyboards.nix
     # Software
     ./jetbrains.nix
     ./work.nix
@@ -45,6 +47,9 @@
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;
   hybrid-gpu.nvidiaOnly.enable = lib.mkDefault true;
+
+  # Keyboards
+  keyboards-config.zsa.enable = lib.mkDefault false;
 
   # Software
   jetbrains.enable = lib.mkDefault false;
