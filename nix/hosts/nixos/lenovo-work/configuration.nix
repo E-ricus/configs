@@ -18,6 +18,23 @@
     tctiEnvironment.enable = true;
   };
 
+  # Hibernation support
+  # resumeDevice points to the opened LUKS volume defined in disko.nix
+  boot.resumeDevice = "/dev/mapper/crypted";
+  # resume_offset is required for btrfs swapfiles. Get the value by running:
+  #   sudo btrfs inspect-internal map-swapfile -r /.swapvol/swapfile
+  boot.kernelParams = ["resume_offset=41286002"];
+
+  # Suspend-then-hibernate: suspend to RAM first, auto-hibernate after 30 min
+  systemd.sleep.settings.Sleep.HibernateDelaySec = "30min";
+
+  # Lid and power button behavior
+  services.logind.settings.Login = {
+    LidSwitch = "suspend-then-hibernate";
+    PowerKey = "hibernate";
+    PowerKeyLongPress = "poweroff";
+  };
+
   # Taken from nixos-hardware
   services.fstrim.enable = true;
 

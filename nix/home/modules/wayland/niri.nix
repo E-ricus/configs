@@ -435,7 +435,7 @@
             }
             {
               timeout = 1800;
-              command = "${pkgs.systemd}/bin/systemctl suspend";
+              command = "${pkgs.systemd}/bin/systemctl suspend-then-hibernate";
             }
           ];
         };
