@@ -42,6 +42,10 @@
         swaybg-config.enable = lib.mkDefault (!config.noctalia-config.enable);
 
         programs.niri.settings = {
+          environment = lib.mkIf config.noctalia-config.enable {
+            NOCTALIA_PAM_SERVICE = "noctalia";
+          };
+
           workspaces = {
             "01".name = "1";
             "02".name = "2";

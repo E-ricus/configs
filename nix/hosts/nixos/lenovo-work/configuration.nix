@@ -25,8 +25,8 @@
   #   sudo btrfs inspect-internal map-swapfile -r /.swapvol/swapfile
   boot.kernelParams = ["resume_offset=41286002"];
 
-  # Suspend-then-hibernate: suspend to RAM first, auto-hibernate after 30 min
-  systemd.sleep.settings.Sleep.HibernateDelaySec = "30min";
+  # Suspend-then-hibernate: suspend to RAM first, auto-hibernate after x min
+  systemd.sleep.settings.Sleep.HibernateDelaySec = "15min";
 
   # Lid and power button behavior
   services.logind.settings.Login = {
@@ -64,15 +64,9 @@
   };
 
   # Fingerprint (Synaptics 06cb:00f9, natively supported by libfprint)
-  # Is sometimes flaky, and when using an external monitor and lid is close I don't have the sensor.
-  # TODO: Have password work in paralel
-  services.fprintd.enable = false;
-  security.pam.services = {
-    sudo.fprintAuth = true;
-    hyprlock.fprintAuth = true;
-    swaylock.fprintAuth = true;
-    gtklock.fprintAuth = true;
-  };
+  # Uses pam-fprint-grosshack for parallel auth: fingerprint and password
+  # prompts are active simultaneously — whichever succeeds first wins.
+  fingerprint-config.enable = true;
 
   # Backlight control - udev rules for video group write access
   hardware.brillo.enable = true;

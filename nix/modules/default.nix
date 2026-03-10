@@ -15,6 +15,7 @@
     ./windows-vm.nix
     ./hybrid-gpu.nix
     # Hardware
+    ./fingerprint.nix
     ./keyboards.nix
     # Software
     ./jetbrains.nix
@@ -47,6 +48,9 @@
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;
   hybrid-gpu.nvidiaOnly.enable = lib.mkDefault true;
+
+  # Fingerprint
+  fingerprint-config.enable = lib.mkDefault false;
 
   # Keyboards
   keyboards-config.zsa.enable = lib.mkDefault false;

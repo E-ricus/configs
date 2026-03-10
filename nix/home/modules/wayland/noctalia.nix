@@ -96,6 +96,7 @@
           animationSpeed = 1;
           animationDisabled = false;
           compactLockScreen = false;
+          autoStartAuth = true;
           lockOnSuspend = true;
           showSessionButtonsOnLockScreen = true;
           showHibernateOnLockScreen = false;
@@ -434,6 +435,13 @@
         };
       };
     };
+
+    # Tell noctalia lock screen to use a dedicated PAM service instead of
+    # the default "login", so we can configure parallel fingerprint+password
+    # auth specifically for the lock screen.
+    # Using systemd.user.sessionVariables so the env var is available to
+    # noctalia-shell (spawned by the compositor, not a shell).
+    systemd.user.sessionVariables.NOCTALIA_PAM_SERVICE = "noctalia";
 
     # Disable mako when noctalia is enabled (noctalia handles notifications)
     services.mako.enable = lib.mkForce false;
