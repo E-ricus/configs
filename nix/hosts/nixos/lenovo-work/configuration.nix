@@ -18,6 +18,8 @@
     tctiEnvironment.enable = true;
   };
 
+  # Firmware does not bridge usb charging as AC
+  boot.blacklistedKernelModules = ["ac"];
   # Hibernation support
   # resumeDevice points to the opened LUKS volume defined in disko.nix
   boot.resumeDevice = "/dev/mapper/crypted";
@@ -30,9 +32,10 @@
 
   # Lid and power button behavior
   services.logind.settings.Login = {
-    LidSwitch = "suspend-then-hibernate";
-    PowerKey = "hibernate";
-    PowerKeyLongPress = "poweroff";
+    HandleLidSwitch = "suspend-then-hibernate";
+    HandleLidSwitchExternalPower = "suspend";
+    HandlePowerKey = "hibernate";
+    HandlePowerKeyLongPress = "poweroff";
   };
 
   # Taken from nixos-hardware
