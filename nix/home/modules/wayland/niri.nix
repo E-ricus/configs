@@ -5,9 +5,6 @@
   ...
 }: {
   imports = [
-    ./walker.nix
-    ./waybar.nix
-    ./swaybg.nix
     ./noctalia.nix
   ];
 
@@ -36,11 +33,6 @@
           '';
     in
       lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
-        # Enable walker and waybar by default when niri is enabled (unless noctalia is used)
-        walker-config.enable = lib.mkDefault true;
-        waybar-config.enable = lib.mkDefault (!config.noctalia-config.enable);
-        swaybg-config.enable = lib.mkDefault (!config.noctalia-config.enable);
-
         programs.niri.settings = {
           environment = lib.mkIf config.noctalia-config.enable {
             NOCTALIA_PAM_SERVICE = "noctalia";
@@ -121,16 +113,7 @@
             struts = {};
           };
 
-          spawn-at-startup =
-            [
-              {command = ["elephant"];}
-              {command = ["walker" "--gapplication-service"];}
-            ]
-            ++ (
-              if config.noctalia-config.enable
-              then [{command = ["noctalia-shell"];}]
-              else [{command = ["swaybg" "-i" config.swaybg-config.selectedWallpaperPath "-m" "fill"];}]
-            );
+          spawn-at-startup = [{command = ["noctalia-shell"];}];
 
           prefer-no-csd = true;
           screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
@@ -177,7 +160,7 @@
             launcherBind =
               if config.noctalia-config.enable
               then ni {action.spawn = noctalia "launcher toggle";}
-              else ni {action.spawn = ["walker"];};
+              else ni {action.spawn = ["fuzzel"];};
 
             lockBind =
               if config.noctalia-config.enable

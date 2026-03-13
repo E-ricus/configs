@@ -5,8 +5,7 @@
   ...
 }: {
   imports = [
-    ./walker.nix
-    ./waybar.nix
+    ./noctalia.nix
   ];
   options = {
     hyprland-config = {
