@@ -14,7 +14,7 @@
   # Enable modules
   desktop-wayland = {
     enable = true;
-    compositor = "niri";
+    compositor = "hyprland";
   };
   graphics-config = {
     enable = true;

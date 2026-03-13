@@ -18,20 +18,34 @@
 
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
+
+    # Conditional lock script
+    lockScript =
+      if config.noctalia-config.enable
+      then
+        pkgs.writeShellScript "lock-screen" ''
+          ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock
+        ''
+      else
+        pkgs.writeShellScript "lock-screen" ''
+          ${pkgs.hyprlock}/bin/hyprlock
+        '';
   in
     lib.mkIf (config.wayland.enable && config.wayland.compositor == "hyprland") {
-      # Enable walker and waybar by default when hyprland is enabled
-      walker-config.enable = lib.mkDefault true;
-      waybar-config.enable = lib.mkDefault true;
+      # Only enable fallback tools when noctalia is disabled
+      programs.fuzzel.enable = lib.mkDefault (!config.noctalia-config.enable);
 
       hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
 
-      home.packages = with pkgs; [
-        hyprlock
-        hyprpaper
-        grim
-        slurp
-      ];
+      home.packages = with pkgs;
+        [
+          grim
+          slurp
+        ]
+        ++ lib.optionals (!config.noctalia-config.enable) [
+          hyprlock
+          hyprpaper
+        ];
 
       wayland.windowManager.hyprland = {
         enable = true;
@@ -43,8 +57,11 @@
         };
         settings = {
           "$mod" = "SUPER";
-          "$terminal" = "alacritty";
-          "$menu" = "walker";
+          "$terminal" = "ghostty";
+          "$menu" =
+            if config.noctalia-config.enable
+            then "noctalia-shell ipc call launcher toggle"
+            else "fuzzel";
 
           misc.focus_on_activate = true;
 
@@ -52,12 +69,13 @@
             ",preferred,auto,auto"
           ];
 
-          exec-once = [
-            "hyprpaper"
-            # for walker menu, it might not be useful:
-            "elephant"
-            "walker --gapplication-service"
-          ];
+          exec-once =
+            (lib.optionals config.noctalia-config.enable [
+              "noctalia-shell"
+            ])
+            ++ (lib.optionals (!config.noctalia-config.enable) [
+              "hyprpaper"
+            ]);
 
           general = {
             gaps_in = 5;
@@ -108,6 +126,7 @@
             "$mod, V, togglefloating"
             "$mod, D, exec, $menu"
             "$mod, P, pseudo,"
+            "$mod ALT, L, exec, ${lockScript}"
 
             #move focus
             "$mod, h, moveFocus, l"
@@ -156,9 +175,21 @@
             "SHIFT, Print, exec, grim - | ${sattyCmd}"
 
             # Volume
-            ", XF86AudioRaiseVolume, exec, ${volumeScript} raise"
-            ", XF86AudioLowerVolume, exec, ${volumeScript} lower"
-            ", XF86AudioMute, exec, ${volumeScript} toggle-mute"
+            ", XF86AudioRaiseVolume, exec, ${
+              if config.noctalia-config.enable
+              then "noctalia-shell ipc call volume increase"
+              else "${volumeScript} raise"
+            }"
+            ", XF86AudioLowerVolume, exec, ${
+              if config.noctalia-config.enable
+              then "noctalia-shell ipc call volume decrease"
+              else "${volumeScript} lower"
+            }"
+            ", XF86AudioMute, exec, ${
+              if config.noctalia-config.enable
+              then "noctalia-shell ipc call volume muteOutput"
+              else "${volumeScript} toggle-mute"
+            }"
 
             # Brightness
             ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"
@@ -176,6 +207,9 @@
         [
           # TODO: This is specific for the lenovo laptop, make it configurable if needed
           "WLR_DRM_DEVICES,/dev/dri/card1" #Prefer iGPU
+        ]
+        ++ lib.optionals config.noctalia-config.enable [
+          "NOCTALIA_PAM_SERVICE,noctalia"
         ]
         ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable [
           "GDK_SCALE,2"
@@ -196,7 +230,7 @@
         enable = true;
         settings = {
           general = {
-            lock_cmd = "pidof hyprlock || hyprlock";
+            lock_cmd = "${lockScript}";
             before_sleep_cmd = "loginctl lock-session";
             after_sleep_cmd = "hyprctl dispatch dpms on";
           };
@@ -213,7 +247,7 @@
             }
             {
               timeout = 1800;
-              on-timeout = "systemctl suspend";
+              on-timeout = "systemctl suspend-then-hibernate";
             }
           ];
         };
