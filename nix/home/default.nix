@@ -64,7 +64,10 @@
 
   # Wayland (by default uses hyprland)
   wayland.enable = lib.mkDefault false;
-  hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
+  hyprland-config = {
+    xwayland-zero-scale.enable = lib.mkDefault false;
+    wlr-drm-device = lib.mkDefault null;
+  };
   # Lower priority, as each compositor enables them by default
   noctalia-config.enable = lib.mkOptionDefault false;
 

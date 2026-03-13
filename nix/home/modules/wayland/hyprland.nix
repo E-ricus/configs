@@ -9,12 +9,24 @@
   ];
   options = {
     hyprland-config = {
-      xwayland-zero-scale.enable = lib.mkEnableOption "enables XWayland zero scaling (fixes 4K scaling issues)";
+      xwayland-zero-scale = {
+        enable = lib.mkEnableOption "enables XWayland zero scaling (fixes 4K scaling issues)";
+        scale = lib.mkOption {
+          type = lib.types.either lib.types.int lib.types.float;
+          default = 2;
+          description = "Scale factor for XWayland applications when zero scaling is enabled";
+        };
+      };
+      wlr-drm-device = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "WLR_DRM_DEVICES value to prefer specific GPU (e.g., /dev/dri/card1 for iGPU)";
+      };
     };
   };
 
   config = let
-    sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
+    sattyCmd = "satty --copy-command wl-copy -f - --output-filename ~/Pictures/Screenshots/satty-$(date '+%Y%m%d-%H:%M:%S').png";
 
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
@@ -204,18 +216,20 @@
       };
 
       wayland.windowManager.hyprland.settings.env =
-        [
-          # TODO: This is specific for the lenovo laptop, make it configurable if needed
-          "WLR_DRM_DEVICES,/dev/dri/card1" #Prefer iGPU
-        ]
+        (lib.optionals (config.hyprland-config.wlr-drm-device != null) [
+          "WLR_DRM_DEVICES,${config.hyprland-config.wlr-drm-device}"
+        ])
         ++ lib.optionals config.noctalia-config.enable [
           "NOCTALIA_PAM_SERVICE,noctalia"
         ]
-        ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable [
-          "GDK_SCALE,2"
-          "QT_SCALE_FACTOR,2"
-          "XCURSOR_SIZE,32"
-        ];
+        ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable (let
+          scale = config.hyprland-config.xwayland-zero-scale.scale;
+          cursorSize = builtins.floor (16 * scale);
+        in [
+          "GDK_SCALE,${toString scale}"
+          "QT_SCALE_FACTOR,${toString scale}"
+          "XCURSOR_SIZE,${toString cursorSize}"
+        ]);
 
       # Conditional XWayland zero scaling
       wayland.windowManager.hyprland.settings.xwayland = lib.mkIf config.hyprland-config.xwayland-zero-scale.enable {
@@ -223,7 +237,14 @@
       };
 
       # Screenshots
-      programs.satty.enable = true;
+      programs.satty = {
+        enable = true;
+        settings = {
+          general = {
+            initial-tool = "brush";
+          };
+        };
+      };
 
       # Idle management
       services.hypridle = {

@@ -38,17 +38,10 @@
     minecraft.enable = true;
   };
 
-  # Fingerprint
-  services.fprintd = {
+  # Fingerprint authentication with parallel password support
+  fingerprint-config = {
     enable = true;
-    tod.enable = true;
     # driver for elantech sensor
-    tod.driver = pkgs.libfprint-2-tod1-elan;
-  };
-  security.pam.services = {
-    sudo.fprintAuth = true;
-    hyprlock.fprintAuth = true;
-    swaylock.fprintAuth = true;
-    gtklock.fprintAuth = true;
+    driver = pkgs.libfprint-2-tod1-elan;
   };
 }

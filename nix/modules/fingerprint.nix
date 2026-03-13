@@ -30,12 +30,24 @@ in {
         default = ["sudo" "login" "hyprlock" "swaylock" "gtklock" "noctalia"];
         description = "PAM services to enable fingerprint authentication for.";
       };
+
+      driver = lib.mkOption {
+        type = lib.types.nullOr lib.types.package;
+        default = null;
+        description = "Optional TOD driver package for fprintd (e.g., libfprint-2-tod1-elan)";
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
     # Enable the fprintd daemon
-    services.fprintd.enable = true;
+    services.fprintd = {
+      enable = true;
+      tod = lib.mkIf (cfg.driver != null) {
+        enable = true;
+        driver = cfg.driver;
+      };
+    };
 
     # Disable the default NixOS fprintd PAM integration (which is sequential)
     # and inject the grosshack module instead for true parallel auth.

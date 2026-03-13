@@ -68,6 +68,10 @@
 
       # Enable dconf (needed for some GTK apps)
       programs.dconf.enable = true;
+
+      # Enable power management services (useful for both compositors)
+      services.upower.enable = true;
+      services.power-profiles-daemon.enable = true;
     })
     (lib.mkIf (config.desktop-wayland.enable && config.desktop-wayland.compositor == "hyprland") {
       services.displayManager.defaultSession = "hyprland";
@@ -96,8 +100,6 @@
       environment.systemPackages = with pkgs; [
         xwayland-satellite # xwayland support
       ];
-      services.upower.enable = true;
-      services.power-profiles-daemon.enable = true;
     })
   ];
 }

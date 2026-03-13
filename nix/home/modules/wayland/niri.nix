@@ -401,8 +401,6 @@
         home.packages = lib.optionals (!config.noctalia-config.enable) (with pkgs; [
           hyprlock
         ]);
-        programs.fuzzel.enable = true; # backup app launcher
-        programs.satty.enable = true; # screenshot annotation
 
         services.swayidle = {
           enable = true;

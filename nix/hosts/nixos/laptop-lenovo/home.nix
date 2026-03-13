@@ -20,6 +20,8 @@
   };
   # Use noctalia shell instead of waybar + swaybg
   noctalia-config.enable = true;
+  # Hyprland configuration
+  hyprland-config.wlr-drm-device = "/dev/dri/card1"; # Prefer iGPU
   editors.enable = true;
   langs = {
     enable = true;
