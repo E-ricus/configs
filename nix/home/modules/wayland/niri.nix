@@ -79,22 +79,23 @@
             hot-corners.enable = false;
           };
 
-          outputs."eDP-1" = {
-            mode = {
-              width = 3840;
-              height = 2160;
-              refresh = 60.0;
-            };
-            scale = 2.0;
-            transform = {
-              rotation = 0;
-              flipped = false;
-            };
-            position = {
-              x = 1280;
-              y = 0;
-            };
-          };
+          # Seems like is choosing correctly
+          # outputs."eDP-1" = {
+          #   mode = {
+          #     width = 3840;
+          #     height = 2160;
+          #     refresh = 60.0;
+          #   };
+          #   scale = 2.0;
+          #   transform = {
+          #     rotation = 0;
+          #     flipped = false;
+          #   };
+          #   position = {
+          #     x = 1280;
+          #     y = 0;
+          #   };
+          # };
 
           layout = {
             gaps = 8;

@@ -19,7 +19,8 @@
     ];
     # For slack in wayland
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
-    # Sad
+    # TeamViewer daemon (manual start only: sudo systemctl start teamviewerd)
     services.teamviewer.enable = true;
+    systemd.services.teamviewerd.wantedBy = lib.mkForce [];
   };
 }
