@@ -34,9 +34,15 @@
     in
       lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
         programs.niri.settings = {
-          environment = lib.mkIf config.noctalia-config.enable {
-            NOCTALIA_PAM_SERVICE = "noctalia";
-          };
+          environment = lib.mkMerge [
+            (lib.mkIf config.noctalia-config.enable {
+              NOCTALIA_PAM_SERVICE = "noctalia";
+            })
+            {
+              QT_QPA_PLATFORM = "wayland";
+              ELECTRON_OZONE_PLATFORM_HINT = "auto";
+            }
+          ];
 
           workspaces = {
             "01".name = "1";
@@ -58,6 +64,7 @@
               natural-scroll = true;
             };
             focus-follows-mouse = {
+              enable = false;
               max-scroll-amount = "90%";
             };
           };
@@ -71,23 +78,23 @@
             hot-corners.enable = false;
           };
 
-          # Seems like is choosing correctly
-          # outputs."eDP-1" = {
-          #   mode = {
-          #     width = 3840;
-          #     height = 2160;
-          #     refresh = 60.0;
-          #   };
-          #   scale = 2.0;
-          #   transform = {
-          #     rotation = 0;
-          #     flipped = false;
-          #   };
-          #   position = {
-          #     x = 1280;
-          #     y = 0;
-          #   };
-          # };
+          outputs."eDP-1" = {
+            scale = config.wayland.scale;
+            # Seems like is choosing correctly
+            #   mode = {
+            #     width = 3840;
+            #     height = 2160;
+            #     refresh = 60.0;
+            #   };
+            #   transform = {
+            #     rotation = 0;
+            #     flipped = false;
+            #   };
+            #   position = {
+            #     x = 1280;
+            #     y = 0;
+            #   };
+          };
 
           layout = {
             gaps = 8;
@@ -120,7 +127,6 @@
 
           hotkey-overlay.skip-at-startup = true;
 
-          animations = {};
           overview = {
             backdrop-color = "#26233a";
           };

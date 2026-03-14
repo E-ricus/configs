@@ -7,14 +7,17 @@
   users.users.${user} = {
     isNormalUser = true;
     description = "Eric";
-    extraGroups = ["networkmanager" "wheel" "video" "audio"];
-    shell = pkgs.nushell;
+    extraGroups = ["networkmanager" "wheel" "video" "audio" "plugdev"];
+    shell = pkgs.fish;
   };
+
+  # Taken from nixos-hardware
+  services.fstrim.enable = true;
 
   # Enable modules
   desktop-wayland = {
     enable = true;
-    compositor = "hyprland";
+    compositor = "niri";
   };
   graphics-config = {
     enable = true;
@@ -44,4 +47,8 @@
     # driver for elantech sensor
     driver = pkgs.libfprint-2-tod1-elan;
   };
+  # Backlight control - udev rules for video group write access
+  hardware.brillo.enable = true;
+
+  keyboards-config.zsa.enable = true;
 }

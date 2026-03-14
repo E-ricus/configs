@@ -24,6 +24,11 @@
         default = "hyprland";
         description = "Which Wayland compositor to use";
       };
+      scale = lib.mkOption {
+        type = lib.types.either lib.types.int lib.types.float;
+        default = 1.0;
+        description = "Scale factor for monitor";
+      };
     };
   };
 

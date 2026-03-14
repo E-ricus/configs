@@ -11,11 +11,6 @@
     hyprland-config = {
       xwayland-zero-scale = {
         enable = lib.mkEnableOption "enables XWayland zero scaling (fixes 4K scaling issues)";
-        scale = lib.mkOption {
-          type = lib.types.either lib.types.int lib.types.float;
-          default = 2;
-          description = "Scale factor for XWayland applications when zero scaling is enabled";
-        };
       };
       wlr-drm-device = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -223,7 +218,7 @@
           "NOCTALIA_PAM_SERVICE,noctalia"
         ]
         ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable (let
-          scale = config.hyprland-config.xwayland-zero-scale.scale;
+          scale = config.wayland.scale;
           cursorSize = builtins.floor (16 * scale);
         in [
           "GDK_SCALE,${toString scale}"
