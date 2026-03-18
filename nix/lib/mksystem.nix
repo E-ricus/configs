@@ -102,7 +102,7 @@ in
           # Access them as: inputs.walker, inputs.noctalia, inputs.niri, etc.
           # The 'darwin' flag indicates whether this is a macOS system
           home-manager.extraSpecialArgs = {
-            inherit inputs darwin;
+            inherit inputs darwin user;
           };
         }
       ]

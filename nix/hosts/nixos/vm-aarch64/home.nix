@@ -1,12 +1,12 @@
-{...}: {
+{user, ...}: {
   imports = [
     ../../../home/default.nix
   ];
 
   # Home Manager configuration
   home = {
-    username = "ericus";
-    homeDirectory = "/home/ericus";
+    username = "${user}";
+    homeDirectory = "/home/${user}";
     stateVersion = "25.05";
   };
 
