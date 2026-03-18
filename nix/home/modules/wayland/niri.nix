@@ -39,8 +39,11 @@
               NOCTALIA_PAM_SERVICE = "noctalia";
             })
             {
-              QT_QPA_PLATFORM = "wayland";
               ELECTRON_OZONE_PLATFORM_HINT = "auto";
+              # Workaround for Qt6 Wayland use-after-free crash in
+              # QWaylandSurface::surface_enter when outputs are removed
+              # (e.g. unplugging external monitor with lid closed).
+              QT_WAYLAND_RECONNECT = "1";
             }
           ];
 
