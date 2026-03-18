@@ -46,7 +46,15 @@
       shellWrapperName = "y";
     };
     programs.lazygit.enable = true;
-    programs.jujutsu.enable = true;
+    programs.jujutsu = {
+      enable = true;
+      settings = {
+        user = {
+          email = "ericdpb@pm.me";
+          name = "Eric Puentes";
+        };
+      };
+    };
     programs.direnv = {
       enable = true;
       enableZshIntegration = true;
