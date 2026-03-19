@@ -22,7 +22,6 @@
       fastfetch
 
       # Goodies
-      starship
       htop
       stow
       jq

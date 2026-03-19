@@ -1,0 +1,17 @@
+# Disable built-in git modules (jj-starship handles both git and jj)
+[git_branch]
+disabled = true
+
+[git_status]
+disabled = true
+
+[git_commit]
+disabled = true
+
+[battery]
+disabled = true
+
+[custom.jj]
+when = "jj-starship detect"
+shell = ["jj-starship"]
+format = "$output "

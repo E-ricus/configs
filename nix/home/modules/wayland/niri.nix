@@ -123,7 +123,7 @@
             struts = {};
           };
 
-          spawn-at-startup = [{command = ["noctalia-shell"];}];
+          spawn-at-startup = lib.optionals config.noctalia-config.enable [{command = ["noctalia-shell"];}];
 
           prefer-no-csd = true;
           screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
@@ -425,8 +425,8 @@
             }
             {
               timeout = 600;
-              command = "${pkgs.niri}/bin/niri msg action power-off-monitors";
-              resumeCommand = "${pkgs.niri}/bin/niri msg action power-on-monitors";
+              command = "${pkgs.niri-unstable}/bin/niri msg action power-off-monitors";
+              resumeCommand = "${pkgs.niri-unstable}/bin/niri msg action power-on-monitors";
             }
             {
               timeout = 1800;

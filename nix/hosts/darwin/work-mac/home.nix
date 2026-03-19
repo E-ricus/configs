@@ -24,6 +24,7 @@
   programs.home-manager.enable = true;
 
   # Enable modules for this host
+  starship-config.enable = true;
   git-config.enable = true;
   editors = {
     enable = true;

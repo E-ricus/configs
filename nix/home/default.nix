@@ -14,6 +14,9 @@
     ./modules/alacritty.nix
     ./modules/ghostty.nix
 
+    # Prompt
+    ./modules/starship.nix
+
     # Shell configurations
     ./modules/fish.nix
     ./modules/zsh.nix
@@ -40,6 +43,9 @@
   # Terminal emulators
   alacritty-config.enable = lib.mkDefault false;
   ghostty-config.enable = lib.mkDefault false;
+
+  # Prompt
+  starship-config.enable = lib.mkDefault false;
 
   # Shell configurations
   fish-config.enable = lib.mkDefault false;
