@@ -224,7 +224,7 @@ in {
               nvram_path = "${storagePath}/windows-vm.nvram";
               virtio_net = true; # Better network performance (needs VirtIO driver during install)
               virtio_drive = true; # Better disk performance (needs VirtIO driver during install)
-              virtio_video = true; # VirtIO GPU
+              virtio_video = false; # VirtIO GPU not great right now
               install_virtio = true; # Attach VirtIO driver ISO for Windows installation
             });
             # Don't auto-start/stop — manage via virt-manager

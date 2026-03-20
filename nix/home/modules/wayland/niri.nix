@@ -20,12 +20,72 @@
       brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
       volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
 
-      # Use different lock commands based on whether noctalia is enabled
+      # TODO: Find a correct way to move to a systemd service after checking why noctalia dissabled it.
+      # Wrapper that auto-restarts noctalia-shell on crash with rate limiting.
+      # If it crashes 3 times within 60 seconds, stop retrying to avoid a
+      # CPU-burning crash loop.  Crashes that happen after 60 s of uptime
+      # reset the counter (the instance was healthy for a while).
+      noctaliaWrapper = pkgs.writeShellScript "noctalia-shell-wrapper" ''
+        MAX_CRASHES=3
+        WINDOW=60
+        crash_times=""
+        crash_count=0
+
+        while true; do
+          start=$(date +%s)
+          noctalia-shell
+          exit_code=$?
+          end=$(date +%s)
+          runtime=$((end - start))
+
+          # Exit cleanly if noctalia exited with 0 (normal shutdown)
+          if [ "$exit_code" -eq 0 ]; then
+            break
+          fi
+
+          # If the instance ran for longer than the crash window, it was
+          # healthy -- reset the counter.
+          if [ "$runtime" -ge "$WINDOW" ]; then
+            crash_times=""
+            crash_count=0
+          fi
+
+          # Record this crash
+          crash_count=$((crash_count + 1))
+          crash_times="$crash_times $end"
+
+          # Prune crash timestamps older than the window
+          cutoff=$((end - WINDOW))
+          new_times=""
+          new_count=0
+          for t in $crash_times; do
+            if [ "$t" -ge "$cutoff" ]; then
+              new_times="$new_times $t"
+              new_count=$((new_count + 1))
+            fi
+          done
+          crash_times="$new_times"
+          crash_count="$new_count"
+
+          if [ "$crash_count" -ge "$MAX_CRASHES" ]; then
+            echo "noctalia-shell crashed $MAX_CRASHES times in ''${WINDOW}s, giving up" >&2
+            break
+          fi
+
+          echo "noctalia-shell exited ($exit_code), restarting in 2s (crash $crash_count/$MAX_CRASHES)" >&2
+          sleep 2
+        done
+      '';
+
+      # Use different lock commands based on whether noctalia is enabled.
+      # When noctalia is enabled, try its lock screen first and fall back
+      # to hyprlock if noctalia is dead (e.g. after a crash).
       lockScript =
         if config.noctalia-config.enable
         then
           pkgs.writeShellScript "lock-screen" ''
-            ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock
+            ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock \
+              || ${pkgs.hyprlock}/bin/hyprlock
           ''
         else
           pkgs.writeShellScript "lock-screen" ''
@@ -33,6 +93,8 @@
           '';
     in
       lib.mkIf (config.wayland.enable && config.wayland.compositor == "niri") {
+        #
+        programs.fuzzel.enable = true;
         programs.niri.settings = {
           environment = lib.mkMerge [
             (lib.mkIf config.noctalia-config.enable {
@@ -123,7 +185,7 @@
             struts = {};
           };
 
-          spawn-at-startup = lib.optionals config.noctalia-config.enable [{command = ["noctalia-shell"];}];
+          spawn-at-startup = lib.optionals config.noctalia-config.enable [{command = ["${noctaliaWrapper}"];}];
 
           prefer-no-csd = true;
           screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
@@ -212,6 +274,7 @@
             "Mod+Shift+Slash" = ni {action.show-hotkey-overlay = {};};
             "Mod+Return" = ni {action.spawn = ["ghostty"];};
             "Mod+D" = launcherBind;
+            "Mod+Shift+D" = ni {action.spawn = ["fuzzel"];}; # fallback launcher (no noctalia IPC)
             "Mod+E" = ni {action.spawn = ["nautilus"];};
             "Mod+V" = ni {action.toggle-window-floating = {};};
             "Mod+Shift+V" = ni {action.switch-focus-between-floating-and-tiling = {};};
@@ -407,9 +470,9 @@
           };
         };
 
-        home.packages = lib.optionals (!config.noctalia-config.enable) (with pkgs; [
-          hyprlock
-        ]);
+        home.packages = with pkgs; [
+          hyprlock # always available as lock screen fallback
+        ];
 
         services.swayidle = {
           enable = true;

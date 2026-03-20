@@ -39,8 +39,7 @@
         '';
   in
     lib.mkIf (config.wayland.enable && config.wayland.compositor == "hyprland") {
-      # Only enable fallback tools when noctalia is disabled
-      programs.fuzzel.enable = lib.mkDefault (!config.noctalia-config.enable);
+      programs.fuzzel.enable = true;
 
       hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
 
