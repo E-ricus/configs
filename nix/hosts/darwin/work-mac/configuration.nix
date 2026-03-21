@@ -1,3 +1,10 @@
+## Not used anymore, left for documentation in the future
+## input should be added again
+#
+# nix-darwin = {
+#   url = "github:nix-darwin/nix-darwin/master";
+#   inputs.nixpkgs.follows = "nixpkgs";
+# };
 {
   pkgs,
   user,

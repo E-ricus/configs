@@ -1,3 +1,11 @@
+### Module is unusued and unmantained right now, the input has been deleted:
+# elephant.url = "github:abenz1267/elephant";
+# walker = {
+#   url = "github:abenz1267/walker";
+#   inputs.nixpkgs.follows = "nixpkgs";
+#   inputs.elephant.follows = "elephant";
+# };
+# the defult config and import should also be added again
 {
   config,
   pkgs,
