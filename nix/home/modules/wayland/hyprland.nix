@@ -26,9 +26,17 @@
     brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
     volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
 
+    isDms = config.dms-config.enable;
+    isNoctalia = config.noctalia-config.enable;
+
     # Conditional lock script
     lockScript =
-      if config.noctalia-config.enable
+      if isDms
+      then
+        pkgs.writeShellScript "lock-screen" ''
+          dms ipc call lock lock
+        ''
+      else if isNoctalia
       then
         pkgs.writeShellScript "lock-screen" ''
           ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock
@@ -48,9 +56,12 @@
           grim
           slurp
         ]
-        ++ lib.optionals (!config.noctalia-config.enable) [
+        ++ lib.optionals (!isDms && !isNoctalia) [
           hyprlock
           hyprpaper
+        ]
+        ++ lib.optionals (!isDms && isNoctalia) [
+          # noctalia provides its own wallpaper, no hyprpaper needed
         ];
 
       wayland.windowManager.hyprland = {
@@ -65,7 +76,9 @@
           "$mod" = "SUPER";
           "$terminal" = "ghostty";
           "$menu" =
-            if config.noctalia-config.enable
+            if isDms
+            then "dms ipc call spotlight toggle"
+            else if isNoctalia
             then "noctalia-shell ipc call launcher toggle"
             else "fuzzel";
 
@@ -76,12 +89,13 @@
           ];
 
           exec-once =
-            (lib.optionals config.noctalia-config.enable [
+            (lib.optionals (isNoctalia && !isDms) [
               "noctalia-shell"
             ])
-            ++ (lib.optionals (!config.noctalia-config.enable) [
+            ++ (lib.optionals (!isNoctalia && !isDms) [
               "hyprpaper"
             ]);
+            # DMS: started via systemd, no exec-once needed
 
           general = {
             gaps_in = 5;
@@ -129,7 +143,7 @@
             "$mod, F,fullscreen"
             "$mod, E, exec, nautilus"
             "$mod, Q, killactive,"
-            "$mod, V, togglefloating"
+            "$mod, T, togglefloating"
             "$mod, D, exec, $menu"
             "$mod, P, pseudo,"
             "$mod ALT, L, exec, ${lockScript}"
@@ -182,24 +196,49 @@
 
             # Volume
             ", XF86AudioRaiseVolume, exec, ${
-              if config.noctalia-config.enable
+              if isDms
+              then "dms ipc call audio increment 3"
+              else if isNoctalia
               then "noctalia-shell ipc call volume increase"
               else "${volumeScript} raise"
             }"
             ", XF86AudioLowerVolume, exec, ${
-              if config.noctalia-config.enable
+              if isDms
+              then "dms ipc call audio decrement 3"
+              else if isNoctalia
               then "noctalia-shell ipc call volume decrease"
               else "${volumeScript} lower"
             }"
             ", XF86AudioMute, exec, ${
-              if config.noctalia-config.enable
+              if isDms
+              then "dms ipc call audio mute"
+              else if isNoctalia
               then "noctalia-shell ipc call volume muteOutput"
               else "${volumeScript} toggle-mute"
             }"
 
             # Brightness
-            ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"
-            ", XF86MonBrightnessDown, exec, ${brightnessScript} lower"
+            ", XF86MonBrightnessUp, exec, ${
+              if isDms
+              then "dms ipc call brightness increment 5"
+              else "${brightnessScript} raise"
+            }"
+            ", XF86MonBrightnessDown, exec, ${
+              if isDms
+              then "dms ipc call brightness decrement 5"
+              else "${brightnessScript} lower"
+            }"
+          ]
+          # DMS-specific keybinds
+          ++ lib.optionals isDms [
+            "$mod, space, exec, dms ipc call spotlight toggle"
+            "$mod, V, exec, dms ipc call clipboard toggle"
+            "$mod, N, exec, dms ipc call notifications toggle"
+            "$mod, M, exec, dms ipc call processlist focusOrToggle"
+            "$mod SHIFT, comma, exec, dms ipc call settings focusOrToggle"
+            "$mod, X, exec, dms ipc call powermenu toggle"
+            "$mod, Y, exec, dms ipc call dankdash wallpaper"
+            "$mod, TAB, exec, dms ipc call hypr toggleOverview"
           ];
 
           bindm = [
@@ -209,11 +248,21 @@
         };
       };
 
+      # DMS layer rules for Hyprland
+      wayland.windowManager.hyprland.settings.layerrule = lib.optionals isDms [
+        "noanim, ^(dms)$"
+      ];
+
+      # Float DMS quickshell windows
+      wayland.windowManager.hyprland.settings.windowrulev2 = lib.optionals isDms [
+        "float, class:^(org.quickshell)$"
+      ];
+
       wayland.windowManager.hyprland.settings.env =
         (lib.optionals (config.hyprland-config.wlr-drm-device != null) [
           "WLR_DRM_DEVICES,${config.hyprland-config.wlr-drm-device}"
         ])
-        ++ lib.optionals config.noctalia-config.enable [
+        ++ lib.optionals isNoctalia [
           "NOCTALIA_PAM_SERVICE,noctalia"
         ]
         ++ lib.optionals config.hyprland-config.xwayland-zero-scale.enable (let
@@ -240,8 +289,9 @@
         };
       };
 
-      # Idle management
-      services.hypridle = {
+      # Idle management: DMS handles idle/lock natively when enabled.
+      # hypridle is only used when DMS is not active.
+      services.hypridle = lib.mkIf (!isDms) {
         enable = true;
         settings = {
           general = {

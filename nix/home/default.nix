@@ -76,6 +76,7 @@
   };
   # Lower priority, as each compositor enables them by default
   noctalia-config.enable = lib.mkOptionDefault false;
+  dms-config.enable = lib.mkOptionDefault false;
 
   # Networking
   wireguard-config.enable = lib.mkDefault false;

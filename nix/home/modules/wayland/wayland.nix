@@ -10,6 +10,7 @@
     [
       ./hyprland.nix
       ./niri.nix
+      ./dms.nix
     ]
     ++ lib.optionals (inputs ? niri && darwin) [
       inputs.niri.homeModules.niri

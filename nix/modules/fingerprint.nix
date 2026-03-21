@@ -27,7 +27,7 @@ in {
         type = lib.types.listOf lib.types.str;
         # Note: greetd is excluded because its gnome-keyring integration adds
         # extra pam_unix (unix-early) before grosshack, causing multiple password
-        default = ["sudo" "login" "hyprlock" "swaylock" "gtklock" "noctalia"];
+        default = ["sudo" "hyprlock" "swaylock" "gtklock" "noctalia"];
         description = "PAM services to enable fingerprint authentication for.";
       };
 
@@ -76,5 +76,19 @@ in {
           {greetd.fprintAuth = false;}
         ]
         ++ (map mkGrosshackService cfg.pamServices));
+
+    # Restart fprintd after resume from suspend/hibernate.
+    # Desktop shells that continuously poll fprintd (e.g. DMS lock screen)
+    # leave the service in a broken state after suspend because the dbus
+    # call is interrupted mid-operation. Restarting fprintd recovers it.
+    systemd.services.fprintd-resume = {
+      description = "Restart fprintd after resume from suspend/hibernate";
+      after = ["suspend.target" "hibernate.target" "hybrid-sleep.target" "suspend-then-hibernate.target"];
+      wantedBy = ["suspend.target" "hibernate.target" "hybrid-sleep.target" "suspend-then-hibernate.target"];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
+      };
+    };
   };
 }

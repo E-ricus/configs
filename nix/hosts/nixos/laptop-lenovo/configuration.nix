@@ -18,6 +18,7 @@
   desktop-wayland = {
     enable = true;
     compositor = "niri";
+    dank.enable = true; # DankGreeter + DMS polkit agent
   };
   graphics-config = {
     enable = true;

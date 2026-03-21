@@ -20,8 +20,8 @@
     compositor = "niri";
     scale = 2.0;
   };
-  # Use noctalia shell instead of waybar + swaybg
-  noctalia-config.enable = true;
+  # Desktop shell (pick one: dms-config or noctalia-config)
+  dms-config.enable = true;
   # Hyprland configuration
   hyprland-config.wlr-drm-device = "/dev/dri/card1"; # Prefer iGPU
   editors.enable = true;

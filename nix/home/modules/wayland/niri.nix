@@ -17,75 +17,35 @@
           "call"
         ]
         ++ (pkgs.lib.splitString " " cmd);
+
+      dms = cmd:
+        [
+          "dms"
+          "ipc"
+          "call"
+        ]
+        ++ (pkgs.lib.splitString " " cmd);
+
       brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ../../config/wayland/brightness-control.sh);
       volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ../../config/wayland/volume-control.sh);
 
-      # TODO: Find a correct way to move to a systemd service after checking why noctalia dissabled it.
-      # Wrapper that auto-restarts noctalia-shell on crash with rate limiting.
-      # If it crashes 3 times within 60 seconds, stop retrying to avoid a
-      # CPU-burning crash loop.  Crashes that happen after 60 s of uptime
-      # reset the counter (the instance was healthy for a while).
-      noctaliaWrapper = pkgs.writeShellScript "noctalia-shell-wrapper" ''
-        MAX_CRASHES=3
-        WINDOW=60
-        crash_times=""
-        crash_count=0
+      isDms = config.dms-config.enable;
+      isNoctalia = config.noctalia-config.enable;
 
-        while true; do
-          start=$(date +%s)
-          noctalia-shell
-          exit_code=$?
-          end=$(date +%s)
-          runtime=$((end - start))
-
-          # Exit cleanly if noctalia exited with 0 (normal shutdown)
-          if [ "$exit_code" -eq 0 ]; then
-            break
-          fi
-
-          # If the instance ran for longer than the crash window, it was
-          # healthy -- reset the counter.
-          if [ "$runtime" -ge "$WINDOW" ]; then
-            crash_times=""
-            crash_count=0
-          fi
-
-          # Record this crash
-          crash_count=$((crash_count + 1))
-          crash_times="$crash_times $end"
-
-          # Prune crash timestamps older than the window
-          cutoff=$((end - WINDOW))
-          new_times=""
-          new_count=0
-          for t in $crash_times; do
-            if [ "$t" -ge "$cutoff" ]; then
-              new_times="$new_times $t"
-              new_count=$((new_count + 1))
-            fi
-          done
-          crash_times="$new_times"
-          crash_count="$new_count"
-
-          if [ "$crash_count" -ge "$MAX_CRASHES" ]; then
-            echo "noctalia-shell crashed $MAX_CRASHES times in ''${WINDOW}s, giving up" >&2
-            break
-          fi
-
-          echo "noctalia-shell exited ($exit_code), restarting in 2s (crash $crash_count/$MAX_CRASHES)" >&2
-          sleep 2
-        done
-      '';
-
-      # Use different lock commands based on whether noctalia is enabled.
-      # When noctalia is enabled, try its lock screen first and fall back
-      # to hyprlock if noctalia is dead (e.g. after a crash).
+      # Lock command depends on which shell is active:
+      # - DMS: uses built-in session-lock via IPC
+      # - Noctalia: uses its lock screen via IPC
+      # - Neither: falls back to hyprlock
       lockScript =
-        if config.noctalia-config.enable
+        if isDms
         then
           pkgs.writeShellScript "lock-screen" ''
-            ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock \
-              || ${pkgs.hyprlock}/bin/hyprlock
+            dms ipc lock lock
+          ''
+        else if isNoctalia
+        then
+          pkgs.writeShellScript "lock-screen" ''
+            ${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock
           ''
         else
           pkgs.writeShellScript "lock-screen" ''
@@ -97,7 +57,7 @@
         programs.fuzzel.enable = true;
         programs.niri.settings = {
           environment = lib.mkMerge [
-            (lib.mkIf config.noctalia-config.enable {
+            (lib.mkIf isNoctalia {
               NOCTALIA_PAM_SERVICE = "noctalia";
             })
             {
@@ -145,20 +105,6 @@
 
           outputs."eDP-1" = {
             scale = config.wayland.scale;
-            # Seems like is choosing correctly
-            #   mode = {
-            #     width = 3840;
-            #     height = 2160;
-            #     refresh = 60.0;
-            #   };
-            #   transform = {
-            #     rotation = 0;
-            #     flipped = false;
-            #   };
-            #   position = {
-            #     x = 1280;
-            #     y = 0;
-            #   };
           };
 
           layout = {
@@ -185,7 +131,7 @@
             struts = {};
           };
 
-          spawn-at-startup = lib.optionals config.noctalia-config.enable [{command = ["${noctaliaWrapper}"];}];
+          spawn-at-startup = lib.optionals isNoctalia [{command = ["noctalia-shell"];}];
 
           prefer-no-csd = true;
           screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
@@ -196,31 +142,53 @@
             backdrop-color = "#26233a";
           };
 
-          window-rules = [
+          # -- Layer rules for DMS --
+          # When DMS is active, place its wallpaper layers within the backdrop
+          # so they appear in the niri overview.
+          layer-rules = lib.optionals isDms [
             {
-              matches = [{app-id = "^org\\.wezfurlong\\.wezterm$";}];
-              default-column-width = {};
+              matches = [{namespace = "^quickshell$";}];
+              place-within-backdrop = true;
             }
             {
-              matches = [
-                {
-                  app-id = "firefox$";
-                  title = "^Picture-in-Picture$";
-                }
-              ];
-              open-floating = true;
-            }
-            {
-              matches = [{app-id = ".*";}];
-              geometry-corner-radius = {
-                top-left = 8.0;
-                top-right = 8.0;
-                bottom-right = 8.0;
-                bottom-left = 8.0;
-              };
-              clip-to-geometry = true;
+              matches = [{namespace = "dms:blurwallpaper";}];
+              place-within-backdrop = true;
             }
           ];
+
+          window-rules =
+            [
+              {
+                matches = [{app-id = "^org\\.wezfurlong\\.wezterm$";}];
+                default-column-width = {};
+              }
+              {
+                matches = [
+                  {
+                    app-id = "firefox$";
+                    title = "^Picture-in-Picture$";
+                  }
+                ];
+                open-floating = true;
+              }
+              {
+                matches = [{app-id = ".*";}];
+                geometry-corner-radius = {
+                  top-left = 8.0;
+                  top-right = 8.0;
+                  bottom-right = 8.0;
+                  bottom-left = 8.0;
+                };
+                clip-to-geometry = true;
+              }
+            ]
+            # DMS quickshell windows should open floating
+            ++ lib.optionals isDms [
+              {
+                matches = [{app-id = "^org\\.quickshell$";}];
+                open-floating = true;
+              }
+            ];
 
           binds = let
             # Helper: mark a binding as not inhibitable, so niri always
@@ -229,17 +197,26 @@
             ni = attrs: attrs // {allow-inhibiting = false;};
 
             launcherBind =
-              if config.noctalia-config.enable
+              if isDms
+              then ni {action.spawn = dms "spotlight toggle";}
+              else if isNoctalia
               then ni {action.spawn = noctalia "launcher toggle";}
               else ni {action.spawn = ["fuzzel"];};
 
             lockBind =
-              if config.noctalia-config.enable
+              if isDms
+              then ni {action.spawn = dms "lock lock";}
+              else if isNoctalia
               then ni {action.spawn = noctalia "lockScreen lock";}
               else ni {action.spawn = ["hyprlock"];};
 
             volumeRaiseBind =
-              if config.noctalia-config.enable
+              if isDms
+              then {
+                allow-when-locked = true;
+                action.spawn = dms "audio increment 3";
+              }
+              else if isNoctalia
               then {
                 allow-when-locked = true;
                 action.spawn = noctalia "volume increase";
@@ -250,7 +227,12 @@
               };
 
             volumeLowerBind =
-              if config.noctalia-config.enable
+              if isDms
+              then {
+                allow-when-locked = true;
+                action.spawn = dms "audio decrement 3";
+              }
+              else if isNoctalia
               then {
                 allow-when-locked = true;
                 action.spawn = noctalia "volume decrease";
@@ -261,7 +243,12 @@
               };
 
             volumeMuteBind =
-              if config.noctalia-config.enable
+              if isDms
+              then {
+                allow-when-locked = true;
+                action.spawn = dms "audio mute";
+              }
+              else if isNoctalia
               then {
                 allow-when-locked = true;
                 action.spawn = noctalia "volume muteOutput";
@@ -270,211 +257,291 @@
                 allow-when-locked = true;
                 action.spawn = ["${volumeScript}" "toggle-mute"];
               };
-          in {
-            "Mod+Shift+Slash" = ni {action.show-hotkey-overlay = {};};
-            "Mod+Return" = ni {action.spawn = ["ghostty"];};
-            "Mod+D" = launcherBind;
-            "Mod+Shift+D" = ni {action.spawn = ["fuzzel"];}; # fallback launcher (no noctalia IPC)
-            "Mod+E" = ni {action.spawn = ["nautilus"];};
-            "Mod+V" = ni {action.toggle-window-floating = {};};
-            "Mod+Shift+V" = ni {action.switch-focus-between-floating-and-tiling = {};};
-            "Super+Alt+L" = lockBind;
 
-            "Super+Alt+S" = ni {
-              allow-when-locked = true;
-              action.spawn-sh = "pkill orca || exec orca";
+            brightnessUpBind =
+              if isDms
+              then {
+                allow-when-locked = true;
+                action.spawn = dms "brightness increment 5 ";
+              }
+              else {
+                allow-when-locked = true;
+                action.spawn = ["${brightnessScript}" "raise"];
+              };
+
+            brightnessDownBind =
+              if isDms
+              then {
+                allow-when-locked = true;
+                action.spawn = dms "brightness decrement 5 ";
+              }
+              else {
+                allow-when-locked = true;
+                action.spawn = ["${brightnessScript}" "lower"];
+              };
+          in
+            {
+              "Mod+Shift+Slash" = ni {action.show-hotkey-overlay = {};};
+              "Mod+Return" = ni {action.spawn = ["ghostty"];};
+              "Mod+D" = launcherBind;
+              "Mod+Shift+D" = ni {action.spawn = ["fuzzel"];}; # fallback launcher (no shell IPC)
+              "Mod+E" = ni {action.spawn = ["nautilus"];};
+              # Mod+T for toggle-floating (moved from Mod+V to avoid DMS clipboard conflict)
+              "Mod+T" = ni {action.toggle-window-floating = {};};
+              "Mod+Shift+V" = ni {action.switch-focus-between-floating-and-tiling = {};};
+              "Super+Alt+L" = lockBind;
+
+              "Super+Alt+S" = ni {
+                allow-when-locked = true;
+                action.spawn-sh = "pkill orca || exec orca";
+              };
+
+              "XF86AudioRaiseVolume" = volumeRaiseBind;
+              "XF86AudioLowerVolume" = volumeLowerBind;
+              "XF86AudioMute" = volumeMuteBind;
+              "XF86AudioMicMute" =
+                if isDms
+                then {
+                  allow-when-locked = true;
+                  action.spawn = dms "audio micmute";
+                }
+                else {
+                  allow-when-locked = true;
+                  action.spawn-sh = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+                };
+
+              "XF86AudioPlay" =
+                if isDms
+                then {
+                  allow-when-locked = true;
+                  action.spawn = dms "mpris playPause";
+                }
+                else {
+                  allow-when-locked = true;
+                  action.spawn-sh = "playerctl play-pause";
+                };
+              "XF86AudioStop" =
+                if isDms
+                then {
+                  allow-when-locked = true;
+                  action.spawn = dms "mpris stop";
+                }
+                else {
+                  allow-when-locked = true;
+                  action.spawn-sh = "playerctl stop";
+                };
+              "XF86AudioPrev" =
+                if isDms
+                then {
+                  allow-when-locked = true;
+                  action.spawn = dms "mpris previous";
+                }
+                else {
+                  allow-when-locked = true;
+                  action.spawn-sh = "playerctl previous";
+                };
+              "XF86AudioNext" =
+                if isDms
+                then {
+                  allow-when-locked = true;
+                  action.spawn = dms "mpris next";
+                }
+                else {
+                  allow-when-locked = true;
+                  action.spawn-sh = "playerctl next";
+                };
+
+              "XF86MonBrightnessUp" = brightnessUpBind;
+              "XF86MonBrightnessDown" = brightnessDownBind;
+
+              "Mod+O" = ni {
+                repeat = false;
+                action.toggle-overview = {};
+              };
+              "Mod+Q" = ni {
+                repeat = false;
+                action.close-window = {};
+              };
+
+              # Focus navigation
+              "Mod+Left" = ni {action.focus-column-left = {};};
+              "Mod+Down" = ni {action.focus-window-down = {};};
+              "Mod+Up" = ni {action.focus-window-up = {};};
+              "Mod+Right" = ni {action.focus-column-right = {};};
+              "Mod+H" = ni {action.focus-column-left = {};};
+              "Mod+J" = ni {action.focus-window-down = {};};
+              "Mod+K" = ni {action.focus-window-up = {};};
+              "Mod+L" = ni {action.focus-column-right = {};};
+
+              # Move windows
+              "Mod+Shift+Left" = ni {action.move-column-left = {};};
+              "Mod+Shift+Down" = ni {action.move-window-down = {};};
+              "Mod+Shift+Up" = ni {action.move-window-up = {};};
+              "Mod+Shift+Right" = ni {action.move-column-right = {};};
+              "Mod+Shift+H" = ni {action.move-column-left = {};};
+              "Mod+Shift+J" = ni {action.move-window-down = {};};
+              "Mod+Shift+K" = ni {action.move-window-up = {};};
+              "Mod+Shift+L" = ni {action.move-column-right = {};};
+
+              "Mod+Home" = ni {action.focus-column-first = {};};
+              "Mod+End" = ni {action.focus-column-last = {};};
+              "Mod+Ctrl+Home" = ni {action.move-column-to-first = {};};
+              "Mod+Ctrl+End" = ni {action.move-column-to-last = {};};
+
+              # Monitor navigation
+              "Mod+Ctrl+H" = ni {action.focus-monitor-left = {};};
+              "Mod+Ctrl+J" = ni {action.focus-monitor-down = {};};
+              "Mod+Ctrl+K" = ni {action.focus-monitor-up = {};};
+              "Mod+Ctrl+L" = ni {action.focus-monitor-right = {};};
+
+              "Mod+Shift+Ctrl+H" = ni {action.move-column-to-monitor-left = {};};
+              "Mod+Shift+Ctrl+J" = ni {action.move-column-to-monitor-down = {};};
+              "Mod+Shift+Ctrl+K" = ni {action.move-column-to-monitor-up = {};};
+              "Mod+Shift+Ctrl+L" = ni {action.move-column-to-monitor-right = {};};
+
+              # Workspace navigation
+              "Mod+Page_Down" = ni {action.focus-workspace-down = {};};
+              "Mod+Page_Up" = ni {action.focus-workspace-up = {};};
+              "Mod+U" = ni {action.focus-workspace-down = {};};
+              "Mod+I" = ni {action.focus-workspace-up = {};};
+              "Mod+Ctrl+Page_Down" = ni {action.move-column-to-workspace-down = {};};
+              "Mod+Ctrl+Page_Up" = ni {action.move-column-to-workspace-up = {};};
+              "Mod+Ctrl+U" = ni {action.move-column-to-workspace-down = {};};
+              "Mod+Ctrl+I" = ni {action.move-column-to-workspace-up = {};};
+
+              "Mod+Shift+Page_Down" = ni {action.move-workspace-down = {};};
+              "Mod+Shift+Page_Up" = ni {action.move-workspace-up = {};};
+              "Mod+Shift+U" = ni {action.move-workspace-down = {};};
+              "Mod+Shift+I" = ni {action.move-workspace-up = {};};
+
+              # Wheel scroll workspace switching
+              "Mod+WheelScrollDown" = ni {
+                cooldown-ms = 150;
+                action.focus-workspace-down = {};
+              };
+              "Mod+WheelScrollUp" = ni {
+                cooldown-ms = 150;
+                action.focus-workspace-up = {};
+              };
+              "Mod+Ctrl+WheelScrollDown" = ni {
+                cooldown-ms = 150;
+                action.move-column-to-workspace-down = {};
+              };
+              "Mod+Ctrl+WheelScrollUp" = ni {
+                cooldown-ms = 150;
+                action.move-column-to-workspace-up = {};
+              };
+
+              # Wheel scroll column navigation
+              "Mod+WheelScrollRight" = ni {action.focus-column-right = {};};
+              "Mod+WheelScrollLeft" = ni {action.focus-column-left = {};};
+              "Mod+Ctrl+WheelScrollRight" = ni {action.move-column-right = {};};
+              "Mod+Ctrl+WheelScrollLeft" = ni {action.move-column-left = {};};
+
+              "Mod+Shift+WheelScrollDown" = ni {action.focus-column-right = {};};
+              "Mod+Shift+WheelScrollUp" = ni {action.focus-column-left = {};};
+              "Mod+Ctrl+Shift+WheelScrollDown" = ni {action.move-column-right = {};};
+              "Mod+Ctrl+Shift+WheelScrollUp" = ni {action.move-column-left = {};};
+
+              # Workspace switching (1-10)
+              "Mod+1" = ni {action.focus-workspace = 1;};
+              "Mod+2" = ni {action.focus-workspace = 2;};
+              "Mod+3" = ni {action.focus-workspace = 3;};
+              "Mod+4" = ni {action.focus-workspace = 4;};
+              "Mod+5" = ni {action.focus-workspace = 5;};
+              "Mod+6" = ni {action.focus-workspace = 6;};
+              "Mod+7" = ni {action.focus-workspace = 7;};
+              "Mod+8" = ni {action.focus-workspace = 8;};
+              "Mod+9" = ni {action.focus-workspace = 9;};
+              "Mod+0" = ni {action.focus-workspace = 10;};
+
+              "Mod+Shift+1" = ni {action.move-column-to-workspace = 1;};
+              "Mod+Shift+2" = ni {action.move-column-to-workspace = 2;};
+              "Mod+Shift+3" = ni {action.move-column-to-workspace = 3;};
+              "Mod+Shift+4" = ni {action.move-column-to-workspace = 4;};
+              "Mod+Shift+5" = ni {action.move-column-to-workspace = 5;};
+              "Mod+Shift+6" = ni {action.move-column-to-workspace = 6;};
+              "Mod+Shift+7" = ni {action.move-column-to-workspace = 7;};
+              "Mod+Shift+8" = ni {action.move-column-to-workspace = 8;};
+              "Mod+Shift+9" = ni {action.move-column-to-workspace = 9;};
+              "Mod+Shift+0" = ni {action.move-column-to-workspace = 10;};
+
+              # Window management
+              "Mod+BracketLeft" = ni {action.consume-or-expel-window-left = {};};
+              "Mod+BracketRight" = ni {action.consume-or-expel-window-right = {};};
+              "Mod+Comma" = ni {action.consume-window-into-column = {};};
+              "Mod+Period" = ni {action.expel-window-from-column = {};};
+
+              "Mod+R" = ni {action.switch-preset-column-width = {};};
+              "Mod+Shift+R" = ni {action.switch-preset-window-height = {};};
+              "Mod+Ctrl+R" = ni {action.reset-window-height = {};};
+              "Mod+F" = ni {action.maximize-column = {};};
+              "Mod+Shift+F" = ni {action.fullscreen-window = {};};
+              "Mod+Ctrl+F" = ni {action.expand-column-to-available-width = {};};
+
+              "Mod+C" = ni {action.center-column = {};};
+              "Mod+Ctrl+C" = ni {action.center-visible-columns = {};};
+
+              "Mod+Minus" = ni {action.set-column-width = "-10%";};
+              "Mod+Equal" = ni {action.set-column-width = "+10%";};
+              "Mod+Shift+Minus" = ni {action.set-window-height = "-10%";};
+              "Mod+Shift+Equal" = ni {action.set-window-height = "+10%";};
+
+              "Mod+W" = ni {action.toggle-column-tabbed-display = {};};
+
+              # Screenshots
+              "Print" =
+                if isDms
+                then ni {action.spawn = dms "niri screenshot";}
+                else ni {action.screenshot = {};};
+              "Ctrl+Print".action.screenshot-screen = {};
+              "Alt+Print".action.screenshot-window = {};
+
+              "Mod+Escape" = {
+                allow-inhibiting = false;
+                action.toggle-keyboard-shortcuts-inhibit = {};
+              };
+
+              "Mod+Shift+E" = ni {action.quit = {};};
+              "Ctrl+Alt+Delete".action.quit = {};
+              "Mod+Shift+P" = ni {action.power-off-monitors = {};};
+            }
+            # -- DMS-specific keybinds (only when DMS is active) --
+            // lib.optionalAttrs isDms {
+              # DMS spotlight launcher (alternative to Mod+D)
+              "Mod+Space" = ni {action.spawn = dms "spotlight toggle";};
+              # Clipboard manager (replaces old Mod+V toggle-floating, now on Mod+T)
+              "Mod+V" = ni {action.spawn = dms "clipboard toggle";};
+              # Notification center
+              "Mod+N" = ni {action.spawn = dms "notifications toggle";};
+              # Task / process manager
+              "Mod+M" = ni {action.spawn = dms "processlist focusOrToggle";};
+              # DMS settings
+              "Mod+Shift+Comma" = ni {action.spawn = dms "settings focusOrToggle";};
+              # Power menu
+              "Mod+X" = ni {action.spawn = dms "powermenu toggle";};
+              # Wallpaper browser
+              "Mod+Y" = ni {action.spawn = dms "dankdash wallpaper";};
+              # Night mode toggle
+              "Mod+Alt+N" = ni {
+                allow-when-locked = true;
+                action.spawn = dms "night toggle";
+              };
             };
-
-            "XF86AudioRaiseVolume" = volumeRaiseBind;
-            "XF86AudioLowerVolume" = volumeLowerBind;
-            "XF86AudioMute" = volumeMuteBind;
-            "XF86AudioMicMute" = {
-              allow-when-locked = true;
-              action.spawn-sh = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
-            };
-
-            "XF86AudioPlay" = {
-              allow-when-locked = true;
-              action.spawn-sh = "playerctl play-pause";
-            };
-            "XF86AudioStop" = {
-              allow-when-locked = true;
-              action.spawn-sh = "playerctl stop";
-            };
-            "XF86AudioPrev" = {
-              allow-when-locked = true;
-              action.spawn-sh = "playerctl previous";
-            };
-            "XF86AudioNext" = {
-              allow-when-locked = true;
-              action.spawn-sh = "playerctl next";
-            };
-
-            "XF86MonBrightnessUp" = {
-              allow-when-locked = true;
-              action.spawn = ["${brightnessScript}" "raise"];
-            };
-            "XF86MonBrightnessDown" = {
-              allow-when-locked = true;
-              action.spawn = ["${brightnessScript}" "lower"];
-            };
-
-            "Mod+O" = ni {
-              repeat = false;
-              action.toggle-overview = {};
-            };
-            "Mod+Q" = ni {
-              repeat = false;
-              action.close-window = {};
-            };
-
-            # Focus navigation
-            "Mod+Left" = ni {action.focus-column-left = {};};
-            "Mod+Down" = ni {action.focus-window-down = {};};
-            "Mod+Up" = ni {action.focus-window-up = {};};
-            "Mod+Right" = ni {action.focus-column-right = {};};
-            "Mod+H" = ni {action.focus-column-left = {};};
-            "Mod+J" = ni {action.focus-window-down = {};};
-            "Mod+K" = ni {action.focus-window-up = {};};
-            "Mod+L" = ni {action.focus-column-right = {};};
-
-            # Move windows
-            "Mod+Shift+Left" = ni {action.move-column-left = {};};
-            "Mod+Shift+Down" = ni {action.move-window-down = {};};
-            "Mod+Shift+Up" = ni {action.move-window-up = {};};
-            "Mod+Shift+Right" = ni {action.move-column-right = {};};
-            "Mod+Shift+H" = ni {action.move-column-left = {};};
-            "Mod+Shift+J" = ni {action.move-window-down = {};};
-            "Mod+Shift+K" = ni {action.move-window-up = {};};
-            "Mod+Shift+L" = ni {action.move-column-right = {};};
-
-            "Mod+Home" = ni {action.focus-column-first = {};};
-            "Mod+End" = ni {action.focus-column-last = {};};
-            "Mod+Ctrl+Home" = ni {action.move-column-to-first = {};};
-            "Mod+Ctrl+End" = ni {action.move-column-to-last = {};};
-
-            # Monitor navigation
-            "Mod+Ctrl+H" = ni {action.focus-monitor-left = {};};
-            "Mod+Ctrl+J" = ni {action.focus-monitor-down = {};};
-            "Mod+Ctrl+K" = ni {action.focus-monitor-up = {};};
-            "Mod+Ctrl+L" = ni {action.focus-monitor-right = {};};
-
-            "Mod+Shift+Ctrl+H" = ni {action.move-column-to-monitor-left = {};};
-            "Mod+Shift+Ctrl+J" = ni {action.move-column-to-monitor-down = {};};
-            "Mod+Shift+Ctrl+K" = ni {action.move-column-to-monitor-up = {};};
-            "Mod+Shift+Ctrl+L" = ni {action.move-column-to-monitor-right = {};};
-
-            # Workspace navigation
-            "Mod+Page_Down" = ni {action.focus-workspace-down = {};};
-            "Mod+Page_Up" = ni {action.focus-workspace-up = {};};
-            "Mod+U" = ni {action.focus-workspace-down = {};};
-            "Mod+I" = ni {action.focus-workspace-up = {};};
-            "Mod+Ctrl+Page_Down" = ni {action.move-column-to-workspace-down = {};};
-            "Mod+Ctrl+Page_Up" = ni {action.move-column-to-workspace-up = {};};
-            "Mod+Ctrl+U" = ni {action.move-column-to-workspace-down = {};};
-            "Mod+Ctrl+I" = ni {action.move-column-to-workspace-up = {};};
-
-            "Mod+Shift+Page_Down" = ni {action.move-workspace-down = {};};
-            "Mod+Shift+Page_Up" = ni {action.move-workspace-up = {};};
-            "Mod+Shift+U" = ni {action.move-workspace-down = {};};
-            "Mod+Shift+I" = ni {action.move-workspace-up = {};};
-
-            # Wheel scroll workspace switching
-            "Mod+WheelScrollDown" = ni {
-              cooldown-ms = 150;
-              action.focus-workspace-down = {};
-            };
-            "Mod+WheelScrollUp" = ni {
-              cooldown-ms = 150;
-              action.focus-workspace-up = {};
-            };
-            "Mod+Ctrl+WheelScrollDown" = ni {
-              cooldown-ms = 150;
-              action.move-column-to-workspace-down = {};
-            };
-            "Mod+Ctrl+WheelScrollUp" = ni {
-              cooldown-ms = 150;
-              action.move-column-to-workspace-up = {};
-            };
-
-            # Wheel scroll column navigation
-            "Mod+WheelScrollRight" = ni {action.focus-column-right = {};};
-            "Mod+WheelScrollLeft" = ni {action.focus-column-left = {};};
-            "Mod+Ctrl+WheelScrollRight" = ni {action.move-column-right = {};};
-            "Mod+Ctrl+WheelScrollLeft" = ni {action.move-column-left = {};};
-
-            "Mod+Shift+WheelScrollDown" = ni {action.focus-column-right = {};};
-            "Mod+Shift+WheelScrollUp" = ni {action.focus-column-left = {};};
-            "Mod+Ctrl+Shift+WheelScrollDown" = ni {action.move-column-right = {};};
-            "Mod+Ctrl+Shift+WheelScrollUp" = ni {action.move-column-left = {};};
-
-            # Workspace switching (1-10)
-            "Mod+1" = ni {action.focus-workspace = 1;};
-            "Mod+2" = ni {action.focus-workspace = 2;};
-            "Mod+3" = ni {action.focus-workspace = 3;};
-            "Mod+4" = ni {action.focus-workspace = 4;};
-            "Mod+5" = ni {action.focus-workspace = 5;};
-            "Mod+6" = ni {action.focus-workspace = 6;};
-            "Mod+7" = ni {action.focus-workspace = 7;};
-            "Mod+8" = ni {action.focus-workspace = 8;};
-            "Mod+9" = ni {action.focus-workspace = 9;};
-            "Mod+0" = ni {action.focus-workspace = 10;};
-
-            "Mod+Shift+1" = ni {action.move-column-to-workspace = 1;};
-            "Mod+Shift+2" = ni {action.move-column-to-workspace = 2;};
-            "Mod+Shift+3" = ni {action.move-column-to-workspace = 3;};
-            "Mod+Shift+4" = ni {action.move-column-to-workspace = 4;};
-            "Mod+Shift+5" = ni {action.move-column-to-workspace = 5;};
-            "Mod+Shift+6" = ni {action.move-column-to-workspace = 6;};
-            "Mod+Shift+7" = ni {action.move-column-to-workspace = 7;};
-            "Mod+Shift+8" = ni {action.move-column-to-workspace = 8;};
-            "Mod+Shift+9" = ni {action.move-column-to-workspace = 9;};
-            "Mod+Shift+0" = ni {action.move-column-to-workspace = 10;};
-
-            # Window management
-            "Mod+BracketLeft" = ni {action.consume-or-expel-window-left = {};};
-            "Mod+BracketRight" = ni {action.consume-or-expel-window-right = {};};
-            "Mod+Comma" = ni {action.consume-window-into-column = {};};
-            "Mod+Period" = ni {action.expel-window-from-column = {};};
-
-            "Mod+R" = ni {action.switch-preset-column-width = {};};
-            "Mod+Shift+R" = ni {action.switch-preset-window-height = {};};
-            "Mod+Ctrl+R" = ni {action.reset-window-height = {};};
-            "Mod+F" = ni {action.maximize-column = {};};
-            "Mod+Shift+F" = ni {action.fullscreen-window = {};};
-            "Mod+Ctrl+F" = ni {action.expand-column-to-available-width = {};};
-
-            "Mod+C" = ni {action.center-column = {};};
-            "Mod+Ctrl+C" = ni {action.center-visible-columns = {};};
-
-            "Mod+Minus" = ni {action.set-column-width = "-10%";};
-            "Mod+Equal" = ni {action.set-column-width = "+10%";};
-            "Mod+Shift+Minus" = ni {action.set-window-height = "-10%";};
-            "Mod+Shift+Equal" = ni {action.set-window-height = "+10%";};
-
-            "Mod+W" = ni {action.toggle-column-tabbed-display = {};};
-
-            # Screenshots
-            "Print".action.screenshot = {};
-            "Ctrl+Print".action.screenshot-screen = {};
-            "Alt+Print".action.screenshot-window = {};
-
-            "Mod+Escape" = {
-              allow-inhibiting = false;
-              action.toggle-keyboard-shortcuts-inhibit = {};
-            };
-
-            "Mod+Shift+E" = ni {action.quit = {};};
-            "Ctrl+Alt+Delete".action.quit = {};
-            "Mod+Shift+P" = ni {action.power-off-monitors = {};};
-          };
         };
 
-        home.packages = with pkgs; [
-          hyprlock # always available as lock screen fallback
-        ];
+        home.packages = with pkgs;
+          [
+            hyprlock # always available as lock screen fallback
+          ]
+          # Screenshots editor when not using DMS (DMS has built-in niri screenshot)
+          ++ lib.optionals (!isDms) [
+            satty
+          ];
 
-        services.swayidle = {
+        # Idle management: DMS handles idle/lock natively when enabled.
+        # swayidle is only used when DMS is not active.
+        services.swayidle = lib.mkIf (!isDms) {
           enable = true;
           systemdTarget = "graphical-session.target";
           events = {
