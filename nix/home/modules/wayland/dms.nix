@@ -35,10 +35,6 @@
     wallpaperTransition = "fade";
     wallpaperFillMode = "Fill";
 
-    # -- Launcher / plugins --
-    showThirdPartyPlugins = true;
-    searchAppActions = true;
-
     # -- Do not disturb --
     doNotDisturb = false;
 
@@ -52,7 +48,6 @@ in {
     inputs.dms.homeModules.dank-material-shell
     inputs.dms.homeModules.niri
     inputs.dms-plugin-registry.homeModules.default
-    inputs.danksearch.homeModules.default
   ];
 
   options = {
@@ -116,6 +111,31 @@ in {
 
         # Dock: show in niri overview
         dockOpenOnOverview = true;
+
+        # -- Compositing --
+        blurredWallpaperLayer = false;
+        blurWallpaperOnOverview = false;
+        modalDarkenBackground = true;
+        niriOverviewOverlayEnabled = true;
+
+        # -- Animation --
+        animationSpeed = 1;
+        customAnimationDuration = 500;
+
+        # -- Spotlight / launcher --
+        appLauncherViewMode = "list";
+        spotlightModalViewMode = "list";
+        sortAppsAlphabetically = false;
+        dankLauncherV2Size = "compact";
+        dankLauncherV2BorderEnabled = false;
+        dankLauncherV2ShowFooter = true;
+        spotlightCloseNiriOverview = true;
+        showThirdPartyPlugins = true;
+        searchAppActions = true;
+
+        # -- Theming --
+        gtkThemingEnabled = true;
+        qtThemingEnabled = true;
 
         barConfigs = [
           {
@@ -190,16 +210,6 @@ in {
 
         lockBeforeSuspend = true;
         loginctlLockIntegration = true;
-
-        # Auto-enable installed plugins
-        builtInPluginSettings = {
-          dankBatteryAlerts = {
-            enabled = true;
-          };
-          catWidget = {
-            enable = true;
-          };
-        };
       };
 
       # -- Clipboard --
@@ -211,43 +221,26 @@ in {
 
       # -- Plugins --
       plugins = {
-        dankBatteryAlerts = {
-          enable = true;
-        };
-        catWidget = {
-          enable = true;
-        };
-      };
-    };
+        dankBatteryAlerts.enable = true;
+        catWidget.enable = true;
 
-    # DankSearch - filesystem search engine for the DMS launcher
-    programs.dsearch = {
-      enable = true;
-      config = {
-        index_paths = [
-          {
-            path = "~/Documents";
-            max_depth = 6;
-            exclude_hidden = false;
-            exclude_dirs = ["node_modules" ".git" "target"];
-          }
-          {
-            path = "~/Projects";
-            max_depth = 8;
-            exclude_hidden = false;
-            exclude_dirs = ["node_modules" ".git" "target" "dist" "build"];
-          }
-          {
-            path = "~/Downloads";
-            max_depth = 3;
-            exclude_hidden = false;
-          }
-          {
-            path = "~/Pictures";
-            max_depth = 4;
-            exclude_hidden = false;
-          }
-        ];
+        # Launcher / spotlight plugins
+        commandRunner.enable = true;
+        calculator.enable = true;
+        webSearch = {
+          enable = true;
+          settings = {
+            defaultEngine = "kagi";
+          };
+        };
+        emojiLauncher = {
+          enable = true;
+          settings = {
+            noTrigger = false;
+            trigger = ":";
+          };
+        };
+        sessionPower.enable = true;
       };
     };
 

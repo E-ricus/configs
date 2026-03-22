@@ -21,9 +21,6 @@
       # Editors
       # Neovim in common
 
-      # Theming
-      papirus-icon-theme
-
       # Fonts
       font-awesome
 
@@ -48,14 +45,26 @@
     gtk = {
       enable = true;
       theme = {
-        name = "adw-gtk3-dark";
-        package = pkgs.adw-gtk3;
+        name = "catppuccin-mocha-mauve-standard";
+        package = pkgs.catppuccin-gtk.override {
+          variant = "mocha";
+          accents = ["mauve"];
+          size = "standard";
+        };
       };
+      # Silence HM 26.05 warning: gtk4 theme no longer inherits from gtk.theme
+      gtk4.theme = null;
       iconTheme = {
         name = "Papirus-Dark";
-        package = pkgs.papirus-icon-theme;
+        package = pkgs.catppuccin-papirus-folders.override {
+          flavor = "mocha";
+          accent = "mauve";
+        };
       };
       gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+      gtk4.extraConfig = {
         gtk-application-prefer-dark-theme = 1;
       };
     };
