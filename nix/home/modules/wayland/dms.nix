@@ -20,14 +20,13 @@
 }: let
   jsonFormat = pkgs.formats.json {};
 
-  # DMS session defaults we want to enforce on every activation.
+  # DMS session defaults enforced on every activation.
   # session.json is mutable (DMS writes wallpaper picks, mode toggles, etc.)
   # so we can't use home-manager's xdg.stateFile (that creates a read-only
   # nix-store symlink). Instead we merge our overrides on top of whatever
   # DMS has already written, preserving runtime state while ensuring our
   # declared values win.
   #
-  # Keys map 1:1 to DMS SessionSpec.js.
   sessionDefaults = {
     # -- Theme --
     isLightMode = false;
@@ -107,31 +106,28 @@ in {
       enableAudioWavelength = true; # cava audio visualizer
       enableVPN = true; # VPN management widget
 
-      # -- Settings (settings.json - declarative, read-only) --
       settings = {
         theme = "dark";
         dynamicTheming = false;
         opacity = 1.0;
 
-        # Detect weather location by IP
+        # Detect location by IP
         useAutoLocation = true;
 
         # Dock: show in niri overview
         dockOpenOnOverview = true;
 
-        # Bar: custom layout - no launcher button, notifications at the end,
-        # slightly smaller with reduced padding.
         barConfigs = [
           {
             id = "default";
             name = "Main Bar";
             enabled = true;
-            position = 2; # left
+            position = 2; # 0 top, 1 down, 2 left, 3 right
             screenPreferences = ["all"];
             showOnLastDisplay = true;
-            leftWidgets = ["workspaceSwitcher" "focusedWindow"];
+            leftWidgets = ["workspaceSwitcher" "focusedWindow" "catWidget"];
             centerWidgets = ["music" "clock" "privacyIndicator"];
-            rightWidgets = ["systemTray" "clipboard" "cpuUsage" "memUsage" "battery" "controlCenterButton" "notificationButton"];
+            rightWidgets = ["systemTray" "vpn" "clipboard" "cpuUsage" "memUsage" "battery" "controlCenterButton" "notificationButton"];
             spacing = 3;
             innerPadding = 3;
             bottomGap = 0;
@@ -190,7 +186,7 @@ in {
         batteryLockTimeout = 180; # 3 min -> lock
         batteryMonitorTimeout = 300; # 5 min -> DPMS off
         batterySuspendTimeout = 900; # 15 min -> suspend
-        batterySuspendBehavior = 0; # 0=suspend
+        batterySuspendBehavior = 2; # 0=suspend, 1=hibernate, 2=suspend-then-hibernate
 
         lockBeforeSuspend = true;
         loginctlLockIntegration = true;
@@ -199,6 +195,9 @@ in {
         builtInPluginSettings = {
           dankBatteryAlerts = {
             enabled = true;
+          };
+          catWidget = {
+            enable = true;
           };
         };
       };
@@ -215,6 +214,9 @@ in {
         dankBatteryAlerts = {
           enable = true;
         };
+        catWidget = {
+          enable = true;
+        };
       };
     };
 
@@ -226,24 +228,24 @@ in {
           {
             path = "~/Documents";
             max_depth = 6;
-            exclude_hidden = true;
+            exclude_hidden = false;
             exclude_dirs = ["node_modules" ".git" "target"];
           }
           {
             path = "~/Projects";
             max_depth = 8;
-            exclude_hidden = true;
+            exclude_hidden = false;
             exclude_dirs = ["node_modules" ".git" "target" "dist" "build"];
           }
           {
             path = "~/Downloads";
             max_depth = 3;
-            exclude_hidden = true;
+            exclude_hidden = false;
           }
           {
             path = "~/Pictures";
             max_depth = 4;
-            exclude_hidden = true;
+            exclude_hidden = false;
           }
         ];
       };

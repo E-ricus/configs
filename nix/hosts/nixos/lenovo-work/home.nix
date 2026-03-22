@@ -20,8 +20,8 @@
     compositor = "niri";
     scale = 1.75;
   };
-  # Use noctalia shell instead of waybar + swaybg
-  noctalia-config.enable = true;
+  # Desktop shell (pick one: dms-config or noctalia-config)
+  dms-config.enable = true;
   editors.enable = true;
   langs = {
     enable = true;
