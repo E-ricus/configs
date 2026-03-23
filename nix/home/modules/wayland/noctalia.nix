@@ -2,7 +2,6 @@
   config,
   lib,
   inputs,
-  pkgs,
   ...
 }: {
   imports = [inputs.noctalia.homeModules.default];
@@ -13,10 +12,6 @@
   };
 
   config = lib.mkIf config.noctalia-config.enable {
-    home.packages = with pkgs; [
-      gpu-screen-recorder
-    ];
-
     programs.noctalia-shell = {
       enable = true;
 

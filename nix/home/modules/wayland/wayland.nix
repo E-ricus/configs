@@ -40,6 +40,7 @@
       brightnessctl
       playerctl
       libnotify
+      gpu-screen-recorder
     ];
 
     # Notifications (can be overridden by noctalia or other modules)

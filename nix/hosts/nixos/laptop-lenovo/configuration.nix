@@ -17,7 +17,7 @@
   # Enable modules
   desktop-wayland = {
     enable = true;
-    compositor = "niri";
+    compositor = "hyprland";
     dank.enable = true; # DankGreeter + DMS polkit agent
   };
   graphics-config = {

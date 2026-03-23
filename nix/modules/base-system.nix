@@ -20,6 +20,7 @@
 
     # Enable flakes
     nix.settings.experimental-features = ["nix-command" "flakes"];
+    nix.settings.stalled-download-timeout = 0;
 
     # Disable command-not-found (prevents database errors with flakes)
     programs.command-not-found.enable = false;

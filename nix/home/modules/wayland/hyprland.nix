@@ -282,21 +282,21 @@
       # don't stack with the compositor's effects.
       wayland.windowManager.hyprland.settings.layerrule = lib.optionals isDms [
         # -- Animations --
-        "animation slide right, ^(dms:control-center)$"
-        "animation slide top, ^(dms:workspace-overview)$"
+        "animation slide right, match:namespace dms:control-center"
+        "animation slide top, match:namespace dms:workspace-overview"
         # -- Blur on modals --
-        "blur, ^(dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal))$"
-        "ignorealpha 0, ^(dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal))$"
+        "blur on, match:namespace dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal)"
+        "ignore_alpha 0, match:namespace dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal)"
         # -- Blur on shell components (bar, popouts, etc.) --
-        "blur, ^(dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock))$"
-        "ignorealpha 0, ^(dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock))$"
+        "blur on, match:namespace dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock)"
+        "ignore_alpha 0, match:namespace dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock)"
         # -- Dim behind modals --
-        "dimaround, ^(dms:(color-picker|clipboard|spotlight|settings|polkit|power-menu|confirm-modal))$"
+        "dim_around on, match:namespace dms:(color-picker|clipboard|spotlight|settings|polkit|power-menu|confirm-modal)"
       ];
 
       # Float DMS quickshell windows
-      wayland.windowManager.hyprland.settings.windowrulev2 = lib.optionals isDms [
-        "float, class:^(org.quickshell)$"
+      wayland.windowManager.hyprland.settings.windowrule = lib.optionals isDms [
+        "float on, match:class org.quickshell"
       ];
 
       wayland.windowManager.hyprland.settings.env =

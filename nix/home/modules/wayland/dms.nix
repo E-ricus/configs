@@ -18,31 +18,6 @@
   pkgs,
   ...
 }: let
-  jsonFormat = pkgs.formats.json {};
-
-  # DMS session defaults enforced on every activation.
-  # session.json is mutable (DMS writes wallpaper picks, mode toggles, etc.)
-  # so we can't use home-manager's xdg.stateFile (that creates a read-only
-  # nix-store symlink). Instead we merge our overrides on top of whatever
-  # DMS has already written, preserving runtime state while ensuring our
-  # declared values win.
-  #
-  sessionDefaults = {
-    # -- Theme --
-    isLightMode = false;
-
-    # -- Wallpaper --
-    wallpaperTransition = "fade";
-    wallpaperFillMode = "Fill";
-
-    # -- Do not disturb --
-    doNotDisturb = false;
-
-    # -- Misc --
-    weatherHourlyDetailed = true;
-  };
-
-  sessionDefaultsJson = jsonFormat.generate "dms-session-defaults.json" sessionDefaults;
 in {
   imports = [
     inputs.dms.homeModules.dank-material-shell
@@ -71,32 +46,36 @@ in {
       };
 
       # -- Niri integration --
-      # Only configure when niri is the active compositor; the niri
-      # home module isn't even imported on Hyprland.
-      niri = lib.mkIf isNiri {
-        # Systemd handles startup, not spawn-at-startup
-        enableSpawn = false;
-        # We add keybinds manually in niri.nix to avoid conflicts
-        # with existing compositor keybinds (Mod+V, Mod+Comma, etc.)
-        enableKeybinds = false;
-        # Use the includes hack: renames niri-flake config.kdl -> hm.kdl,
-        # then creates a new config.kdl that includes hm.kdl + DMS files.
-        # DMS auto-generates binds, colors, layout, alttab, outputs, wpblur.
-        includes = {
-          enable = true;
-          override = true;
-          originalFileName = "hm";
-          filesToInclude = [
-            "alttab"
-            "binds"
-            "colors"
-            "cursor"
-            "layout"
-            "outputs"
-            "wpblur"
-          ];
+      # Only configure when niri is the active compositor
+      niri =
+        if isNiri
+        then {
+          # Systemd handles startup, not spawn-at-startup
+          enableSpawn = false;
+          # keybinds manually added in niri.nix to avoid conflicts
+          # with existing compositor keybinds (Mod+V, Mod+Comma, etc.)
+          enableKeybinds = false;
+          # Use the includes hack: renames niri-flake config.kdl -> hm.kdl,
+          # then creates a new config.kdl that includes hm.kdl + DMS files.
+          # DMS auto-generates binds, colors, layout, alttab, outputs, wpblur.
+          includes = {
+            enable = true;
+            override = true;
+            originalFileName = "hm";
+            filesToInclude = [
+              "alttab"
+              "binds"
+              "colors"
+              "cursor"
+              "layout"
+              "outputs"
+              "wpblur"
+            ];
+          };
+        }
+        else {
+          includes.enable = false;
         };
-      };
 
       # -- Feature toggles --
       enableSystemMonitoring = true; # dgop for system resource widgets
@@ -157,9 +136,9 @@ in {
             position = 2; # 0 top, 1 down, 2 left, 3 right
             screenPreferences = ["all"];
             showOnLastDisplay = true;
-            leftWidgets = ["workspaceSwitcher" "focusedWindow" "catWidget"];
+            leftWidgets = ["powerMenuButton" "workspaceSwitcher" "focusedWindow" "catWidget"];
             centerWidgets = ["music" "clock" "privacyIndicator"];
-            rightWidgets = ["systemTray" "vpn" "clipboard" "cpuUsage" "memUsage" "battery" "controlCenterButton" "notificationButton"];
+            rightWidgets = ["systemTray" "separator" "screenRecorder" "vpn" "cpuUsage" "memUsage" "battery" "controlCenterButton" "notificationButton"];
             spacing = 3;
             innerPadding = 3;
             bottomGap = 0;
@@ -224,19 +203,15 @@ in {
         loginctlLockIntegration = true;
       };
 
-      # -- Clipboard --
       clipboardSettings = {
         maxHistory = 25;
         clearAtStartup = false;
-        disabled = false;
       };
 
-      # -- Plugins --
       plugins = {
         dankBatteryAlerts.enable = true;
         catWidget.enable = true;
 
-        # Launcher / spotlight plugins
         commandRunner.enable = true;
         calculator.enable = true;
         webSearch = {
@@ -253,46 +228,21 @@ in {
           };
         };
         sessionPower.enable = true;
+        screenRecorder = {
+          enable = true;
+          settings = {
+            outputDir = "${config.home.homeDirectory}/Videos/recordings";
+          };
+        };
       };
     };
 
-    # Screenshot editors for DMS niri screenshot integration
     home.packages = with pkgs; [
       qt6Packages.qtmultimedia
       swappy
       satty
     ];
 
-    # Seed empty DMS niri include files so niri doesn't error on startup
-    # before DMS has had a chance to generate them. DMS overwrites these
-    # at runtime with real content. (Niri only — Hyprland doesn't use includes.)
-    #
-    # Merge session defaults into session.json (mutable). jq merges our
-    # declared values on top of the existing file, so runtime state like
-    # wallpaper picks and pinned apps are preserved while weather location,
-    # theme mode, etc. are always set to our declared values.
-    home.activation.seedDmsState = lib.hm.dag.entryAfter ["writeBoundary"] (
-      (lib.optionalString isNiri ''
-        mkdir -p "$HOME/.config/niri/dms"
-        for f in alttab colors layout outputs wpblur binds cursor windowrules; do
-          [ -f "$HOME/.config/niri/dms/$f.kdl" ] || touch "$HOME/.config/niri/dms/$f.kdl"
-        done
-      '')
-      + ''
-        SESSION="$HOME/.local/state/DankMaterialShell/session.json"
-        mkdir -p "$(dirname "$SESSION")"
-        if [ -f "$SESSION" ]; then
-          # Merge: existing session * our overrides (our values win)
-          ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$SESSION" ${sessionDefaultsJson} > "$SESSION.tmp" \
-            && mv "$SESSION.tmp" "$SESSION"
-        else
-          cp ${sessionDefaultsJson} "$SESSION"
-          chmod 644 "$SESSION"
-        fi
-      ''
-    );
-
-    # DMS handles notifications natively - disable mako
     services.mako.enable = lib.mkForce false;
   });
 }
