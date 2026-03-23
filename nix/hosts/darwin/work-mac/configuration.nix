@@ -1,9 +1,17 @@
 ## Not used anymore, left for documentation in the future
-## input should be added again
+## input and output should be added again
 #
 # nix-darwin = {
 #   url = "github:nix-darwin/nix-darwin/master";
 #   inputs.nixpkgs.follows = "nixpkgs";
+# };
+# darwinConfigurations = {
+#   work-mac = mkSystem {
+#     system = "aarch64-darwin";
+#     hostname = "work-mac";
+#     user = "ericpuentes";
+#     darwin = true;
+#   };
 # };
 {
   pkgs,

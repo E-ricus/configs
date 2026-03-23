@@ -1,5 +1,4 @@
 {
-  inputs,
   config,
   pkgs,
   lib,
@@ -29,10 +28,7 @@
       tree-sitter
       gh
       just
-
-      # TUIs TODO: Maybe move to it's own module?
-      inputs.sqlit.packages.${pkgs.stdenv.hostPlatform.system}.default
-      atac
+      hyperfine
     ];
 
     home.sessionPath = [
@@ -59,7 +55,6 @@
       enableZshIntegration = true;
       enableNushellIntegration = true;
       enableFishIntegration = true;
-      # fish enabled by default
       nix-direnv.enable = true;
       config = {
         whitelist.prefix = ["~/code/" "~/Projects"];

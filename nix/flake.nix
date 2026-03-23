@@ -26,10 +26,6 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sqlit = {
-      url = "github:Maxteabag/sqlit";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-jetbrains-plugins = {
       url = "github:nix-community/nix-jetbrains-plugins";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -93,16 +89,6 @@
         modules = [
           ./modules
         ];
-      };
-    };
-
-    # Darwin configurations
-    darwinConfigurations = {
-      work-mac = mkSystem {
-        system = "aarch64-darwin";
-        hostname = "work-mac";
-        user = "ericpuentes";
-        darwin = true;
       };
     };
   };

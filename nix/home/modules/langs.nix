@@ -44,8 +44,7 @@
       # LLMs
       ++ lib.optionals config.langs.llm.enable [
         opencode
-        # TODO: Hours building what happened?
-        #claude-code
+        claude-code
         codex
       ]
       # Package managers

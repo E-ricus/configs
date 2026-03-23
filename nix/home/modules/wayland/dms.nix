@@ -186,18 +186,20 @@ in {
         enableFprint = true;
         greeterEnableFprint = true;
 
-        # -- Idle / lock / suspend --
         # AC power (seconds, 0 = disabled)
         acLockTimeout = 300; # 5 min -> lock
         acMonitorTimeout = 600; # 10 min -> DPMS off
         acSuspendTimeout = 1800; # 30 min -> suspend
         acSuspendBehavior = 0; # 0=suspend, 1=hibernate, 2=suspend-then-hibernate
+        acProfileName = "2"; # 0 saver, 1 balanced, 2 Performance
 
         # Battery power
         batteryLockTimeout = 180; # 3 min -> lock
         batteryMonitorTimeout = 300; # 5 min -> DPMS off
         batterySuspendTimeout = 900; # 15 min -> suspend
         batterySuspendBehavior = 2; # 0=suspend, 1=hibernate, 2=suspend-then-hibernate
+        batteryProfileName = "1"; # 0 saver, 1 balanced, 2 Performance
+        batteryChargeLimit = 90;
 
         lockBeforeSuspend = true;
         loginctlLockIntegration = true;
