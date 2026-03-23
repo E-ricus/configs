@@ -55,7 +55,9 @@ in {
       lib.mkEnableOption "enables DankMaterialShell desktop shell";
   };
 
-  config = lib.mkIf config.dms-config.enable {
+  config = lib.mkIf config.dms-config.enable (let
+    isNiri = config.wayland.compositor == "niri";
+  in {
     programs.dank-material-shell = {
       enable = true;
 
@@ -69,7 +71,9 @@ in {
       };
 
       # -- Niri integration --
-      niri = {
+      # Only configure when niri is the active compositor; the niri
+      # home module isn't even imported on Hyprland.
+      niri = lib.mkIf isNiri {
         # Systemd handles startup, not spawn-at-startup
         enableSpawn = false;
         # We add keybinds manually in niri.nix to avoid conflicts
@@ -115,12 +119,20 @@ in {
         # -- Compositing --
         blurredWallpaperLayer = false;
         blurWallpaperOnOverview = false;
-        modalDarkenBackground = true;
         niriOverviewOverlayEnabled = true;
 
-        # -- Animation --
-        animationSpeed = 1;
-        customAnimationDuration = 500;
+        # On Hyprland, the compositor handles blur, dimaround, and animations
+        # via layer rules — disable DMS's own effects to avoid stacking.
+        # On niri (no blur/dimaround layer rules), DMS handles them natively.
+        modalDarkenBackground = isNiri;
+        animationSpeed =
+          if isNiri
+          then 1
+          else 0; # "None" — compositor handles animations
+        customAnimationDuration =
+          if isNiri
+          then 500
+          else 0;
 
         # -- Spotlight / launcher --
         appLauncherViewMode = "list";
@@ -253,31 +265,34 @@ in {
 
     # Seed empty DMS niri include files so niri doesn't error on startup
     # before DMS has had a chance to generate them. DMS overwrites these
-    # at runtime with real content.
+    # at runtime with real content. (Niri only — Hyprland doesn't use includes.)
     #
     # Merge session defaults into session.json (mutable). jq merges our
     # declared values on top of the existing file, so runtime state like
     # wallpaper picks and pinned apps are preserved while weather location,
     # theme mode, etc. are always set to our declared values.
-    home.activation.seedDmsState = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      mkdir -p "$HOME/.config/niri/dms"
-      for f in alttab colors layout outputs wpblur binds cursor windowrules; do
-        [ -f "$HOME/.config/niri/dms/$f.kdl" ] || touch "$HOME/.config/niri/dms/$f.kdl"
-      done
-
-      SESSION="$HOME/.local/state/DankMaterialShell/session.json"
-      mkdir -p "$(dirname "$SESSION")"
-      if [ -f "$SESSION" ]; then
-        # Merge: existing session * our overrides (our values win)
-        ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$SESSION" ${sessionDefaultsJson} > "$SESSION.tmp" \
-          && mv "$SESSION.tmp" "$SESSION"
-      else
-        cp ${sessionDefaultsJson} "$SESSION"
-        chmod 644 "$SESSION"
-      fi
-    '';
+    home.activation.seedDmsState = lib.hm.dag.entryAfter ["writeBoundary"] (
+      (lib.optionalString isNiri ''
+        mkdir -p "$HOME/.config/niri/dms"
+        for f in alttab colors layout outputs wpblur binds cursor windowrules; do
+          [ -f "$HOME/.config/niri/dms/$f.kdl" ] || touch "$HOME/.config/niri/dms/$f.kdl"
+        done
+      '')
+      + ''
+        SESSION="$HOME/.local/state/DankMaterialShell/session.json"
+        mkdir -p "$(dirname "$SESSION")"
+        if [ -f "$SESSION" ]; then
+          # Merge: existing session * our overrides (our values win)
+          ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$SESSION" ${sessionDefaultsJson} > "$SESSION.tmp" \
+            && mv "$SESSION.tmp" "$SESSION"
+        else
+          cp ${sessionDefaultsJson} "$SESSION"
+          chmod 644 "$SESSION"
+        fi
+      ''
+    );
 
     # DMS handles notifications natively - disable mako
     services.mako.enable = lib.mkForce false;
-  };
+  });
 }

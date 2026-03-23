@@ -143,9 +143,13 @@
           };
 
           # -- Layer rules for DMS --
-          # When DMS is active, place its wallpaper layers within the backdrop
-          # so they appear in the niri overview.
+          # DMS layer rules for niri.
+          # See: danklinux.com/docs/dankmaterialshell/layers
+          #
+          # Niri doesn't support blur layer rules (compositor limitation),
+          # but it does support shadow, block-out-from, and place-within-backdrop.
           layer-rules = lib.optionals isDms [
+            # Place wallpaper layers in backdrop so they show in niri overview
             {
               matches = [{namespace = "^quickshell$";}];
               place-within-backdrop = true;
@@ -153,6 +157,37 @@
             {
               matches = [{namespace = "dms:blurwallpaper";}];
               place-within-backdrop = true;
+            }
+            # Block out sensitive content from screencasts
+            {
+              matches = [{namespace = "^dms:clipboard$";}];
+              block-out-from = "screencast";
+            }
+            {
+              matches = [{namespace = "^dms:polkit$";}];
+              block-out-from = "screencast";
+            }
+            {
+              matches = [{namespace = "^dms:wifi-password$";}];
+              block-out-from = "screencast";
+            }
+            # Shadow on bar and dock
+            {
+              matches = [
+                {namespace = "^dms:bar$";}
+                {namespace = "^dms:dock$";}
+              ];
+              shadow = {
+                enable = true;
+                softness = 40;
+                spread = 5;
+                offset = {
+                  x = 0;
+                  y = 5;
+                };
+                draw-behind-window = true;
+                color = "#00000064";
+              };
             }
           ];
 

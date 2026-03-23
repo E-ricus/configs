@@ -52,16 +52,13 @@
       hyprland-config.xwayland-zero-scale.enable = lib.mkDefault false;
 
       home.packages = with pkgs;
-        [
+        lib.optionals (!isDms) [
           grim
           slurp
         ]
         ++ lib.optionals (!isDms && !isNoctalia) [
           hyprlock
           hyprpaper
-        ]
-        ++ lib.optionals (!isDms && isNoctalia) [
-          # noctalia provides its own wallpaper, no hyprpaper needed
         ];
 
       wayland.windowManager.hyprland = {
@@ -110,8 +107,21 @@
             rounding = 8;
             blur = {
               enabled = true;
-              size = 3;
-              passes = 1;
+              size = 10;
+              passes = 4;
+              ignore_opacity = true;
+              new_optimizations = true;
+              xray = false;
+              noise = 0.02;
+              contrast = 1.1;
+              vibrancy = 0.2;
+              vibrancy_darkness = 0.3;
+            };
+            shadow = {
+              enabled = true;
+              range = 20;
+              render_power = 3;
+              color = "rgba(00000099)";
             };
           };
 
@@ -191,8 +201,16 @@
             "$mod SHIFT, 0, movetoworkspace, 10"
 
             # Screenshot
-            ", Print, exec, grim -g \"$(slurp)\" - | ${sattyCmd}"
-            "SHIFT, Print, exec, grim - | ${sattyCmd}"
+            ", Print, exec, ${
+              if isDms
+              then "dms screenshot --no-file"
+              else "grim -g \"$(slurp)\" - | ${sattyCmd}"
+            }"
+            "SHIFT, Print, exec, ${
+              if isDms
+              then "dms screenshot full --no-file"
+              else "grim - | ${sattyCmd}"
+            }"
 
             # Volume
             ", XF86AudioRaiseVolume, exec, ${
@@ -239,6 +257,13 @@
             "$mod, X, exec, dms ipc call powermenu toggle"
             "$mod, Y, exec, dms ipc call dankdash wallpaper"
             "$mod, TAB, exec, dms ipc call hypr toggleOverview"
+            # Night mode
+            "$mod SHIFT, N, exec, dms ipc call night toggle"
+            # Media (DMS mpris)
+            ", XF86AudioPlay, exec, dms ipc call mpris playPause"
+            ", XF86AudioNext, exec, dms ipc call mpris next"
+            ", XF86AudioPrev, exec, dms ipc call mpris previous"
+            ", XF86AudioStop, exec, dms ipc call mpris stop"
           ];
 
           bindm = [
@@ -248,9 +273,25 @@
         };
       };
 
-      # DMS layer rules for Hyprland
+      # DMS layer rules for Hyprland.
+      # See: danklinux.com/docs/dankmaterialshell/layers
+      #
+      # Compositor-delegated blur, dim, and animations for DMS surfaces.
+      # DMS's own animations and modal dim should be disabled in settings
+      # (animationSpeed = "none", modalDarkenBackground = false) so they
+      # don't stack with the compositor's effects.
       wayland.windowManager.hyprland.settings.layerrule = lib.optionals isDms [
-        "noanim, ^(dms)$"
+        # -- Animations --
+        "animation slide right, ^(dms:control-center)$"
+        "animation slide top, ^(dms:workspace-overview)$"
+        # -- Blur on modals --
+        "blur, ^(dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal))$"
+        "ignorealpha 0, ^(dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal))$"
+        # -- Blur on shell components (bar, popouts, etc.) --
+        "blur, ^(dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock))$"
+        "ignorealpha 0, ^(dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock))$"
+        # -- Dim behind modals --
+        "dimaround, ^(dms:(color-picker|clipboard|spotlight|settings|polkit|power-menu|confirm-modal))$"
       ];
 
       # Float DMS quickshell windows
