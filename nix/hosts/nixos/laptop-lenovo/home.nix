@@ -17,7 +17,7 @@
   git-config.enable = true;
   wayland = {
     enable = true;
-    compositor = "hyprland";
+    compositor = "niri";
     scale = 2.0;
   };
   # Desktop shell (pick one: dms-config or noctalia-config)

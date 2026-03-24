@@ -199,7 +199,8 @@ in {
         batterySuspendTimeout = 900; # 15 min -> suspend
         batterySuspendBehavior = 2; # 0=suspend, 1=hibernate, 2=suspend-then-hibernate
         batteryProfileName = "1"; # 0 saver, 1 balanced, 2 Performance
-        batteryChargeLimit = 90;
+        # scales the widget to show 100% based on the limit set and the actual battery (will show wong values unless the battery is actually stoping charging at this point)
+        batteryChargeLimit = 100;
 
         lockBeforeSuspend = true;
         loginctlLockIntegration = true;
