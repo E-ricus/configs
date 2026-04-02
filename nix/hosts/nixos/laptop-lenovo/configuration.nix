@@ -52,4 +52,8 @@
   hardware.brillo.enable = true;
 
   keyboards-config.zsa.enable = true;
+  vpn = {
+    enable = true;
+    mullvad.enable = true;
+  };
 }

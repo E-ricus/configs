@@ -44,6 +44,8 @@
       # Enable power management services (useful for both compositors)
       services.upower.enable = true;
       services.power-profiles-daemon.enable = true;
+
+
     })
 
     # -- Default greeter: greetd + ReGreet (when DMS is not enabled) --

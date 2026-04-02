@@ -8,6 +8,7 @@
     ./media.nix
     ./graphics.nix
     ./minimal-packages.nix
+    ./vpn.nix
 
     # Optional features
     ./gaming.nix
@@ -44,6 +45,8 @@
   gaming-config.minecraft.enable = lib.mkDefault false;
   virtualization-config.enable = lib.mkDefault false;
   windows-vm.enable = lib.mkDefault false;
+  vpn.enable = lib.mkDefault false;
+  vpn.mullvad.enable = lib.mkDefault false;
 
   # Hybrid GPU configuration (disabled by default)
   hybrid-gpu.enable = lib.mkDefault false;

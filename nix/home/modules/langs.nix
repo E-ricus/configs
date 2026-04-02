@@ -44,7 +44,6 @@
       # LLMs
       ++ lib.optionals config.langs.llm.enable [
         opencode
-        claude-code
         codex
       ]
       # Package managers

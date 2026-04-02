@@ -14,6 +14,7 @@
     home.packages = with pkgs; [
       # File managers
       nautilus
+      jmtpfs # MTP CLI fallback
 
       # Browsers
       firefox
