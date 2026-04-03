@@ -9,7 +9,7 @@ return {
     explorer = { enabled = true },
     indent = { enabled = true },
     input = { enabled = true },
-    picker = { enabled = true },
+    picker = { enabled = true, layout = { preset = "ivy_split" } },
     notifier = { enabled = true },
     quickfile = { enabled = true },
     scope = { enabled = true },

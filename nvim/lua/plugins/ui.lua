@@ -39,9 +39,15 @@ return {
                 end
                 -- Status indicators
                 local status = {}
-                if s.conflict then table.insert(status, "!") end
-                if s.divergent then table.insert(status, "~") end
-                if s.empty then table.insert(status, "o") end
+                if s.conflict then
+                  table.insert(status, "!")
+                end
+                if s.divergent then
+                  table.insert(status, "~")
+                end
+                if s.empty then
+                  table.insert(status, "o")
+                end
                 if #status > 0 then
                   table.insert(parts, "[" .. table.concat(status) .. "]")
                 end
@@ -65,7 +71,7 @@ return {
           "diff",
           "diagnostics",
         },
-        lualine_c = { "filename" },
+        lualine_c = { { "filename", path = 1 } },
         lualine_x = { "encoding", "fileformat", "filetype" },
         lualine_y = { "progress" },
         lualine_z = { "location" },
