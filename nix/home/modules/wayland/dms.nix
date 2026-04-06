@@ -133,7 +133,7 @@ in {
             id = "default";
             name = "Main Bar";
             enabled = true;
-            position = 2; # 0 top, 1 down, 2 left, 3 right
+            position = 0; # 0 top, 1 down, 2 left, 3 right
             screenPreferences = ["all"];
             showOnLastDisplay = true;
             leftWidgets = ["powerMenuButton" "workspaceSwitcher" "focusedWindow" "catWidget"];
