@@ -6,124 +6,48 @@
   den,
   ...
 }: {
-  perSystem = {
-    pkgs,
-    lib,
-    self',
-    ...
-  }: let
-    noctaliaExe = lib.getExe self'.packages.noctalia-shell;
-    noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
-    brightnessScript =
-      pkgs.writeShellScript "brightness-control"
-      (builtins.readFile ../wayland/brightness-control.sh);
-  in {
+  # ── Standalone package (nix run .#niri-noctalia, scale 1.0) ───────
+  perSystem = {pkgs, ...}: {
     packages.niri-noctalia = inputs.wrapper-modules.wrappers.niri.wrap {
       inherit pkgs;
-      imports = [self.wrappersModules.niri-common];
-      v2-settings = true;
-
-      settings = {
-        # Transparent background — Noctalia renders wallpaper via its own layer
-        layout.background-color = "transparent";
-
-        # Noctalia environment
-        environment.NOCTALIA_PAM_SERVICE = "noctalia";
-
-        # Spawn noctalia-shell at startup
-        spawn-at-startup = [noctaliaExe];
-
-        # ── Noctalia-specific keybinds ──────────────────────────────
-        binds = {
-          # Launcher
-          "Mod+D" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = noctalia "launcher toggle";
-          };
-
-          # Lock
-          "Super+Alt+L" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = noctalia "lockScreen lock";
-          };
-
-          # Volume via Noctalia IPC
-          "XF86AudioRaiseVolume" = _: {
-            props.allow-when-locked = true;
-            content.spawn = noctalia "volume increase";
-          };
-          "XF86AudioLowerVolume" = _: {
-            props.allow-when-locked = true;
-            content.spawn = noctalia "volume decrease";
-          };
-          "XF86AudioMute" = _: {
-            props.allow-when-locked = true;
-            content.spawn = noctalia "volume muteOutput";
-          };
-
-          # Mic mute via wpctl (no noctalia IPC for this)
-          "XF86AudioMicMute".spawn-sh = "${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
-
-          # Brightness via brightnessctl script
-          "XF86MonBrightnessUp" = _: {
-            props.allow-when-locked = true;
-            content.spawn = ["${brightnessScript}" "raise"];
-          };
-          "XF86MonBrightnessDown" = _: {
-            props.allow-when-locked = true;
-            content.spawn = ["${brightnessScript}" "lower"];
-          };
-
-          # Media via playerctl
-          "XF86AudioPlay".spawn-sh = "${lib.getExe pkgs.playerctl} play-pause";
-          "XF86AudioStop".spawn-sh = "${lib.getExe pkgs.playerctl} stop";
-          "XF86AudioPrev".spawn-sh = "${lib.getExe pkgs.playerctl} previous";
-          "XF86AudioNext".spawn-sh = "${lib.getExe pkgs.playerctl} next";
-        };
-      };
+      imports = [self.wrappersModules.niri-common self.wrappersModules.niri-noctalia];
     };
   };
 
   # ── Aspect: niri + Noctalia on NixOS + home-manager ───────────────
-  den.aspects.niri-noctalia = {
-    includes = [den.aspects.wayland den.aspects.noctalia];
+  den.aspects.niri-noctalia = den.lib.parametric {
+    includes = [
+      den.aspects.wayland
+      den.aspects.wayland-regreet
+      den.aspects.noctalia
+      # Parametric include: receives {host}, injects per-host scale
+      ({host}: {
+        nixos = {pkgs, ...}: let
+          niriPkg = inputs.wrapper-modules.wrappers.niri.wrap {
+            inherit pkgs;
+            imports = [self.wrappersModules.niri-common self.wrappersModules.niri-noctalia];
+            settings.outputs."eDP-1".scale = host.display.scale;
+          };
+        in {
+          programs.niri.enable = true;
+          programs.niri.package = niriPkg;
+          services.displayManager.defaultSession = "niri";
+          xdg.portal = {
+            enable = true;
+            extraPortals = [pkgs.xdg-desktop-portal-gnome];
+          };
+          environment.systemPackages = [pkgs.xwayland-satellite];
+        };
+      })
+    ];
 
-    nixos = {pkgs, ...}: {
-      programs.niri.enable = true;
-      programs.niri.package = self.packages.${pkgs.stdenv.hostPlatform.system}.niri-noctalia;
-      services.displayManager.defaultSession = "niri";
-      xdg.portal = {
-        enable = true;
-        extraPortals = [pkgs.xdg-desktop-portal-gnome];
-      };
-      environment.systemPackages = [pkgs.xwayland-satellite];
-    };
-
-    homeManager = {
-      pkgs,
-      lib,
-      config,
-      ...
-    }: let
-      niriPkg = self.packages.${pkgs.stdenv.hostPlatform.system}.niri-noctalia;
+    homeManager = {pkgs, lib, config, ...}: let
       noctaliaShell = self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
-      configDir = "${config.xdg.configHome}/niri";
       lockScript =
         pkgs.writeShellScript "lock-screen"
         "${noctaliaShell}/bin/noctalia-shell ipc call lockScreen lock";
     in {
-      programs.fuzzel.enable = true;
-
       home.packages = [pkgs.hyprlock pkgs.satty];
-
-      # User config includes the wrapped config + host overrides
-      xdg.configFile."niri/config.kdl".text = ''
-        include "${niriPkg}/niri-config.kdl"
-        include "host.kdl"
-      '';
-      xdg.configFile."niri/host.kdl".text = lib.mkDefault "";
-      # Override NIRI_CONFIG to use the user config (which includes the baked one)
-      systemd.user.sessionVariables.NIRI_CONFIG = "${configDir}/config.kdl";
 
       # Idle management — Noctalia doesn't handle idle internally
       services.swayidle = {

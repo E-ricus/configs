@@ -1,14 +1,14 @@
-# Host aspect for thinkpad-work — Intel ThinkPad, Secure Boot, disko, niri + DMS.
+# Host aspect for thinkpad-work — Intel ThinkPad, Secure Boot, disko
 {den, ...}: {
   den.hosts.x86_64-linux.thinkpad-work = {
-    scale = 1.75;
+    display.scale = 1.75;
     users.ericus = {};
   };
 
   den.aspects.thinkpad-work = {
     includes = [
       den.provides.hostname
-      # NixOS-only aspects (no homeManager)
+      # NixOS-only aspects
       den.aspects.base-system
       den.aspects.locale
       den.aspects.boot-lanzaboote
@@ -22,6 +22,8 @@
       den.aspects.windows-vm
       den.aspects.work-tools
       den.aspects.vpn
+      # Desktop
+      den.aspects.niri-noctalia
     ];
 
     nixos = {pkgs, ...}: {
@@ -61,15 +63,6 @@
 
       services.fstrim.enable = true;
       hardware.brillo.enable = true;
-    };
-
-    # Host-specific niri overrides — included by the wrapped niri config
-    provides.to-users.homeManager = {...}: {
-      xdg.configFile."niri/host.kdl".text = ''
-        output "eDP-1" {
-          scale 1.75
-        }
-      '';
     };
   };
 }

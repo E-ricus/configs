@@ -1,14 +1,14 @@
-# Host aspect for legion-personal — AMD + NVIDIA hybrid GPU, gaming, niri + DMS.
+# Host aspect for legion-personal
 {den, ...}: {
   den.hosts.x86_64-linux.legion-personal = {
-    scale = 2.0;
+    display.scale = 2.0;
     users.ericus = {};
   };
 
   den.aspects.legion-personal = {
     includes = [
       den.provides.hostname
-      # NixOS-only aspects (no homeManager)
+      # NixOS-only aspects
       den.aspects.base-system
       den.aspects.locale
       den.aspects.boot-systemd
@@ -21,6 +21,8 @@
       den.aspects.keyboards-zsa
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
+      # Desktop
+      den.aspects.niri-noctalia
     ];
 
     nixos = {pkgs, ...}: {
@@ -34,15 +36,6 @@
         amdgpuBusId = "PCI:5:0:0";
         nvidiaBusId = "PCI:1:0:0";
       };
-    };
-
-    # Host-specific niri overrides — included by the wrapped niri config
-    provides.to-users.homeManager = {...}: {
-      xdg.configFile."niri/host.kdl".text = ''
-        output "eDP-1" {
-          scale 2.0
-        }
-      '';
     };
   };
 }

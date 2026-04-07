@@ -320,7 +320,7 @@ nix/modules/desktop/
 └── wayland/                 # Shared Wayland base (polkit, mako, packages)
 ```
 
-- **`common.nix`** — Reusable `wrappersModules.niri-common` imported by both variants. Contains input, cursor, layout, workspaces, window-rules, environment, all navigation keybinds, and `include "~/.config/niri/host.kdl"` for per-host overrides.
+- **`common.nix`** — Reusable `wrappersModules.niri-common` imported by both variants. Contains input, cursor, layout, workspaces, window-rules, environment, all navigation keybinds.
 - **`niri-dms.nix`** — Niri + DMS IPC keybinds (spotlight, clipboard, notifications, volume, brightness, media, screenshot), layer-rules for quickshell/bar/dock. DMS handles idle/lock internally.
 - **`niri-noctalia.nix`** — Niri + Noctalia IPC keybinds (launcher, lockScreen, volume), playerctl, brightnessctl, swayidle with noctalia lock, spawn-at-startup noctalia-shell.
 - **`noctalia.nix`** — Wrapped `noctalia-shell` with all settings. Compositor-agnostic — usable with hyprland too.
@@ -336,21 +336,6 @@ den.aspects.niri-dms
 
 # Noctalia:
 den.aspects.niri-noctalia
-```
-
-### Host-Specific Niri Overrides
-
-The wrapped niri config includes `~/.config/niri/host.kdl`. Each host writes this file for per-host settings (output scale, etc.):
-
-```nix
-# In a host aspect:
-provides.to-users.homeManager = {...}: {
-  xdg.configFile."niri/host.kdl".text = ''
-    output "eDP-1" {
-      scale 1.75
-    }
-  '';
-};
 ```
 
 ## Documentation

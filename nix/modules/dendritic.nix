@@ -7,7 +7,7 @@
 }: {
   imports = [inputs.den.flakeModule];
 
-  # Systems for perSystem outputs (devShells, packages, etc.)
+  # Systems for perSystem outputs
   systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
 
   # All users get home-manager integration
@@ -15,7 +15,7 @@
 
   # Host schema: custom options available in host definitions
   den.schema.host = {lib, ...}: {
-    options.scale = lib.mkOption {
+    options.display.scale = lib.mkOption {
       type = lib.types.either lib.types.int lib.types.float;
       default = 1.0;
       description = "Display scale factor for this host";

@@ -1,14 +1,23 @@
-# Shared niri wrapper module — common settings for both DMS and Noctalia variants.
-# Imported via `imports = [self.wrappersModules.niri-common]` in each .wrap call.
+# All niri wrapper modules — common + per-variant settings.
+# All entries live here in one block so flake-parts can expose them as a single
+# flake.wrappersModules attrset without merge conflicts.
 {self, ...}: {
-  flake.wrappersModules.niri-common = {
-    config,
+  flake.wrappersModules = {
+
+  # ── Shared: layout, keybinds, env, window-rules ──────────────────
+  niri-common = {
     lib,
     pkgs,
     ...
   }: {
     v2-settings = true;
 
+    env = {
+      ELECTRON_OZONE_PLATFORM_HINT = "auto";
+      QT_WAYLAND_RECONNECT = "1";
+      XCURSOR_THEME = "Adwaita";
+      XCURSOR_SIZE = "24";
+    };
     settings = {
       input = {
         keyboard.xkb = {
@@ -23,8 +32,6 @@
         # To enable, add in a variant:
         #   focus-follows-mouse = _: { props.max-scroll-amount = "90%"; };
       };
-
-      # Cursor theme is set via environment variables (not a niri config section).
 
       gestures.hot-corners.off = _: {};
 
@@ -65,10 +72,6 @@
       overview.backdrop-color = "#1e1e2e"; # Catppuccin Mocha Base
 
       environment = {
-        ELECTRON_OZONE_PLATFORM_HINT = "auto";
-        QT_WAYLAND_RECONNECT = "1";
-        XCURSOR_THEME = "Adwaita";
-        XCURSOR_SIZE = "24";
       };
 
       xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
@@ -296,4 +299,196 @@
       };
     };
   };
+
+  # ── Noctalia-specific settings ────────────────────────────────────
+  niri-noctalia = {lib, pkgs, ...}: let
+    noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
+    noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
+    brightnessScript =
+      pkgs.writeShellScript "brightness-control"
+      (builtins.readFile ../wayland/brightness-control.sh);
+  in {
+    v2-settings = true;
+    env.NOCTALIA_PAM_SERVICE = "noctalia";
+    settings = {
+      layout.background-color = "transparent";
+      spawn-at-startup = [noctaliaExe];
+      binds = {
+        "Mod+D" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = noctalia "launcher toggle";
+        };
+        "Super+Alt+L" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = noctalia "lockScreen lock";
+        };
+        "XF86AudioRaiseVolume" = _: {
+          props.allow-when-locked = true;
+          content.spawn = noctalia "volume increase";
+        };
+        "XF86AudioLowerVolume" = _: {
+          props.allow-when-locked = true;
+          content.spawn = noctalia "volume decrease";
+        };
+        "XF86AudioMute" = _: {
+          props.allow-when-locked = true;
+          content.spawn = noctalia "volume muteOutput";
+        };
+        "XF86AudioMicMute".spawn-sh = "${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+        "XF86MonBrightnessUp" = _: {
+          props.allow-when-locked = true;
+          content.spawn = ["${brightnessScript}" "raise"];
+        };
+        "XF86MonBrightnessDown" = _: {
+          props.allow-when-locked = true;
+          content.spawn = ["${brightnessScript}" "lower"];
+        };
+        "XF86AudioPlay".spawn-sh = "${lib.getExe pkgs.playerctl} play-pause";
+        "XF86AudioStop".spawn-sh = "${lib.getExe pkgs.playerctl} stop";
+        "XF86AudioPrev".spawn-sh = "${lib.getExe pkgs.playerctl} previous";
+        "XF86AudioNext".spawn-sh = "${lib.getExe pkgs.playerctl} next";
+      };
+    };
+  };
+
+  # ── DMS-specific settings ─────────────────────────────────────────
+  niri-dms = {lib, pkgs, ...}: let
+    dms = cmd: ["dms" "ipc" "call"] ++ (lib.splitString " " cmd);
+  in {
+    v2-settings = true;
+    settings = {
+      layout.background-color = "transparent";
+      layer-rules = [
+        {
+          matches = [{namespace = "^quickshell$";}];
+          place-within-backdrop = true;
+        }
+        {
+          matches = [{namespace = "dms:blurwallpaper";}];
+          place-within-backdrop = true;
+        }
+        {
+          matches = [{namespace = "^dms:clipboard$";}];
+          block-out-from = "screencast";
+        }
+        {
+          matches = [{namespace = "^dms:polkit$";}];
+          block-out-from = "screencast";
+        }
+        {
+          matches = [{namespace = "^dms:wifi-password$";}];
+          block-out-from = "screencast";
+        }
+        {
+          matches = [
+            {namespace = "^dms:bar$";}
+            {namespace = "^dms:dock$";}
+          ];
+          shadow = {
+            on = _: {};
+            softness = 40;
+            spread = 5;
+            offset = _: {props = {x = 0; y = 5;};};
+            draw-behind-window = true;
+            color = "#00000064";
+          };
+        }
+      ];
+      window-rules = [
+        {
+          matches = [{app-id = "^org\\.quickshell$";}];
+          open-floating = true;
+        }
+      ];
+      binds = {
+        "Mod+D" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "spotlight toggle";
+        };
+        "Super+Alt+L" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "lock lock";
+        };
+        "XF86AudioRaiseVolume" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "audio increment 3";
+        };
+        "XF86AudioLowerVolume" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "audio decrement 3";
+        };
+        "XF86AudioMute" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "audio mute";
+        };
+        "XF86AudioMicMute" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "audio micmute";
+        };
+        "XF86MonBrightnessUp" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "brightness increment 5 ";
+        };
+        "XF86MonBrightnessDown" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "brightness decrement 5 ";
+        };
+        "XF86AudioPlay" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "mpris playPause";
+        };
+        "XF86AudioStop" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "mpris stop";
+        };
+        "XF86AudioPrev" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "mpris previous";
+        };
+        "XF86AudioNext" = _: {
+          props.allow-when-locked = true;
+          content.spawn = dms "mpris next";
+        };
+        "Print" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "niri screenshot";
+        };
+        "Mod+Space" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "spotlight toggle";
+        };
+        "Mod+V" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "clipboard toggle";
+        };
+        "Mod+N" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "notifications toggle";
+        };
+        "Mod+M" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "processlist focusOrToggle";
+        };
+        "Mod+Shift+Comma" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "settings focusOrToggle";
+        };
+        "Mod+X" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "powermenu toggle";
+        };
+        "Mod+Y" = _: {
+          props.allow-inhibiting = false;
+          content.spawn = dms "dankdash wallpaper";
+        };
+        "Mod+Alt+N" = _: {
+          props.allow-inhibiting = false;
+          props.allow-when-locked = true;
+          content.spawn = dms "night toggle";
+        };
+      };
+    };
+  };
+
+  }; # end flake.wrappersModules
 }

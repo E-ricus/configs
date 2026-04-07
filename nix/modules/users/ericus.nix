@@ -25,8 +25,6 @@
       den.aspects.ghostty
       den.aspects.alacritty
 
-      # Desktop
-      den.aspects.niri-dms
       den.aspects.theming
       den.aspects.browsers
       den.aspects.linux-desktop

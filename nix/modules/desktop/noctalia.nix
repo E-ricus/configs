@@ -1,29 +1,34 @@
 # Noctalia desktop shell — wrapped with baked-in config.
 # Run standalone: nix run .#noctalia-shell
 # Compositor-agnostic: composable with niri, hyprland, etc.
-{self, inputs, den, ...}: {
+{
+  self,
+  inputs,
+  den,
+  ...
+}: {
   perSystem = {pkgs, ...}: {
     packages.noctalia-shell = inputs.wrapper-modules.wrappers.noctalia-shell.wrap {
       inherit pkgs;
       env.NOCTALIA_CACHE_DIR = "/tmp/noctalia-cache/";
       # Catppuccin Mocha — Material Design color mapping
       colors = {
-        mPrimary = "#cba6f7";        # Mauve
-        mOnPrimary = "#1e1e2e";      # Base
-        mSecondary = "#f5c2e7";      # Pink
-        mOnSecondary = "#1e1e2e";    # Base
-        mTertiary = "#94e2d5";       # Teal
-        mOnTertiary = "#1e1e2e";     # Base
-        mError = "#f38ba8";          # Red
-        mOnError = "#1e1e2e";        # Base
-        mSurface = "#1e1e2e";        # Base
+        mPrimary = "#cba6f7"; # Mauve
+        mOnPrimary = "#1e1e2e"; # Base
+        mSecondary = "#f5c2e7"; # Pink
+        mOnSecondary = "#1e1e2e"; # Base
+        mTertiary = "#94e2d5"; # Teal
+        mOnTertiary = "#1e1e2e"; # Base
+        mError = "#f38ba8"; # Red
+        mOnError = "#1e1e2e"; # Base
+        mSurface = "#1e1e2e"; # Base
         mSurfaceVariant = "#313244"; # Surface0
-        mOnSurface = "#cdd6f4";      # Text
+        mOnSurface = "#cdd6f4"; # Text
         mOnSurfaceVariant = "#bac2de"; # Subtext1
-        mOutline = "#585b70";        # Surface2
-        mShadow = "#11111b";         # Crust
-        mHover = "#f9e2af";          # Yellow
-        mOnHover = "#1e1e2e";        # Base
+        mOutline = "#585b70"; # Surface2
+        mShadow = "#11111b"; # Crust
+        mHover = "#f9e2af"; # Yellow
+        mOnHover = "#1e1e2e"; # Base
       };
       settings = {
         settingsVersion = 37;
@@ -48,11 +53,14 @@
               {id = "plugin:catwalk";}
             ];
             center = [
-              {id = "Clock"; usePrimaryColor = false;}
+              {
+                id = "Clock";
+                usePrimaryColor = false;
+              }
             ];
             right = [
-              {id = "plugin:screen-recorder";}
               {id = "Tray";}
+              {id = "plugin:screen-recorder";}
               {id = "SystemMonitor";}
               {id = "Battery";}
               {id = "Volume";}
@@ -109,10 +117,22 @@
         };
         calendar = {
           cards = [
-            {enabled = true; id = "calendar-header-card";}
-            {enabled = true; id = "calendar-month-card";}
-            {enabled = true; id = "timer-card";}
-            {enabled = true; id = "weather-card";}
+            {
+              enabled = true;
+              id = "calendar-header-card";
+            }
+            {
+              enabled = true;
+              id = "calendar-month-card";
+            }
+            {
+              enabled = true;
+              id = "timer-card";
+            }
+            {
+              enabled = true;
+              id = "weather-card";
+            }
           ];
         };
         wallpaper = {
@@ -172,11 +192,26 @@
             ];
           };
           cards = [
-            {enabled = true; id = "profile-card";}
-            {enabled = true; id = "shortcuts-card";}
-            {enabled = true; id = "audio-card";}
-            {enabled = true; id = "weather-card";}
-            {enabled = true; id = "media-sysmon-card";}
+            {
+              enabled = true;
+              id = "profile-card";
+            }
+            {
+              enabled = true;
+              id = "shortcuts-card";
+            }
+            {
+              enabled = true;
+              id = "audio-card";
+            }
+            {
+              enabled = true;
+              id = "weather-card";
+            }
+            {
+              enabled = true;
+              id = "media-sysmon-card";
+            }
           ];
         };
         systemMonitor = {
@@ -218,12 +253,30 @@
           position = "center";
           showHeader = true;
           powerOptions = [
-            {action = "lock"; enabled = true;}
-            {action = "suspend"; enabled = true;}
-            {action = "hibernate"; enabled = true;}
-            {action = "reboot"; enabled = true;}
-            {action = "logout"; enabled = true;}
-            {action = "shutdown"; enabled = true;}
+            {
+              action = "lock";
+              enabled = true;
+            }
+            {
+              action = "suspend";
+              enabled = true;
+            }
+            {
+              action = "hibernate";
+              enabled = true;
+            }
+            {
+              action = "reboot";
+              enabled = true;
+            }
+            {
+              action = "logout";
+              enabled = true;
+            }
+            {
+              action = "shutdown";
+              enabled = true;
+            }
           ];
         };
         notifications = {
@@ -282,11 +335,26 @@
           generateTemplatesForPredefined = true;
         };
         templates = {
-          gtk = true; qt = true; kcolorscheme = false; alacritty = false;
-          kitty = false; ghostty = false; foot = false; wezterm = false;
-          fuzzel = false; discord = false; pywalfox = false; vicinae = false;
-          walker = false; code = false; spicetify = false; telegram = false;
-          cava = false; emacs = false; niri = false; enableUserTemplates = false;
+          gtk = true;
+          qt = true;
+          kcolorscheme = false;
+          alacritty = false;
+          kitty = false;
+          ghostty = false;
+          foot = false;
+          wezterm = false;
+          fuzzel = true;
+          discord = false;
+          pywalfox = false;
+          vicinae = false;
+          walker = false;
+          code = false;
+          spicetify = false;
+          telegram = false;
+          cava = false;
+          emacs = false;
+          niri = false;
+          enableUserTemplates = false;
         };
         nightLight = {
           enabled = false;
@@ -332,7 +400,11 @@
 
   # ── Aspect: Noctalia shell (compositor-agnostic) ──────────────────
   den.aspects.noctalia = {
-    homeManager = {pkgs, lib, ...}: {
+    homeManager = {
+      pkgs,
+      lib,
+      ...
+    }: {
       home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell];
       systemd.user.sessionVariables.NOCTALIA_PAM_SERVICE = "noctalia";
       services.mako.enable = lib.mkForce false;
