@@ -10,7 +10,7 @@
     provides.to-users = {
       homeManager.imports = [
         den.aspects.wayland.homeManager
-        den.aspects.niri-noctalia.homeManager
+        den.aspects.dms.homeManager
       ];
     };
 
@@ -31,7 +31,7 @@
       den.aspects.work-tools
       den.aspects.vpn
       # Desktop
-      den.aspects.niri-noctalia
+      den.aspects.niri-dms
     ];
 
     nixos = {pkgs, ...}: {

@@ -9,11 +9,7 @@
 #   1. Remove the datagrip overlay below
 #   2. Run: nix eval .#nixosConfigurations.thinkpad-work.config.system.build.toplevel.drvPath
 #   3. If it evaluates without "no compatible plugin" errors, remove the pin
-{
-  den,
-  inputs,
-  ...
-}: let
+{inputs, ...}: let
   jetbrainsOverlay = inputs.jetbrains-plugins.overlays.default;
 
   # Pin DataGrip to 2025.3.5 (build 253.25560.36) until aws.toolkit supports 2026.x builds.
@@ -48,14 +44,14 @@ in {
         (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.rust-rover (with pkgs.jetbrains-plugins; [
           IdeaVIM
         ]))
-        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.datagrip [
-          pkgs.jetbrains-plugins.IdeaVIM
-          pkgs.jetbrains-plugins.aws.toolkit
-          pkgs.jetbrains-plugins.aws.toolkit.core
+        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.datagrip (with pkgs.jetbrains-plugins; [
+          IdeaVIM
+          aws.toolkit
+          aws.toolkit.core
           # YAML plugin: pinned version since auto-resolve fails for pinned DataGrip build.
           # It's a dependency of aws.toolkit. Pick latest 253.x stable version.
-          pkgs.jetbrains-plugins.org.jetbrains.plugins.yaml.stable."253.29346.50"
-        ])
+          org.jetbrains.plugins.yaml.stable."253.29346.50"
+        ]))
       ];
     };
   };

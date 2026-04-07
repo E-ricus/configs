@@ -96,7 +96,7 @@ configs/
 │   │   │   │   ├── volume-control.sh
 │   │   │   │   └── brightness-control.sh
 │   │   │   ├── niri/                           # Wrapped niri compositor variants
-│   │   │   │   ├── common.nix                  # Shared wrapper module (keybinds, layout)
+│   │   │   │   ├── wrapper.nix                  # Shared wrapper module (keybinds, layout)
 │   │   │   │   ├── niri-dms.nix                # Niri + DMS (wrapped package + aspect)
 │   │   │   │   └── niri-noctalia.nix           # Niri + Noctalia (wrapped package + aspect)
 │   │   │   ├── hyprland.nix                    # Hyprland compositor
@@ -312,7 +312,7 @@ The niri compositor config is split into two wrapped variants, each with a deskt
 ```
 nix/modules/desktop/
 ├── niri/
-│   ├── common.nix           # flake.wrappersModules.niri-common (shared keybinds, layout, etc.)
+│   ├── wrapper.nix           # flake.wrappersModules.niri-common (shared keybinds, layout, etc.)
 │   ├── niri-dms.nix         # packages.niri-dms   + den.aspects.niri-dms
 │   └── niri-noctalia.nix    # packages.niri-noctalia + den.aspects.niri-noctalia
 ├── noctalia.nix             # packages.noctalia-shell (compositor-agnostic)
