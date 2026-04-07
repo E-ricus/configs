@@ -40,13 +40,13 @@
         # Catppuccin Mocha colors
         focus-ring = {
           width = 4;
-          active-color = "#b4befe";   # Lavender
+          active-color = "#b4befe"; # Lavender
           inactive-color = "#6c7086"; # Overlay0
         };
         border = {
           off = _: {};
           width = 4;
-          active-color = "#b4befe";   # Lavender
+          active-color = "#b4befe"; # Lavender
           inactive-color = "#6c7086"; # Overlay0
         };
       };
@@ -278,7 +278,9 @@
 
         "Mod+W".toggle-column-tabbed-display = _: {};
 
-        # ── Screenshots (default — DMS overrides) ─────────────────────
+        # ── Screenshots niri builtin ──────────────────────────────────
+
+        "Print".screenshot = _: {};
         "Ctrl+Print".screenshot-screen = _: {};
         "Alt+Print".screenshot-window = _: {};
 

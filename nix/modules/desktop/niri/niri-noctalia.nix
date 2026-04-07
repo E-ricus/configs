@@ -79,9 +79,6 @@
           "XF86AudioStop".spawn-sh = "${lib.getExe pkgs.playerctl} stop";
           "XF86AudioPrev".spawn-sh = "${lib.getExe pkgs.playerctl} previous";
           "XF86AudioNext".spawn-sh = "${lib.getExe pkgs.playerctl} next";
-
-          # Screenshot via niri built-in
-          "Print".screenshot = _: {};
         };
       };
     };
