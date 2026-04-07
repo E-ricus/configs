@@ -49,6 +49,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Wrapper modules — bake config into packages for portable derivations
+    wrapper-modules = {
+      url = "github:BirdeeHub/nix-wrapper-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Shell / prompt
     jj-starship = {
       url = "github:dmmulroy/jj-starship";
