@@ -41,7 +41,7 @@
       })
     ];
 
-    homeManager = {pkgs, lib, config, ...}: let
+    homeManager = {pkgs, ...}: let
       noctaliaShell = self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
       lockScript =
         pkgs.writeShellScript "lock-screen"

@@ -6,6 +6,14 @@
   };
 
   den.aspects.thinkpad-work = {
+    # Push desktop homeManager config to all users on this host.
+    provides.to-users = {
+      homeManager.imports = [
+        den.aspects.wayland.homeManager
+        den.aspects.niri-noctalia.homeManager
+      ];
+    };
+
     includes = [
       den.provides.hostname
       # NixOS-only aspects
