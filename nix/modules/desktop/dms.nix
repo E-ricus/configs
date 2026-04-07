@@ -3,14 +3,16 @@
 { den, inputs, ... }: let
   dmsGreeterModule = inputs.dms.nixosModules.greeter;
   dmsHmModule = inputs.dms.homeModules.dank-material-shell;
-  dmsNiriHmModule = inputs.dms.homeModules.niri;
+  # DMS niri integration disabled — requires niri flake's HM module (config.lib.niri.actions)
+  # TODO: re-enable once DMS supports wrapped niri or drops the niri flake dependency
+  # dmsNiriHmModule = inputs.dms.homeModules.niri;
   dmsPluginModule = inputs.dms-plugin-registry.homeModules.default;
 in {
   den.aspects.dms = {
     includes = [den.aspects.wayland];
 
     # NixOS: DankGreeter (replaces ReGreet when DMS is active)
-    nixos = { config, ... }: {
+    nixos = { config, lib, ... }: {
       imports = [dmsGreeterModule];
       programs.dank-material-shell.greeter = {
         enable = true;
@@ -18,16 +20,12 @@ in {
         compositor.name = "niri";
         configHome = "/home/ericus";
       };
-      # Disable niri-flake's polkit agent (DMS has its own)
-      systemd.user.services.niri-flake-polkit.enable = false;
+
     };
 
-    homeManager = { config, lib, pkgs, ... }: let
-      isNiri = true; # DMS is currently only used with niri
-    in {
+    homeManager = { config, lib, pkgs, ... }: {
       imports = [
         dmsHmModule
-        dmsNiriHmModule
         dmsPluginModule
       ];
 
@@ -38,20 +36,6 @@ in {
           enable = true;
           restartIfChanged = true;
         };
-
-        niri =
-          if isNiri
-          then {
-            enableSpawn = false;
-            enableKeybinds = false;
-            includes = {
-              enable = true;
-              override = true;
-              originalFileName = "hm";
-              filesToInclude = ["alttab" "binds" "colors" "cursor" "layout" "outputs" "wpblur"];
-            };
-          }
-          else { includes.enable = false; };
 
         enableSystemMonitoring = true;
         enableDynamicTheming = true;
@@ -68,9 +52,9 @@ in {
           blurredWallpaperLayer = false;
           blurWallpaperOnOverview = false;
           niriOverviewOverlayEnabled = true;
-          modalDarkenBackground = isNiri;
-          animationSpeed = if isNiri then 1 else 0;
-          customAnimationDuration = if isNiri then 500 else 0;
+          modalDarkenBackground = true;
+          animationSpeed = 1;
+          customAnimationDuration = 500;
           appLauncherViewMode = "list";
           spotlightModalViewMode = "list";
           sortAppsAlphabetically = false;

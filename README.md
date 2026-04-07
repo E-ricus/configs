@@ -95,10 +95,13 @@ configs/
 │   │   │   │   ├── regreet-style.css
 │   │   │   │   ├── volume-control.sh
 │   │   │   │   └── brightness-control.sh
-│   │   │   ├── niri.nix                        # Niri compositor
+│   │   │   ├── niri/                           # Wrapped niri compositor variants
+│   │   │   │   ├── common.nix                  # Shared wrapper module (keybinds, layout)
+│   │   │   │   ├── niri-dms.nix                # Niri + DMS (wrapped package + aspect)
+│   │   │   │   └── niri-noctalia.nix           # Niri + Noctalia (wrapped package + aspect)
 │   │   │   ├── hyprland.nix                    # Hyprland compositor
-│   │   │   ├── noctalia.nix                    # Noctalia desktop shell
-│   │   │   └── dms.nix                         # DankMaterialShell
+│   │   │   ├── noctalia.nix                    # Wrapped Noctalia shell (compositor-agnostic)
+│   │   │   └── dms.nix                         # DankMaterialShell (flake-based)
 │   │   │
 │   │   ├── programs/                           # Application aspects (one per tool)
 │   │   │   ├── fish/                           # Fish shell + init.fish
@@ -179,7 +182,7 @@ den.aspects.thinkpad-work = {
 den.aspects.ericus = {
   includes = [
     den.provides.define-user
-    den.aspects.tools den.aspects.git den.aspects.niri den.aspects.dms ...
+    den.aspects.tools den.aspects.git den.aspects.niri-dms ...
   ];
   user = { ... }: { description = "Eric"; extraGroups = [ ... ]; };
 };
@@ -210,7 +213,7 @@ Host aspects use `provides.to-users.homeManager` to pass host-specific HM overri
 
 | Host | NixOS aspects (host) | HM aspects (user) |
 |------|---------------------|-------------------|
-| **thinkpad-work** | base, locale, lanzaboote, disko, Intel GPU, media, fingerprint, ZSA, JetBrains, virtualization, Windows VM, work tools, VPN | tools, git, jj, direnv, yazi, nvim, zed, langs, llms, starship, fish, zsh, nushell, tmux, ghostty, alacritty, niri, DMS, theming, browsers, linux-desktop, containers |
+| **thinkpad-work** | base, locale, lanzaboote, disko, Intel GPU, media, fingerprint, ZSA, JetBrains, virtualization, Windows VM, work tools, VPN | tools, git, jj, direnv, yazi, nvim, zed, langs, llms, starship, fish, zsh, nushell, tmux, ghostty, alacritty, niri-dms, theming, browsers, linux-desktop, containers |
 | **legion-personal** | base, locale, systemd-boot, AMD+NVIDIA, media, gaming, Minecraft, fingerprint-elan, ZSA, VPN, Mullvad | (same user aspects as thinkpad-work) |
 | **work-mac** | *(inactive)* | *(inactive)* |
 
@@ -258,62 +261,97 @@ The package is available as `nix build .#my-package` and referenced via `self.pa
 │   ├── thinkpad-work           # NixOS + home-manager
 │   └── legion-personal         # NixOS + home-manager
 └── packages.x86_64-linux
-    └── pam-fprint-grosshack    # Custom PAM module
+    ├── pam-fprint-grosshack    # Custom PAM module
+    ├── niri-dms                # Wrapped niri + DMS config
+    ├── niri-noctalia           # Wrapped niri + Noctalia config
+    ├── noctalia-shell          # Wrapped Noctalia desktop shell
+    ├── alacritty               # Wrapped Alacritty terminal
+    ├── opencode                # Wrapped OpenCode
+    └── tmux                    # Wrapped Tmux
 ```
 
-## Next Step: Wrapper Modules
+## Wrapped Modules
 
-The current architecture is designed to support [wrapper-modules](https://birdeehub.github.io/nix-wrapper-modules/) as a future enhancement. The per-program aspect split (ghostty.nix, alacritty.nix, nvim.nix, etc.) and the `perSystem` + `self` package pattern are the foundation for this.
+Programs are **wrapped** using [nix-wrapper-modules](https://github.com/BirdeeHub/nix-wrapper-modules) — their config is baked into the derivation at build time so they run standalone with no home-manager or external config files.
 
-### What wrapper-modules enables
+### Wrapped Packages
 
-Wrapper-modules bakes configuration INTO the package derivation. Instead of configuring ghostty via home-manager options, you create a wrapped ghostty package with the config built in:
+| Package          | Run standalone             | Source           |
+|------------------|----------------------------|------------------|
+| `alacritty`      | `nix run .#alacritty`      | nixpkgs          |
+| `opencode`       | `nix run .#opencode`       | nixpkgs          |
+| `tmux`           | `nix run .#tmux`           | nixpkgs          |
+| `niri-dms`       | `nix run .#niri-dms`       | nixpkgs (`niri`) |
+| `niri-noctalia`  | `nix run .#niri-noctalia`  | nixpkgs (`niri`) |
+| `noctalia-shell` | `nix run .#noctalia-shell` | nixpkgs          |
+
+Niri supports running nested inside an existing Wayland session — it opens as a window. `nix run .#niri-dms` launches a fully configured niri instance for testing keybinds, layout, window rules, etc. without doing a `nos` rebuild.
+
+### Pattern
 
 ```nix
-# programs/ghostty.nix — future wrapper-modules version
 { self, inputs, ... }: {
   perSystem = { pkgs, ... }: {
-    packages.ghostty = inputs.wrapper-modules.wrappers.ghostty.wrap {
+    packages.myProgram = inputs.wrapper-modules.wrappers.<program>.wrap {
       inherit pkgs;
-      settings = { theme = "Catppuccin Mocha"; background-opacity = 0.98; /* ... */ };
+      settings = { /* program-specific config */ };
     };
   };
-  den.aspects.ghostty = {
+  den.aspects.myProgram = {
     homeManager = { pkgs, ... }: {
-      home.packages = [ self.packages.${pkgs.stdenv.hostPlatform.system}.ghostty ];
+      home.packages = [ self.packages.${pkgs.stdenv.hostPlatform.system}.myProgram ];
     };
   };
 }
 ```
 
-### Testing configs without a full rebuild
+### Niri + Desktop Shell Architecture
 
-With wrapper-modules, wrapped packages can be run directly:
+The niri compositor config is split into two wrapped variants, each with a desktop shell baked in. A shared wrapper module holds the common settings.
 
-```bash
-# Test niri with your config in a nested window (without switching system)
-nix run .#niri
-
-# Test noctalia shell
-nix run .#noctalia
-
-# Test ghostty with baked-in config
-nix run .#ghostty
+```
+nix/modules/desktop/
+├── niri/
+│   ├── common.nix           # flake.wrappersModules.niri-common (shared keybinds, layout, etc.)
+│   ├── niri-dms.nix         # packages.niri-dms   + den.aspects.niri-dms
+│   └── niri-noctalia.nix    # packages.niri-noctalia + den.aspects.niri-noctalia
+├── noctalia.nix             # packages.noctalia-shell (compositor-agnostic)
+├── dms.nix                  # den.aspects.dms (still uses DMS flake — not in nixpkgs)
+└── wayland/                 # Shared Wayland base (polkit, mako, packages)
 ```
 
-Niri supports running nested inside an existing Wayland session -- it opens as a window. This means `nix run .#niri` launches a fully configured niri instance for testing keybinds, layout, window rules, etc. without doing a `nos` rebuild or rebooting.
+- **`common.nix`** — Reusable `wrappersModules.niri-common` imported by both variants. Contains input, cursor, layout, workspaces, window-rules, environment, all navigation keybinds, and `include "~/.config/niri/host.kdl"` for per-host overrides.
+- **`niri-dms.nix`** — Niri + DMS IPC keybinds (spotlight, clipboard, notifications, volume, brightness, media, screenshot), layer-rules for quickshell/bar/dock. DMS handles idle/lock internally.
+- **`niri-noctalia.nix`** — Niri + Noctalia IPC keybinds (launcher, lockScreen, volume), playerctl, brightnessctl, swayidle with noctalia lock, spawn-at-startup noctalia-shell.
+- **`noctalia.nix`** — Wrapped `noctalia-shell` with all settings. Compositor-agnostic — usable with hyprland too.
+- **`dms.nix`** — DMS is closed-source and not in nixpkgs. Still uses its own flake inputs.
 
-This is not available yet -- it requires adding `wrapper-modules` as a flake input and converting the relevant aspects to use `.wrap`. The current `perSystem` + `self.packages` pattern in `fingerprint.nix` demonstrates the exact same structure that wrapper-modules will use.
+### Switching Desktop Shells
 
-### Good candidates for wrapping
+In `ericus.nix`, swap the desktop aspect:
 
-| Program | Why wrap it |
-|---------|-----------|
-| **Niri** | Test compositor config in a window without rebooting |
-| **Ghostty** | Test terminal config instantly with `nix run` |
-| **Noctalia** | Test desktop shell config without full rebuild |
-| **Alacritty** | Same as Ghostty |
-| **OpenCode** | Configure LLM tool with baked-in settings |
+```nix
+# DMS (current):
+den.aspects.niri-dms
+
+# Noctalia:
+den.aspects.niri-noctalia
+```
+
+### Host-Specific Niri Overrides
+
+The wrapped niri config includes `~/.config/niri/host.kdl`. Each host writes this file for per-host settings (output scale, etc.):
+
+```nix
+# In a host aspect:
+provides.to-users.homeManager = {...}: {
+  xdg.configFile."niri/host.kdl".text = ''
+    output "eDP-1" {
+      scale 1.75
+    }
+  '';
+};
+```
 
 ## Documentation
 

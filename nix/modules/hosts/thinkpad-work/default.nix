@@ -63,9 +63,13 @@
       hardware.brillo.enable = true;
     };
 
-    # Host-specific home-manager overrides (via mutual-provider → forwarded to users)
+    # Host-specific niri overrides — included by the wrapped niri config
     provides.to-users.homeManager = {...}: {
-      programs.niri.settings.outputs."eDP-1".scale = 1.75;
+      xdg.configFile."niri/host.kdl".text = ''
+        output "eDP-1" {
+          scale 1.75
+        }
+      '';
     };
   };
 }

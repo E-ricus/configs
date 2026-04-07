@@ -1,13 +1,8 @@
 # Shared Wayland desktop configuration.
 # Combined NixOS (greeter, polkit, portals) + home-manager (packages, Mako).
-{ den, inputs, ... }: let
-  niriOverlay = inputs.niri.overlays.niri;
-in {
+{ den, ... }: {
   den.aspects.wayland = {
     nixos = { pkgs, lib, config, ... }: {
-      # Add niri overlay for niri-stable/niri-unstable packages
-      nixpkgs.overlays = [niriOverlay];
-
       security.polkit.enable = true;
       services.gnome.gnome-keyring.enable = true;
       programs.dconf.enable = true;
