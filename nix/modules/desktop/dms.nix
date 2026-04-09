@@ -1,6 +1,10 @@
 # DankMaterialShell (DMS) — Wayland desktop shell.
 # Provides bar, notifications, wallpaper, lock screen, idle management, and more.
-{ den, inputs, ... }: let
+{
+  den,
+  inputs,
+  ...
+}: let
   dmsGreeterModule = inputs.dms.nixosModules.greeter;
   dmsHmModule = inputs.dms.homeModules.dank-material-shell;
   # DMS niri integration disabled — requires niri flake's HM module (config.lib.niri.actions)
@@ -12,7 +16,7 @@ in {
     includes = [den.aspects.wayland];
 
     # NixOS: DankGreeter (replaces ReGreet when DMS is active)
-    nixos = { config, lib, ... }: {
+    nixos = {...}: {
       imports = [dmsGreeterModule];
       programs.dank-material-shell.greeter = {
         enable = true;
@@ -20,10 +24,13 @@ in {
         compositor.name = "niri";
         configHome = "/home/ericus";
       };
-
     };
 
-    homeManager = { config, lib, pkgs, ... }: {
+    homeManager = {
+      config,
+      pkgs,
+      ...
+    }: {
       imports = [
         dmsHmModule
         dmsPluginModule
@@ -172,8 +179,6 @@ in {
         swappy
         satty
       ];
-
-      services.mako.enable = lib.mkForce false;
     };
   };
 }

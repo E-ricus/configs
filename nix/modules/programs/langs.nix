@@ -18,6 +18,8 @@
         tinymist
         clang-tools
         ols
+        lua-language-server
+        gopls
       ];
     };
 

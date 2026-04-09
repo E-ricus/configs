@@ -1,8 +1,8 @@
 # Shared Wayland desktop configuration.
-# Combined NixOS (greeter, polkit, portals) + home-manager (packages, Mako).
-{ den, ... }: {
+# Combined NixOS (greeter, polkit, portals) + home-manager packages.
+{...}: {
   den.aspects.wayland = {
-    nixos = { pkgs, lib, config, ... }: {
+    nixos = {...}: {
       security.polkit.enable = true;
       services.gnome.gnome-keyring.enable = true;
       programs.dconf.enable = true;
@@ -10,7 +10,11 @@
       services.power-profiles-daemon.enable = true;
     };
 
-    homeManager = { pkgs, lib, ... }: {
+    homeManager = {
+      pkgs,
+      lib,
+      ...
+    }: {
       home.packages = with pkgs; [
         wl-clipboard
         pavucontrol
@@ -20,9 +24,9 @@
         gpu-screen-recorder
       ];
 
-      # Notifications (overridden by DMS/Noctalia when active)
+      # Noctalia/dms handle notifications
       services.mako = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         settings = {
           actions = true;
           icon-path = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
@@ -51,7 +55,7 @@
 
   # ReGreet greeter aspect (used when DMS greeter is NOT active)
   den.aspects.wayland-regreet = {
-    nixos = { pkgs, ... }: {
+    nixos = {pkgs, ...}: {
       programs.regreet = {
         enable = true;
         cageArgs = ["-s" "-d"];

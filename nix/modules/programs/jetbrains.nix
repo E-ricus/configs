@@ -51,6 +51,7 @@ in {
           # YAML plugin: pinned version since auto-resolve fails for pinned DataGrip build.
           # It's a dependency of aws.toolkit. Pick latest 253.x stable version.
           org.jetbrains.plugins.yaml.stable."253.29346.50"
+          com.github.catppuccin.jetbrains
         ]))
       ];
     };

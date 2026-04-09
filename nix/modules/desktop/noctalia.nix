@@ -4,7 +4,6 @@
 {
   self,
   inputs,
-  den,
   ...
 }: {
   perSystem = {pkgs, ...}: {
@@ -410,14 +409,9 @@
 
   # ── Aspect: Noctalia shell (compositor-agnostic) ──────────────────
   den.aspects.noctalia = {
-    homeManager = {
-      pkgs,
-      lib,
-      ...
-    }: {
+    homeManager = {pkgs, ...}: {
       home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell];
       systemd.user.sessionVariables.NOCTALIA_PAM_SERVICE = "noctalia";
-      services.mako.enable = lib.mkForce false;
     };
   };
 }

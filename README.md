@@ -317,7 +317,7 @@ nix/modules/desktop/
 │   └── niri-noctalia.nix    # packages.niri-noctalia + den.aspects.niri-noctalia
 ├── noctalia.nix             # packages.noctalia-shell (compositor-agnostic)
 ├── dms.nix                  # den.aspects.dms (still uses DMS flake — not in nixpkgs)
-└── wayland/                 # Shared Wayland base (polkit, mako, packages)
+└── wayland/                 # Shared Wayland base (polkit, packages)
 ```
 
 - **`common.nix`** — Reusable `wrappersModules.niri-common` imported by both variants. Contains input, cursor, layout, workspaces, window-rules, environment, all navigation keybinds.

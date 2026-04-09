@@ -29,7 +29,16 @@ local servers = {
   lua_ls = {},
   elixirls = {},
   hls = { filetypes = { "haskell", "lhaskell", "cabal" } },
-  vtsls = {},
+  vtsls = {
+    settings = {
+      typescript = {
+        tsserver = {
+          -- log = "verbose",
+          maxTsServerMemory = 8192,
+        },
+      },
+    },
+  },
   denols = {},
   gopls = {
     settings = {
