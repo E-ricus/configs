@@ -59,7 +59,9 @@
               }
             ];
             right = [
+              {id = "plugin:privacy-indicator";}
               {id = "Tray";}
+              {id = "plugin:network-manager-vpn";}
               {id = "plugin:screen-recorder";}
               {id = "SystemMonitor";}
               {id = "Battery";}
@@ -392,6 +394,14 @@
         };
         screen-recorder = {
           src = "${inputs.noctalia-plugins}/screen-recorder";
+          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+        };
+        privacy-indicator = {
+          src = "${inputs.noctalia-plugins}/privacy-indicator";
+          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+        };
+        network-manager-vpn = {
+          src = "${inputs.noctalia-plugins}/network-manager-vpn";
           sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
         };
       };
