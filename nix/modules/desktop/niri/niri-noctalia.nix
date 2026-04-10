@@ -41,7 +41,11 @@
       })
     ];
 
-    homeManager = {pkgs, ...}: let
+    homeManager = {
+      pkgs,
+      config,
+      ...
+    }: let
       noctaliaShell = self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
       lockScript =
         pkgs.writeShellScript "lock-screen"
@@ -52,7 +56,7 @@
       # Idle management — Noctalia doesn't handle idle internally
       services.swayidle = {
         enable = true;
-        systemdTarget = "graphical-session.target";
+        systemdTargets = [config.wayland.systemd.target "graphical-session.target"];
         events = {
           "before-sleep" = "${lockScript}";
           "lock" = "${lockScript}";

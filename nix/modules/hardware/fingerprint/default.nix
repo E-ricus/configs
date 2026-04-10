@@ -1,15 +1,24 @@
 # Fingerprint authentication with parallel password support (pam-fprint-grosshack).
-{ den, self, ... }: {
+{
+  den,
+  self,
+  ...
+}: {
   # Package definition — colocated with the aspect that uses it
   perSystem = {pkgs, ...}: {
     packages.pam-fprint-grosshack = pkgs.callPackage ./_pam-fprint-grosshack.nix {};
   };
 
   den.aspects.fingerprint = {
-    nixos = { pkgs, lib, config, ... }: let
+    nixos = {
+      pkgs,
+      lib,
+      config,
+      ...
+    }: let
       pam-fprint-grosshack = self.packages.${pkgs.stdenv.hostPlatform.system}.pam-fprint-grosshack;
       pam_fprintd_grosshack = "${pam-fprint-grosshack}/lib/security/pam_fprintd_grosshack.so";
-      pamServices = ["sudo" "hyprlock" "swaylock" "gtklock" "noctalia"];
+      pamServices = ["sudo" "login" "hyprlock" "swaylock" "gtklock" "noctalia" "noctalia-shell"];
     in {
       services.fprintd.enable = true;
 
@@ -29,13 +38,34 @@
             {greetd.fprintAuth = false;}
           ]
           ++ (map mkGrosshackService pamServices));
+      # Sometimes it seems not needed. But when it fails to reclaim is annoying.
+      # It doesn't hardm for more consistency.
+      systemd.services.fprintd-resume = {
+        description = "Restart fprintd after resume";
+        after = [
+          "suspend.target"
+          "hibernate.target"
+          "hybrid-sleep.target"
+          "suspend-then-hibernate.target"
+        ];
+        wantedBy = [
+          "suspend.target"
+          "hibernate.target"
+          "hybrid-sleep.target"
+          "suspend-then-hibernate.target"
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
+        };
+      };
     };
   };
 
   # Fingerprint with Elan TOD driver (for specific hardware)
   den.aspects.fingerprint-elan = {
     includes = [den.aspects.fingerprint];
-    nixos = { pkgs, ... }: {
+    nixos = {pkgs, ...}: {
       services.fprintd.tod = {
         enable = true;
         driver = pkgs.libfprint-2-tod1-elan;

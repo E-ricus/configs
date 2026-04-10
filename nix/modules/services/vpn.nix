@@ -1,5 +1,5 @@
 # VPN aspects — WireGuard tools + Mullvad VPN.
-{den, ...}: {
+{...}: {
   den.aspects.vpn = {
     nixos = {pkgs, ...}: {
       environment.systemPackages = [pkgs.wireguard-tools];
@@ -7,15 +7,17 @@
 
     # Sub-aspect for Mullvad
     provides.mullvad = {
-      nixos = {
-        pkgs,
-        lib,
-        ...
-      }: {
+      nixos = {pkgs, ...}: {
         services.mullvad-vpn = {
           enable = true;
           package = pkgs.mullvad-vpn;
         };
+        # These leaks dns but without it and the fallbadk, with the vpn off there is no connection
+        # If commited to mullad, is possible to remove it.
+        networking.nameservers = [
+          "1.1.1.1"
+          "1.0.0.1"
+        ];
         services.resolved = {
           enable = true;
           settings = {
@@ -23,7 +25,10 @@
               DNSSEC = "true";
               Domains = ["~."];
               DNSOverTLS = "true";
-              FallbackDNS = "";
+              fallbackDns = [
+                "1.1.1.1"
+                "1.0.0.1"
+              ];
             };
           };
         };

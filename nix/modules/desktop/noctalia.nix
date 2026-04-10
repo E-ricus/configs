@@ -66,6 +66,7 @@
               {id = "Battery";}
               {id = "Volume";}
               {id = "Network";}
+              {id = "Bluetooth";}
               {id = "NotificationHistory";}
             ];
           };
@@ -338,7 +339,7 @@
         templates = {
           gtk = true;
           qt = true;
-          kcolorscheme = false;
+          kcolorscheme = true;
           alacritty = false;
           kitty = false;
           ghostty = false;
@@ -370,6 +371,21 @@
           enabled = false;
           wallpaperChange = "";
           darkModeChange = "";
+        };
+        # TODO: Migrate swayidle to noctalia
+        idle = {
+          enabled = false;
+          screenOffTimeout = 600;
+          lockTimeout = 660;
+          suspendTimeout = 1800;
+          fadeDuration = 5;
+          screenOffCommand = "";
+          lockCommand = "";
+          suspendCommand = "";
+          resumeScreenOffCommand = "";
+          resumeLockCommand = "";
+          resumeSuspendCommand = "";
+          customCommands = "[]";
         };
       };
       plugins = {

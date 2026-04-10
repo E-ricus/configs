@@ -1,6 +1,6 @@
 # Base system configuration — networking, nix settings, garbage collection.
 # Included by all Linux hosts.
-{den, ...}: {
+{...}: {
   den.aspects.base-system = {
     nixos = {pkgs, ...}: {
       # Networking
@@ -35,7 +35,6 @@
         vim
         home-manager
         fish
-        wireguard-tools
         usbutils
       ];
 

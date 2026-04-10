@@ -18,7 +18,6 @@
   libxml2,
   libpam-wrapper,
 }:
-
 stdenv.mkDerivation rec {
   pname = "pam-fprint-grosshack";
   version = "0.3.0";
