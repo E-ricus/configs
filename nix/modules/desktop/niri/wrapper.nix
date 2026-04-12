@@ -308,10 +308,9 @@
         (builtins.readFile ../wayland/brightness-control.sh);
     in {
       v2-settings = true;
-      env.NOCTALIA_PAM_SERVICE = "noctalia";
       settings = {
         layout.background-color = "transparent";
-        spawn-at-startup = [noctaliaExe];
+        spawn-at-startup = [noctaliaExe "wl-paste --watch cliphist store"];
         binds = {
           "Mod+D" = _: {
             props.allow-inhibiting = false;
@@ -366,16 +365,16 @@
             props.allow-inhibiting = false;
             content.spawn-sh = "${lib.getExe pkgs.playerctl} next";
           };
+          "Mod+V" = _: {
+            props.allow-inhibiting = false;
+            content.spawn = noctalia "plugin:clipper toggle";
+          };
         };
       };
     };
 
     # ── DMS-specific settings ─────────────────────────────────────────
-    niri-dms = {
-      lib,
-      pkgs,
-      ...
-    }: let
+    niri-dms = {lib, ...}: let
       dms = cmd: ["dms" "ipc" "call"] ++ (lib.splitString " " cmd);
     in {
       v2-settings = true;

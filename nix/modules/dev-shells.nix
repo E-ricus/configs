@@ -1,5 +1,3 @@
-# Development shells — integrated via flake-parts perSystem.
-# Usage: nix develop .#default  or  nix develop .#work
 {...}: {
   perSystem = {pkgs, ...}: let
     ldcli = pkgs.buildGoModule rec {
@@ -13,27 +11,27 @@
       };
       vendorHash = "sha256-oq2qH4wUR4/6e8S/e6nxDYVYpILNQGrPL1pxjgs8Kuo=";
     };
-
-    personalPackages = with pkgs; [
-      podman
-      podman-compose
-      podman-tui
-    ];
-
-    workPackages =
-      personalPackages
-      ++ [
-        pkgs.awscli2
-        pkgs.gh
-        ldcli
-      ];
   in {
     devShells = {
-      default = pkgs.mkShell {
-        packages = personalPackages;
+      odin = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          odin
+          ols
+          raylib
+        ];
+
+        shellHook = ''
+          export LD_LIBRARY_PATH="${pkgs.raylib}/lib:$LD_LIBRARY_PATH"
+          echo "Odin + Raylib development environment loaded"
+          echo "Raylib version: ${pkgs.raylib.version}"
+        '';
       };
       work = pkgs.mkShell {
-        packages = workPackages;
+        packages = [
+          pkgs.awscli2
+          pkgs.gh
+          ldcli
+        ];
       };
     };
   };

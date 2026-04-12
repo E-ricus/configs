@@ -22,6 +22,7 @@
         playerctl
         libnotify
         gpu-screen-recorder
+        cliphist
       ];
 
       # Noctalia/dms handle notifications

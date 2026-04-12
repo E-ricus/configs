@@ -8,8 +8,6 @@
   den.aspects.legion-personal = {
     # Push desktop homeManager config to all users on this host.
     # mutual-provider reads provides.to-users from the host's own aspect only.
-    # We return the homeManager class directly so the desktop aspects' HM
-    # modules (wayland packages, noctalia swayidle/hyprlock) reach all users.
     provides.to-users = {
       homeManager.imports = [
         den.aspects.wayland.homeManager
@@ -36,7 +34,7 @@
       den.aspects.niri-noctalia
     ];
 
-    nixos = {pkgs, ...}: {
+    nixos = {...}: {
       imports = [./_hardware.nix];
 
       services.fstrim.enable = true;

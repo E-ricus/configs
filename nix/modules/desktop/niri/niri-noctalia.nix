@@ -53,7 +53,7 @@
     in {
       home.packages = [pkgs.hyprlock pkgs.satty];
 
-      # Idle management — Noctalia doesn't handle idle internally
+      # Noctalia idle management is not handling the lock when the suspend is with
       services.swayidle = {
         enable = true;
         systemdTargets = [config.wayland.systemd.target "graphical-session.target"];
@@ -61,21 +61,6 @@
           "before-sleep" = "${lockScript}";
           "lock" = "${lockScript}";
         };
-        timeouts = [
-          {
-            timeout = 300;
-            command = "${lockScript}";
-          }
-          {
-            timeout = 600;
-            command = "${pkgs.niri}/bin/niri msg action power-off-monitors";
-            resumeCommand = "${pkgs.niri}/bin/niri msg action power-on-monitors";
-          }
-          {
-            timeout = 1800;
-            command = "${pkgs.systemd}/bin/systemctl suspend-then-hibernate";
-          }
-        ];
       };
     };
   };

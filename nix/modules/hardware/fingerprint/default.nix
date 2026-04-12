@@ -18,7 +18,8 @@
     }: let
       pam-fprint-grosshack = self.packages.${pkgs.stdenv.hostPlatform.system}.pam-fprint-grosshack;
       pam_fprintd_grosshack = "${pam-fprint-grosshack}/lib/security/pam_fprintd_grosshack.so";
-      pamServices = ["sudo" "login" "hyprlock" "swaylock" "gtklock" "noctalia" "noctalia-shell"];
+      # Note to self: login conflicts with noctalia/dms it tries to claim the device conflicting
+      pamServices = ["sudo" "hyprlock" "swaylock" "gtklock"];
     in {
       services.fprintd.enable = true;
 
@@ -35,11 +36,13 @@
         };
       in
         lib.mkMerge ([
-            {greetd.fprintAuth = false;}
+            {
+              greetd.fprintAuth = false;
+            }
           ]
           ++ (map mkGrosshackService pamServices));
       # Sometimes it seems not needed. But when it fails to reclaim is annoying.
-      # It doesn't hardm for more consistency.
+      # It doesn't harm for more consistency.
       systemd.services.fprintd-resume = {
         description = "Restart fprintd after resume";
         after = [

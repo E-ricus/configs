@@ -1,5 +1,5 @@
 # Languages, LSPs, formatters.
-{den, ...}: {
+{...}: {
   den.aspects.langs = {
     homeManager = {pkgs, ...}: {
       home.packages = with pkgs; [
@@ -17,7 +17,6 @@
         nixd
         tinymist
         clang-tools
-        ols
         lua-language-server
         gopls
       ];

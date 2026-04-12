@@ -85,6 +85,7 @@
           animationDisabled = false;
           compactLockScreen = false;
           autoStartAuth = true;
+          allowPasswordWithFprintd = true;
           lockOnSuspend = true;
           showSessionButtonsOnLockScreen = true;
           showHibernateOnLockScreen = false;
@@ -372,17 +373,16 @@
           wallpaperChange = "";
           darkModeChange = "";
         };
-        # TODO: Migrate swayidle to noctalia
         idle = {
-          enabled = false;
+          enabled = true;
+          lockTimeout = 300;
           screenOffTimeout = 600;
-          lockTimeout = 660;
           suspendTimeout = 1800;
           fadeDuration = 5;
-          screenOffCommand = "";
+          screenOffCommand = "${pkgs.niri}/bin/niri msg action power-off-monitors";
           lockCommand = "";
-          suspendCommand = "";
-          resumeScreenOffCommand = "";
+          suspendCommand = "${pkgs.systemd}/bin/systemctl suspend-then-hibernate";
+          resumeScreenOffCommand = "${pkgs.niri}/bin/niri msg action power-on-monitors";
           resumeLockCommand = "";
           resumeSuspendCommand = "";
           customCommands = "[]";
@@ -419,11 +419,14 @@
           src = "${inputs.noctalia-plugins}/network-manager-vpn";
           sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
         };
+        clipper = {
+          src = "${inputs.noctalia-plugins}/clipper";
+          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+        };
       };
     };
   };
 
-  # ── Aspect: Noctalia shell (compositor-agnostic) ──────────────────
   den.aspects.noctalia = {
     homeManager = {pkgs, ...}: {
       home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell];
