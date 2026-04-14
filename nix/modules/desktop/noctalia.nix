@@ -9,25 +9,26 @@
   perSystem = {pkgs, ...}: {
     packages.noctalia-shell = inputs.wrapper-modules.wrappers.noctalia-shell.wrap {
       inherit pkgs;
+      # TODO: If using the $HOME variable the env variable set by the wrapper seems to have the literal value breaking this. Not having it set. doesn't allow runtime modifications. And I would prefer to not have my user hardcoded. but fine for now
+      outOfStoreConfig = "/home/ericus/.config/noctalia";
       env.NOCTALIA_CACHE_DIR = "/tmp/noctalia-cache/";
-      # Catppuccin Mocha — Material Design color mapping
       colors = {
         mPrimary = "#cba6f7"; # Mauve
-        mOnPrimary = "#1e1e2e"; # Base
-        mSecondary = "#f5c2e7"; # Pink
-        mOnSecondary = "#1e1e2e"; # Base
+        mOnPrimary = "#11111b"; # Crust
+        mSecondary = "#fab387"; # Peach
+        mOnSecondary = "#11111b"; # Crust
         mTertiary = "#94e2d5"; # Teal
-        mOnTertiary = "#1e1e2e"; # Base
+        mOnTertiary = "#11111b"; # Crust
         mError = "#f38ba8"; # Red
-        mOnError = "#1e1e2e"; # Base
+        mOnError = "#11111b"; # Crust
         mSurface = "#1e1e2e"; # Base
         mSurfaceVariant = "#313244"; # Surface0
         mOnSurface = "#cdd6f4"; # Text
-        mOnSurfaceVariant = "#bac2de"; # Subtext1
-        mOutline = "#585b70"; # Surface2
+        mOnSurfaceVariant = "#a3b4eb"; # custom blue-lavender
+        mOutline = "#4c4f69"; # Overlay2
         mShadow = "#11111b"; # Crust
-        mHover = "#f9e2af"; # Yellow
-        mOnHover = "#1e1e2e"; # Base
+        mHover = "#94e2d5"; # Teal
+        mOnHover = "#11111b"; # Crust
       };
       settings = {
         settingsVersion = 37;
@@ -407,6 +408,10 @@
             hideBackground = true;
           };
         };
+        polkit-agent = {
+          src = "${inputs.noctalia-plugins}/polkit-agent";
+          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+        };
         screen-recorder = {
           src = "${inputs.noctalia-plugins}/screen-recorder";
           sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
@@ -430,7 +435,6 @@
   den.aspects.noctalia = {
     homeManager = {pkgs, ...}: {
       home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell];
-      systemd.user.sessionVariables.NOCTALIA_PAM_SERVICE = "noctalia";
     };
   };
 }

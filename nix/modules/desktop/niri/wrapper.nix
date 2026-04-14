@@ -305,13 +305,6 @@
     }: let
       noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
       noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
-      noctaliaRespawn = pkgs.writeShellScript "noctalia-respawn" ''
-        while true; do
-          ${noctaliaExe}
-          echo "noctalia-shell exited with code $?, restarting in 2s..." >&2
-          sleep 2
-        done
-      '';
       brightnessScript =
         pkgs.writeShellScript "brightness-control"
         (builtins.readFile ../wayland/brightness-control.sh);
@@ -319,7 +312,6 @@
       v2-settings = true;
       settings = {
         layout.background-color = "transparent";
-        spawn-at-startup = [(toString noctaliaRespawn)];
         spawn-sh-at-startup = ["wl-paste --watch cliphist store"];
         binds = {
           "Mod+D" = _: {

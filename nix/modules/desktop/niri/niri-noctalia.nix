@@ -53,6 +53,26 @@
     in {
       home.packages = [pkgs.hyprlock pkgs.satty];
 
+      # Noctalia as a systemd user service — starts with niri, restarts on crash,
+      # logs to journal, and can be managed via systemctl --user.
+      systemd.user.services.noctalia = {
+        Unit = {
+          Description = "Noctalia Shell Service";
+          BindsTo = ["graphical-session.target"];
+          PartOf = ["graphical-session.target"];
+          Requisite = ["graphical-session.target"];
+          After = ["graphical-session.target"];
+        };
+        Service = {
+          ExecStart = "${noctaliaShell}/bin/noctalia-shell";
+          Restart = "on-failure";
+          RestartSec = 1;
+        };
+        Install = {
+          WantedBy = ["niri.service"];
+        };
+      };
+
       # Noctalia idle management is not handling the lock when the suspend is with
       services.swayidle = {
         enable = true;
