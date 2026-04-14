@@ -31,8 +31,6 @@
       env = {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         QT_WAYLAND_RECONNECT = "1";
-        XCURSOR_THEME = "Adwaita";
-        XCURSOR_SIZE = "24";
       };
       settings = {
         input = {
@@ -47,6 +45,10 @@
           # focus-follows-mouse is disabled by default (omitted).
           # To enable, add in a variant:
           #   focus-follows-mouse = _: { props.max-scroll-amount = "90%"; };
+        };
+        cursor = {
+          xcursor-theme = "Adwaita";
+          xcursor-size = 24;
         };
 
         gestures.hot-corners.off = _: {};
@@ -303,6 +305,13 @@
     }: let
       noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
       noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
+      noctaliaRespawn = pkgs.writeShellScript "noctalia-respawn" ''
+        while true; do
+          ${noctaliaExe}
+          echo "noctalia-shell exited with code $?, restarting in 2s..." >&2
+          sleep 2
+        done
+      '';
       brightnessScript =
         pkgs.writeShellScript "brightness-control"
         (builtins.readFile ../wayland/brightness-control.sh);
@@ -310,7 +319,8 @@
       v2-settings = true;
       settings = {
         layout.background-color = "transparent";
-        spawn-at-startup = [noctaliaExe "wl-paste --watch cliphist store"];
+        spawn-at-startup = [(toString noctaliaRespawn)];
+        spawn-sh-at-startup = ["wl-paste --watch cliphist store"];
         binds = {
           "Mod+D" = _: {
             props.allow-inhibiting = false;

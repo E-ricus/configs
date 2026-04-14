@@ -12,6 +12,7 @@
       homeManager.imports = [
         den.aspects.wayland.homeManager
         den.aspects.niri-noctalia.homeManager
+        den.aspects.noctalia.homeManager
       ];
     };
 
