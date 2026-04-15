@@ -6,7 +6,17 @@
   inputs,
   ...
 }: {
-  perSystem = {pkgs, ...}: {
+  perSystem = {pkgs, ...}: let
+    powerAwareSuspend = pkgs.writeShellScript "power-aware-suspend" ''
+      on_battery=$(${pkgs.upower}/bin/upower -d | ${pkgs.gnugrep}/bin/grep -oP 'on-battery:\s+\K\w+')
+
+      if [ "$on_battery" = "yes" ]; then
+        ${pkgs.systemd}/bin/systemctl suspend-then-hibernate
+      else
+        ${pkgs.systemd}/bin/systemctl suspend
+      fi
+    '';
+  in {
     packages.noctalia-shell = inputs.wrapper-modules.wrappers.noctalia-shell.wrap {
       inherit pkgs;
       # TODO: If using the $HOME variable the env variable set by the wrapper seems to have the literal value breaking this. Not having it set. doesn't allow runtime modifications. And I would prefer to not have my user hardcoded. but fine for now
@@ -374,6 +384,7 @@
           wallpaperChange = "";
           darkModeChange = "";
         };
+        # Same timeout when on battery or AC, not ideal
         idle = {
           enabled = true;
           lockTimeout = 300;
@@ -382,7 +393,7 @@
           fadeDuration = 5;
           screenOffCommand = "${pkgs.niri}/bin/niri msg action power-off-monitors";
           lockCommand = "";
-          suspendCommand = "${pkgs.systemd}/bin/systemctl suspend-then-hibernate";
+          suspendCommand = "${powerAwareSuspend}";
           resumeScreenOffCommand = "${pkgs.niri}/bin/niri msg action power-on-monitors";
           resumeLockCommand = "";
           resumeSuspendCommand = "";
