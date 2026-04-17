@@ -50,6 +50,10 @@
           xcursor-theme = "Adwaita";
           xcursor-size = 24;
         };
+        clipboard = {
+          # middle click paste
+          disable-primary = _: {};
+        };
 
         gestures.hot-corners.off = _: {};
 
@@ -145,7 +149,6 @@
           };
 
           # Floating / tiling
-          "Mod+T" = ni "toggle-window-floating";
           "Mod+Shift+V" = ni "switch-focus-between-floating-and-tiling";
 
           # Screen reader toggle
@@ -367,9 +370,14 @@
             props.allow-inhibiting = false;
             content.spawn-sh = "${lib.getExe pkgs.playerctl} next";
           };
+          # Plugins
           "Mod+V" = _: {
             props.allow-inhibiting = false;
             content.spawn = noctalia "plugin:clipper toggle";
+          };
+          "Mod+T" = _: {
+            props.allow-inhibiting = false;
+            content.spawn = noctalia "plugin:todo togglePanel";
           };
         };
       };

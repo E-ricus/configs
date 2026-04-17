@@ -439,6 +439,10 @@
           src = "${inputs.noctalia-plugins}/clipper";
           sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
         };
+        todo = {
+          src = "${inputs.noctalia-plugins}/todo";
+          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+        };
       };
     };
   };
