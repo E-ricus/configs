@@ -28,6 +28,7 @@
   # Global defaults applied to all hosts/users
   den.default.nixos.system.stateVersion = "25.11";
   den.default.nixos.nixpkgs.config.allowUnfree = true;
+  den.default.homeManager.nixpkgs.config.allowUnfree = true;
   den.default.homeManager.home.stateVersion = "25.11";
   den.default.homeManager.programs.home-manager.enable = true;
 }

@@ -27,6 +27,7 @@
 
       den.aspects.theming
       den.aspects.browsers
+      den.aspects.aseprite
       den.aspects.linux-desktop
       den.aspects.containers
     ];
