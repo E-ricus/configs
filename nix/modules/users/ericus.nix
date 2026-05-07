@@ -33,7 +33,7 @@
 
     user = {...}: {
       description = "Eric";
-      extraGroups = ["networkmanager" "wheel" "video" "audio" "plugdev"];
+      extraGroups = ["networkmanager" "wheel" "video" "audio" "plugdev" "podman"];
     };
     home.sessionPath = ["$HOME/.local/bin"];
   };

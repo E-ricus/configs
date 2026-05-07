@@ -1,9 +1,5 @@
-# QEMU/KVM virtualization + declarative Windows 11 VM via NixVirt.
-{
-  den,
-  inputs,
-  ...
-}: let
+# QEMU virtualization + declarative Windows 11 VM via NixVirt.
+{inputs, ...}: let
   nixvirtModule = inputs.NixVirt.nixosModules.default;
   nixvirt = inputs.NixVirt;
 in {
@@ -13,6 +9,17 @@ in {
       lib,
       ...
     }: {
+      nixpkgs.overlays = [
+        (final: prev: {
+          qemu = prev.qemu.overrideAttrs (old: {
+            configureFlags = old.configureFlags ++ ["--enable-gtk-clipboard"];
+          });
+          qemu_kvm = prev.qemu_kvm.overrideAttrs (old: {
+            configureFlags = old.configureFlags ++ ["--enable-gtk-clipboard"];
+          });
+        })
+      ];
+
       virtualisation.libvirtd = {
         enable = true;
         qemu = {

@@ -1,5 +1,5 @@
 # Linux desktop utilities — file managers, media players, etc.
-{den, ...}: {
+{...}: {
   den.aspects.linux-desktop = {
     homeManager = {pkgs, ...}: {
       home.packages = with pkgs; [
@@ -11,6 +11,13 @@
         gcc
         gnumake
       ];
+    };
+    nixos = {pkgs, ...}: {
+      environment.systemPackages = [pkgs.appimage-run];
+      programs.appimage = {
+        enable = true;
+        binfmt = true;
+      };
     };
   };
 }
