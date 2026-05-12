@@ -1,5 +1,5 @@
 # Git configuration.
-{den, ...}: {
+{...}: {
   den.aspects.git = {
     homeManager = {...}: {
       programs.lazygit.enable = true;
@@ -30,7 +30,7 @@
           };
           merge = {
             tool = "vimdiff";
-            conflictstyle = "diff3";
+            conflictstyle = "zdiff3";
           };
           pull.rebase = true;
           init.defaultBranch = "main";
