@@ -42,6 +42,9 @@
             tap = _: {};
             natural-scroll = _: {};
           };
+          tablet = {
+            map-to-focused-output = _: {};
+          };
           # focus-follows-mouse is disabled by default (omitted).
           # To enable, add in a variant:
           #   focus-follows-mouse = _: { props.max-scroll-amount = "90%"; };

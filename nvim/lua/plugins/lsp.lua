@@ -18,7 +18,8 @@ local servers = {
   tinymist = {},
   nixd = {},
   pylsp = {},
-  c3_lsp = {},
+  c3_lsp = { cmd = { "c3-lsp" } }, -- when grabing from nixpkgs directly
+  -- c3_lsp = {}, --official binary name
   mojo = {},
   clojure_lsp = {},
   clangd = {},
