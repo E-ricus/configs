@@ -16,6 +16,7 @@
       den.aspects.nvim
       den.aspects.zed
       den.aspects.langs
+      den.aspects.c3
       den.aspects.llms
       den.aspects.starship
       den.aspects.fish
