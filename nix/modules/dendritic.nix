@@ -10,6 +10,13 @@
   # Systems for perSystem outputs
   systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
 
+  perSystem = {system, ...}: {
+    _module.args.pkgs = import inputs.nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    };
+  };
+
   # All users get home-manager integration
   den.schema.user.classes = lib.mkDefault ["homeManager"];
 
@@ -23,7 +30,7 @@
   };
 
   # Enable mutual-provider: lets host aspects contribute homeManager config to users
-  den.ctx.user.includes = [den._.mutual-provider];
+  den.schema.user.includes = [den._.mutual-provider];
 
   # Global defaults applied to all hosts/users
   den.default.nixos.system.stateVersion = "25.11";

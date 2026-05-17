@@ -12,8 +12,10 @@ in {
       ];
 
       environment.systemPackages = [
-        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.rust-rover (with pkgs.jetbrains-plugins; [
+        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.clion (with pkgs.jetbrains-plugins; [
           IdeaVIM
+          com.github.catppuccin.jetbrains
+          org.c3lang.c3intellij
         ]))
         (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.datagrip (with pkgs.jetbrains-plugins; [
           IdeaVIM

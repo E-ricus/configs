@@ -3,7 +3,7 @@
 # through xwayland-satellite. This aspect seeds ~/.config/aseprite/aseprite.ini
 # with correct screen/UI scale on first install so it's usable out of the box.
 {den, ...}: {
-  den.aspects.aseprite = den.lib.parametric {
+  den.aspects.aseprite = {
     includes = [
       ({host, ...}: {
         homeManager = {

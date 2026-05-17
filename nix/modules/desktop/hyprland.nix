@@ -1,7 +1,7 @@
 # Hyprland compositor — combined NixOS enablement + full home-manager configuration.
 # Currently not used by any active host, but kept for flexibility.
 { den, inputs, ... }: {
-  den.aspects.hyprland = den.lib.parametric {
+  den.aspects.hyprland = {
     includes = [
       den.aspects.wayland
       # Parametric: receives {host} to pass host.display.scale into homeManager

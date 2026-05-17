@@ -15,7 +15,7 @@
   };
 
   # ── Aspect: niri + Noctalia on NixOS + home-manager ───────────────
-  den.aspects.niri-noctalia = den.lib.parametric {
+  den.aspects.niri-noctalia = {
     includes = [
       den.aspects.wayland
       den.aspects.wayland-regreet

@@ -16,7 +16,7 @@
   };
 
   # ── Aspect: niri + DMS on NixOS + home-manager ────────────────────
-  den.aspects.niri-dms = den.lib.parametric {
+  den.aspects.niri-dms = {
     includes = [
       den.aspects.wayland
       den.aspects.dms

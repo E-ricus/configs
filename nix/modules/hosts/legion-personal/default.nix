@@ -31,6 +31,7 @@
       den.aspects.keyboards-zsa
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
+      den.aspects.jetbrains
       # Desktop
       den.aspects.niri-noctalia
     ];
