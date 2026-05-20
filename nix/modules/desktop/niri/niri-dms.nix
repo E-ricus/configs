@@ -22,7 +22,11 @@
       den.aspects.dms
       # Parametric include: receives {host}, injects per-host scale
       ({host}: {
-        nixos = {pkgs, ...}: let
+        nixos = {
+          pkgs,
+          lib,
+          ...
+        }: let
           niriPkg = inputs.wrapper-modules.wrappers.niri.wrap {
             inherit pkgs;
             imports = [self.wrappersModules.niri-common self.wrappersModules.niri-dms];
@@ -31,7 +35,7 @@
         in {
           programs.niri.enable = true;
           programs.niri.package = niriPkg;
-          services.displayManager.defaultSession = "niri";
+          services.displayManager.defaultSession = lib.mkDefault "niri";
           xdg.portal = {
             enable = true;
             extraPortals = [pkgs.xdg-desktop-portal-gnome];

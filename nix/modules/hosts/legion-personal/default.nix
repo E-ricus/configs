@@ -34,6 +34,7 @@
       den.aspects.jetbrains
       # Desktop
       den.aspects.niri-noctalia
+      den.aspects.cosmic
     ];
 
     nixos = {...}: {

@@ -33,6 +33,7 @@
       den.aspects.vpn
       # Desktop
       den.aspects.niri-noctalia
+      den.aspects.cosmic
     ];
 
     nixos = {pkgs, ...}: {
