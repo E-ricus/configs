@@ -114,23 +114,6 @@ return {
       map("<leader>rrd", "renderDiagnostic", " Render Diagnostic")
       map("<leader>rco", "openCargo", "Open Cargo Toml")
     end,
-    init = function()
-      require("local.compilemode").setup({
-        keymap = "<leader>cc",
-        cargo = {
-          enabled = true,
-          default = "clippy",
-          keymap = "<leader>rcc",
-          on_save = false,
-        },
-        zig = {
-          enabled = true,
-          default = "check",
-          keymap = nil,
-          on_save = false,
-        },
-      })
-    end,
   },
   {
     "saecki/crates.nvim",
