@@ -8,6 +8,8 @@
       programs.dconf.enable = true;
       services.upower.enable = true;
       services.power-profiles-daemon.enable = true;
+
+      programs.gpu-screen-recorder.enable = true;
     };
 
     homeManager = {
@@ -21,8 +23,8 @@
         brightnessctl
         playerctl
         libnotify
-        gpu-screen-recorder
         cliphist
+        slurp
       ];
 
       # Noctalia/dms handle notifications

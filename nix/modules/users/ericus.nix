@@ -37,6 +37,13 @@
       description = "Eric";
       extraGroups = ["networkmanager" "wheel" "video" "audio" "plugdev" "podman"];
     };
-    home.sessionPath = ["$HOME/.local/bin"];
+
+    homeManager = {config, ...}: {
+      home.sessionPath = ["$HOME/.local/bin"];
+
+      home.file.".local/bin".source =
+        config.lib.file.mkOutOfStoreSymlink
+        "${config.home.homeDirectory}/configs/bin";
+    };
   };
 }

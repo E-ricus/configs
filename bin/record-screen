@@ -1,0 +1,231 @@
+#!/usr/bin/env bash
+# record-screen — wrapper around gpu-screen-recorder.
+#
+# Modes:
+#   region                    Pick a region with slurp and record it.
+#   screen [MONITOR]          Record a full monitor. If MONITOR is omitted,
+#                             auto-pick when only one is active, otherwise
+#                             show an fzf picker. Pass an explicit monitor
+#                             name (e.g. DP-1, eDP-1) to skip the picker.
+#
+# Audio source is chosen interactively via fzf.
+# Files are saved to ~/Videos/recordings/YYYY-MM-DD_HH-MM-SS.mp4
+# Press Ctrl+C to stop and save.
+#
+# Region mode caveat (COSMIC):
+#   GSR's native region capture is broken on cosmic-comp — it reads
+#   wl_output::mode which COSMIC reports as a bogus low mode, then clips
+#   the requested region down to ~28% of its size
+#   (see https://github.com/pop-os/cosmic-comp/issues/1417).
+#   As a workaround we capture the full containing monitor and post-crop
+#   to slurp's selection with ffmpeg. Once COSMIC fixes #1417 this can go
+#   back to using `gpu-screen-recorder -w "WxH+X+Y"` directly.
+
+set -euo pipefail
+
+OUTPUT_DIR="$HOME/Videos/recordings"
+FPS=60
+OUT=""
+TMP_OUT=""
+
+usage() {
+  cat <<EOF
+Usage:
+  record-screen region              Pick a region with slurp and record
+  record-screen screen [MONITOR]    Record a full monitor
+                                    - omit MONITOR to auto-pick (or fzf if
+                                      multiple are active)
+                                    - or pass an explicit name (e.g. DP-1)
+
+Files: $OUTPUT_DIR/YYYY-MM-DD_HH-MM-SS.mp4
+Press Ctrl+C to stop and save.
+EOF
+}
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send "$@" 2>/dev/null || true
+  fi
+}
+
+on_exit() {
+  # Clean up any leftover temp file (e.g. if crop failed mid-way).
+  if [ -n "$TMP_OUT" ] && [ -f "$TMP_OUT" ] && [ -n "$OUT" ] && [ -f "$OUT" ]; then
+    rm -f "$TMP_OUT"
+  fi
+  if [ -n "$OUT" ] && [ -f "$OUT" ]; then
+    notify "Recording saved" "$OUT"
+  fi
+}
+trap on_exit EXIT
+
+# ffmpeg is provided by ffmpeg-headless in modules/desktop/wayland/default.nix.
+
+list_active_monitors() {
+  gpu-screen-recorder --list-monitors
+}
+
+pick_audio() {
+  local choice spec
+  choice="$(printf '%s\n' \
+    "Desktop                  default_output" \
+    "Desktop + Microphone     default_output|default_input" \
+    "Microphone               default_input" \
+    "None" \
+    "Custom..." \
+    | fzf --prompt='Audio: ' --height=40% --reverse)" \
+    || { echo "Cancelled." >&2; exit 1; }
+
+  case "$choice" in
+    "")
+      echo "Cancelled." >&2; exit 1
+      ;;
+    "None")
+      printf ''
+      ;;
+    "Custom..."*)
+      spec="$(gpu-screen-recorder --list-audio-devices \
+        | awk -F'|' '{ printf "%-80s\t%s\n", $2, $1 }' \
+        | fzf -m \
+              --prompt='Audio devices (Tab to multi-select, Enter to confirm): ' \
+              --height=60% --reverse \
+        | awk -F'\t' '{ print $2 }' \
+        | paste -sd'|' -)"
+      if [ -z "$spec" ]; then
+        echo "No audio devices selected." >&2; exit 1
+      fi
+      printf '%s' "$spec"
+      ;;
+    *)
+      # Last whitespace-separated field is the gpu-screen-recorder spec.
+      printf '%s' "$choice" | awk '{ print $NF }'
+      ;;
+  esac
+}
+
+pick_monitor() {
+  local lines count name
+  lines="$(list_active_monitors)"
+  count="$(printf '%s\n' "$lines" | grep -c '.')"
+
+  if [ "$count" -eq 0 ]; then
+    echo "No active monitors detected." >&2; exit 1
+  elif [ "$count" -eq 1 ]; then
+    printf '%s\n' "$lines" | cut -d'|' -f1
+  else
+    name="$(printf '%s\n' "$lines" \
+      | awk -F'|' '{ printf "%-10s %s\n", $1, $2 }' \
+      | fzf --prompt='Monitor: ' --height=40% --reverse \
+      | awk '{ print $1 }')"
+    if [ -z "$name" ]; then
+      echo "Cancelled." >&2; exit 1
+    fi
+    printf '%s\n' "$name"
+  fi
+}
+
+validate_monitor() {
+  local want="$1"
+  if ! list_active_monitors | cut -d'|' -f1 | grep -qx "$want"; then
+    echo "Monitor '$want' not active. Available:" >&2
+    list_active_monitors \
+      | awk -F'|' '{ printf "  %-10s %s\n", $1, $2 }' >&2
+    exit 2
+  fi
+}
+
+new_output_path() {
+  mkdir -p "$OUTPUT_DIR"
+  printf '%s/%s.mp4' "$OUTPUT_DIR" "$(date +%Y-%m-%d_%H-%M-%S)"
+}
+
+run_recorder() {
+  local -a args=( -f "$FPS" -o "$OUT" )
+  if [ -n "$AUDIO" ]; then
+    args+=( -a "$AUDIO" )
+  fi
+  notify "Recording started" "$OUT"
+  echo "Recording -> $OUT"
+  echo "+ gpu-screen-recorder ${CAPTURE[*]} ${args[*]}" >&2
+  gpu-screen-recorder "${CAPTURE[@]}" "${args[@]}"
+}
+
+case "${1:-}" in
+  region)
+    AUDIO="$(pick_audio)"
+    REGION="$(slurp -f '%wx%h+%x+%y' || true)"
+    if [ -z "${REGION:-}" ]; then
+      echo "Region cancelled." >&2; exit 1
+    fi
+    echo "slurp selection: $REGION" >&2
+
+    # Parse slurp's "WxH+X+Y" into components for ffmpeg crop.
+    REG_W="${REGION%%x*}"
+    rest="${REGION#*x}"
+    REG_H="${rest%%+*}"
+    rest="${rest#*+}"
+    REG_X="${rest%%+*}"
+    REG_Y="${rest##*+}"
+
+    # Workaround for cosmic-comp #1417: record the whole containing monitor
+    # (GSR full-monitor capture is unaffected by the wl_output bug), then
+    # crop to slurp's selection with ffmpeg.
+    MONITOR="$(list_active_monitors | head -1 | cut -d'|' -f1)"
+
+    OUT="$(new_output_path)"
+    TMP_OUT="${OUT%.mp4}.uncropped.mp4"
+    CAPTURE=( -w "$MONITOR" )
+
+    gsr_args=( -f "$FPS" -o "$TMP_OUT" )
+    [ -n "$AUDIO" ] && gsr_args+=( -a "$AUDIO" )
+
+    notify "Recording started" "$OUT"
+    echo "Recording full $MONITOR (will crop to ${REG_W}x${REG_H}+${REG_X}+${REG_Y}) -> $OUT"
+    echo "+ gpu-screen-recorder ${CAPTURE[*]} ${gsr_args[*]}" >&2
+
+    # GSR exits 0 on SIGINT (Ctrl+C). Don't trip set -e if it returns non-zero.
+    gpu-screen-recorder "${CAPTURE[@]}" "${gsr_args[@]}" || true
+
+    if [ ! -s "$TMP_OUT" ]; then
+      echo "Recording failed: no temp file at $TMP_OUT" >&2
+      exit 1
+    fi
+
+    echo "Cropping to ${REG_W}x${REG_H}+${REG_X}+${REG_Y}..."
+    if ffmpeg -hide_banner -loglevel error -y \
+        -i "$TMP_OUT" \
+        -vf "crop=${REG_W}:${REG_H}:${REG_X}:${REG_Y}" \
+        -c:a copy \
+        "$OUT" </dev/null; then
+      rm -f "$TMP_OUT"
+      echo "Saved -> $OUT"
+    else
+      # Crop failed — keep the uncropped recording so we don't lose data.
+      echo "Crop failed; keeping uncropped recording at $TMP_OUT" >&2
+      mv -f "$TMP_OUT" "$OUT"
+    fi
+    ;;
+
+  screen)
+    AUDIO="$(pick_audio)"
+    if [ -n "${2:-}" ]; then
+      MONITOR="$2"
+      validate_monitor "$MONITOR"
+    else
+      MONITOR="$(pick_monitor)"
+    fi
+    CAPTURE=( -w "$MONITOR" )
+    OUT="$(new_output_path)"
+    run_recorder
+    ;;
+
+  -h|--help|"")
+    usage
+    ;;
+
+  *)
+    echo "Unknown mode: $1" >&2
+    usage
+    exit 2
+    ;;
+esac

@@ -10,6 +10,7 @@
         vlc
         gcc
         gnumake
+        ffmpeg-headless
       ];
     };
     nixos = {pkgs, ...}: {
