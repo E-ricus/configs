@@ -1,5 +1,3 @@
-# User aspect for ericus — shared across hosts that use this user.
-# The user definition is just aspect composition + system user config.
 {den, ...}: {
   den.aspects.ericus = {
     includes = [
@@ -7,7 +5,6 @@
       den.provides.primary-user
       (den.provides.user-shell "fish")
 
-      # CLI tools and shells
       den.aspects.tools
       den.aspects.git
       den.aspects.jujutsu
@@ -25,6 +22,9 @@
       den.aspects.tmux
       den.aspects.ghostty
       den.aspects.alacritty
+
+      den.aspects.niri-noctalia
+      den.aspects.cosmic
 
       den.aspects.theming
       den.aspects.browsers

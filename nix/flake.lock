@@ -69,64 +69,7 @@
         "type": "github"
       }
     },
-    "dms": {
-      "inputs": {
-        "flake-compat": "flake-compat",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1779420104,
-        "narHash": "sha256-G99qz+ORLXx6vBJQ3L0bI6RKTN65fFJPJmu9P5EOTeU=",
-        "owner": "AvengeMedia",
-        "repo": "DankMaterialShell",
-        "rev": "ef5de19f6b349ee168610090fee7e570936e71ae",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AvengeMedia",
-        "repo": "DankMaterialShell",
-        "type": "github"
-      }
-    },
-    "dms-plugin-registry": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1779417178,
-        "narHash": "sha256-sqRVIGOTo9Mf2vFD2LzlsMa3zv0ltHsj18X6Rqe/4vY=",
-        "owner": "AvengeMedia",
-        "repo": "dms-plugin-registry",
-        "rev": "f1e59487f8c2109f397fdebeaa085c8521540c36",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AvengeMedia",
-        "repo": "dms-plugin-registry",
-        "type": "github"
-      }
-    },
     "flake-compat": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1767039857,
-        "narHash": "sha256-vNpUSpF5Nuw8xvDLj2KCwwksIbjua2LZCqhV1LNRDns=",
-        "owner": "NixOS",
-        "repo": "flake-compat",
-        "rev": "5edf11c44bc78a0d334f6334cdaf7d60d732daab",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "flake-compat",
-        "type": "github"
-      }
-    },
-    "flake-compat_2": {
       "flake": false,
       "locked": {
         "lastModified": 1761588595,
@@ -411,7 +354,7 @@
     },
     "pre-commit": {
       "inputs": {
-        "flake-compat": "flake-compat_2",
+        "flake-compat": "flake-compat",
         "gitignore": "gitignore",
         "nixpkgs": [
           "lanzaboote",
@@ -437,8 +380,6 @@
         "NixVirt": "NixVirt",
         "den": "den",
         "disko": "disko",
-        "dms": "dms",
-        "dms-plugin-registry": "dms-plugin-registry",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "import-tree": "import-tree",

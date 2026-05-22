@@ -18,7 +18,7 @@
     }: let
       pam-fprint-grosshack = self.packages.${pkgs.stdenv.hostPlatform.system}.pam-fprint-grosshack;
       pam_fprintd_grosshack = "${pam-fprint-grosshack}/lib/security/pam_fprintd_grosshack.so";
-      # Note to self: login conflicts with noctalia/dms it tries to claim the device conflicting
+      # Note to self: login can conflict with noctalia trying to claim the device.
       pamServices = ["sudo" "hyprlock" "swaylock" "gtklock"];
     in {
       services.fprintd.enable = true;

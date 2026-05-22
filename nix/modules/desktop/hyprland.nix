@@ -2,7 +2,6 @@
 # Currently not used by any active host, but kept for flexibility.
 {
   den,
-  inputs,
   ...
 }: {
   den.aspects.hyprland = {
@@ -20,16 +19,13 @@
           brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ./wayland/brightness-control.sh);
           volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ./wayland/volume-control.sh);
 
-          isDms = config.programs.dank-material-shell.enable or false;
           isNoctalia = config.programs.noctalia-shell.enable or false;
 
           cfg = config.desktop.hyprland;
           scale = host.display.scale;
 
           lockScript =
-            if isDms
-            then pkgs.writeShellScript "lock-screen" "dms ipc call lock lock"
-            else if isNoctalia
+            if isNoctalia
             then pkgs.writeShellScript "lock-screen" "${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock"
             else pkgs.writeShellScript "lock-screen" "${pkgs.hyprlock}/bin/hyprlock";
         in {
@@ -46,8 +42,8 @@
             programs.fuzzel.enable = true;
 
             home.packages = with pkgs;
-              lib.optionals (!isDms) [grim]
-              ++ lib.optionals (!isDms && !isNoctalia) [hyprlock hyprpaper];
+              [grim]
+              ++ lib.optionals (!isNoctalia) [hyprlock hyprpaper];
 
             wayland.windowManager.hyprland = {
               enable = true;
@@ -61,9 +57,7 @@
                 "$mod" = "SUPER";
                 "$terminal" = "ghostty";
                 "$menu" =
-                  if isDms
-                  then "dms ipc call spotlight toggle"
-                  else if isNoctalia
+                  if isNoctalia
                   then "noctalia-shell ipc call launcher toggle"
                   else "fuzzel";
 
@@ -71,8 +65,8 @@
                 monitor = [",preferred,auto,auto"];
 
                 exec-once =
-                  (lib.optionals (isNoctalia && !isDms) ["noctalia-shell"])
-                  ++ (lib.optionals (!isNoctalia && !isDms) ["hyprpaper"]);
+                  (lib.optionals isNoctalia ["noctalia-shell"])
+                  ++ (lib.optionals (!isNoctalia) ["hyprpaper"]);
 
                 general = {
                   gaps_in = 5;
@@ -168,81 +162,30 @@
                     "$mod SHIFT, 8, movetoworkspace, 8"
                     "$mod SHIFT, 9, movetoworkspace, 9"
                     "$mod SHIFT, 0, movetoworkspace, 10"
-                    ", Print, exec, ${
-                      if isDms
-                      then "dms screenshot --no-file"
-                      else "grim -g \"$(slurp)\" - | ${sattyCmd}"
-                    }"
-                    "SHIFT, Print, exec, ${
-                      if isDms
-                      then "dms screenshot full --no-file"
-                      else "grim - | ${sattyCmd}"
-                    }"
+                    ", Print, exec, grim -g \"$(slurp)\" - | ${sattyCmd}"
+                    "SHIFT, Print, exec, grim - | ${sattyCmd}"
                     ", XF86AudioRaiseVolume, exec, ${
-                      if isDms
-                      then "dms ipc call audio increment 3"
-                      else if isNoctalia
+                      if isNoctalia
                       then "noctalia-shell ipc call volume increase"
                       else "${volumeScript} raise"
                     }"
                     ", XF86AudioLowerVolume, exec, ${
-                      if isDms
-                      then "dms ipc call audio decrement 3"
-                      else if isNoctalia
+                      if isNoctalia
                       then "noctalia-shell ipc call volume decrease"
                       else "${volumeScript} lower"
                     }"
                     ", XF86AudioMute, exec, ${
-                      if isDms
-                      then "dms ipc call audio mute"
-                      else if isNoctalia
+                      if isNoctalia
                       then "noctalia-shell ipc call volume muteOutput"
                       else "${volumeScript} toggle-mute"
                     }"
-                    ", XF86MonBrightnessUp, exec, ${
-                      if isDms
-                      then "dms ipc call brightness increment 5"
-                      else "${brightnessScript} raise"
-                    }"
-                    ", XF86MonBrightnessDown, exec, ${
-                      if isDms
-                      then "dms ipc call brightness decrement 5"
-                      else "${brightnessScript} lower"
-                    }"
-                  ]
-                  ++ lib.optionals isDms [
-                    "$mod, space, exec, dms ipc call spotlight toggle"
-                    "$mod, V, exec, dms ipc call clipboard toggle"
-                    "$mod, N, exec, dms ipc call notifications toggle"
-                    "$mod, M, exec, dms ipc call processlist focusOrToggle"
-                    "$mod SHIFT, comma, exec, dms ipc call settings focusOrToggle"
-                    "$mod, X, exec, dms ipc call powermenu toggle"
-                    "$mod, Y, exec, dms ipc call dankdash wallpaper"
-                    "$mod, TAB, exec, dms ipc call hypr toggleOverview"
-                    "$mod SHIFT, N, exec, dms ipc call night toggle"
-                    ", XF86AudioPlay, exec, dms ipc call mpris playPause"
-                    ", XF86AudioNext, exec, dms ipc call mpris next"
-                    ", XF86AudioPrev, exec, dms ipc call mpris previous"
-                    ", XF86AudioStop, exec, dms ipc call mpris stop"
+                    ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"
+                    ", XF86MonBrightnessDown, exec, ${brightnessScript} lower"
                   ];
 
                 bindm = [
                   "$mod, mouse:272, movewindow"
                   "$mod, mouse:273, resizeactive"
-                ];
-
-                layerrule = lib.optionals isDms [
-                  "animation slide right, match:namespace dms:control-center"
-                  "animation slide top, match:namespace dms:workspace-overview"
-                  "blur on, match:namespace dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal)"
-                  "ignore_alpha 0, match:namespace dms:(polkit|notification-center-modal|workspace-overview|color-picker|clipboard|spotlight|settings|process-list-modal|power-menu|confirm-modal)"
-                  "blur on, match:namespace dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock)"
-                  "ignore_alpha 0, match:namespace dms:(bar|tooltip|toast|dock-context-menu|tray-menu-window|control-center|notification-center-popout|dash|process-list-popout|battery|popout|app-launcher|dock)"
-                  "dim_around on, match:namespace dms:(color-picker|clipboard|spotlight|settings|polkit|power-menu|confirm-modal)"
-                ];
-
-                windowrule = lib.optionals isDms [
-                  "float on, match:class org.quickshell"
                 ];
 
                 env =
@@ -263,7 +206,7 @@
               settings.general.initial-tool = "brush";
             };
 
-            services.hypridle = lib.mkIf (!isDms) {
+            services.hypridle = {
               enable = true;
               settings = {
                 general = {

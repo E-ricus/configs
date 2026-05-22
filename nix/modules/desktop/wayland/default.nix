@@ -27,7 +27,7 @@
         slurp
       ];
 
-      # Noctalia/dms handle notifications
+      # Noctalia handles notifications
       services.mako = {
         enable = lib.mkDefault false;
         settings = {
@@ -56,7 +56,7 @@
     };
   };
 
-  # ReGreet greeter aspect (used when DMS greeter is NOT active)
+  # ReGreet greeter aspect
   den.aspects.wayland-regreet = {
     nixos = {pkgs, ...}: {
       programs.regreet = {

@@ -6,16 +6,6 @@
   };
 
   den.aspects.legion-personal = {
-    # Push desktop homeManager config to all users on this host.
-    # mutual-provider reads provides.to-users from the host's own aspect only.
-    provides.to-users = {
-      homeManager.imports = [
-        den.aspects.wayland.homeManager
-        den.aspects.niri-noctalia.homeManager
-        den.aspects.noctalia.homeManager
-      ];
-    };
-
     includes = [
       den.provides.hostname
       # NixOS-only aspects
@@ -32,9 +22,6 @@
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
       den.aspects.jetbrains
-      # Desktop
-      den.aspects.niri-noctalia
-      den.aspects.cosmic
     ];
 
     nixos = {...}: {

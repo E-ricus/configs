@@ -10,7 +10,7 @@
   perSystem = {pkgs, ...}: {
     packages.niri-noctalia = inputs.wrapper-modules.wrappers.niri.wrap {
       inherit pkgs;
-      imports = [self.wrappersModules.niri-common self.wrappersModules.niri-noctalia];
+      imports = [self.wrappersModules.niri-noctalia];
     };
   };
 
@@ -29,7 +29,7 @@
         }: let
           niriPkg = inputs.wrapper-modules.wrappers.niri.wrap {
             inherit pkgs;
-            imports = [self.wrappersModules.niri-common self.wrappersModules.niri-noctalia];
+            imports = [self.wrappersModules.niri-noctalia];
             settings.outputs."eDP-1".scale = host.display.scale;
           };
         in {

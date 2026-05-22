@@ -95,13 +95,11 @@ configs/
 │   │   │   │   ├── regreet-style.css
 │   │   │   │   ├── volume-control.sh
 │   │   │   │   └── brightness-control.sh
-│   │   │   ├── niri/                           # Wrapped niri compositor variants
-│   │   │   │   ├── wrapper.nix                  # Shared wrapper module (keybinds, layout)
-│   │   │   │   ├── niri-dms.nix                # Niri + DMS (wrapped package + aspect)
+│   │   │   ├── niri/                           # Wrapped niri compositor (Noctalia)
+│   │   │   │   ├── wrapper.nix                 # Noctalia wrapper module (keybinds, layout)
 │   │   │   │   └── niri-noctalia.nix           # Niri + Noctalia (wrapped package + aspect)
 │   │   │   ├── hyprland.nix                    # Hyprland compositor
 │   │   │   ├── noctalia.nix                    # Wrapped Noctalia shell (compositor-agnostic)
-│   │   │   └── dms.nix                         # DankMaterialShell (flake-based)
 │   │   │
 │   │   ├── programs/                           # Application aspects (one per tool)
 │   │   │   ├── fish/                           # Fish shell + init.fish
@@ -182,7 +180,7 @@ den.aspects.thinkpad-work = {
 den.aspects.ericus = {
   includes = [
     den.provides.define-user
-    den.aspects.tools den.aspects.git den.aspects.niri-dms ...
+    den.aspects.tools den.aspects.git den.aspects.niri-noctalia ...
   ];
   user = { ... }: { description = "Eric"; extraGroups = [ ... ]; };
 };
@@ -213,7 +211,7 @@ Host aspects use `provides.to-users.homeManager` to pass host-specific HM overri
 
 | Host | NixOS aspects (host) | HM aspects (user) |
 |------|---------------------|-------------------|
-| **thinkpad-work** | base, locale, lanzaboote, disko, Intel GPU, media, fingerprint, ZSA, JetBrains, virtualization, Windows VM, work tools, VPN | tools, git, jj, direnv, yazi, nvim, zed, langs, llms, starship, fish, zsh, nushell, tmux, ghostty, alacritty, niri-dms, theming, browsers, linux-desktop, containers |
+| **thinkpad-work** | base, locale, lanzaboote, disko, Intel GPU, media, fingerprint, ZSA, JetBrains, virtualization, Windows VM, work tools, VPN | tools, git, jj, direnv, yazi, nvim, zed, langs, llms, starship, fish, zsh, nushell, tmux, ghostty, alacritty, niri-noctalia, theming, browsers, linux-desktop, containers |
 | **legion-personal** | base, locale, systemd-boot, AMD+NVIDIA, media, gaming, Minecraft, fingerprint-elan, ZSA, VPN, Mullvad | (same user aspects as thinkpad-work) |
 | **work-mac** | *(inactive)* | *(inactive)* |
 
@@ -262,7 +260,6 @@ The package is available as `nix build .#my-package` and referenced via `self.pa
 │   └── legion-personal         # NixOS + home-manager
 └── packages.x86_64-linux
     ├── pam-fprint-grosshack    # Custom PAM module
-    ├── niri-dms                # Wrapped niri + DMS config
     ├── niri-noctalia           # Wrapped niri + Noctalia config
     ├── noctalia-shell          # Wrapped Noctalia desktop shell
     ├── alacritty               # Wrapped Alacritty terminal
@@ -281,11 +278,10 @@ Programs are **wrapped** using [nix-wrapper-modules](https://github.com/BirdeeHu
 | `alacritty`      | `nix run .#alacritty`      | nixpkgs          |
 | `opencode`       | `nix run .#opencode`       | nixpkgs          |
 | `tmux`           | `nix run .#tmux`           | nixpkgs          |
-| `niri-dms`       | `nix run .#niri-dms`       | nixpkgs (`niri`) |
 | `niri-noctalia`  | `nix run .#niri-noctalia`  | nixpkgs (`niri`) |
 | `noctalia-shell` | `nix run .#noctalia-shell` | nixpkgs          |
 
-Niri supports running nested inside an existing Wayland session — it opens as a window. `nix run .#niri-dms` launches a fully configured niri instance for testing keybinds, layout, window rules, etc. without doing a `nos` rebuild.
+Niri supports running nested inside an existing Wayland session — it opens as a window. `nix run .#niri-noctalia` launches a fully configured niri instance for testing keybinds, layout, window rules, etc. without doing a `nos` rebuild.
 
 ### Pattern
 
@@ -307,34 +303,26 @@ Niri supports running nested inside an existing Wayland session — it opens as 
 
 ### Niri + Desktop Shell Architecture
 
-The niri compositor config is split into two wrapped variants, each with a desktop shell baked in. A shared wrapper module holds the common settings.
+The niri compositor config is wrapped for Noctalia in a single module.
 
 ```
 nix/modules/desktop/
 ├── niri/
-│   ├── wrapper.nix           # flake.wrappersModules.niri-common (shared keybinds, layout, etc.)
-│   ├── niri-dms.nix         # packages.niri-dms   + den.aspects.niri-dms
+│   ├── wrapper.nix           # flake.wrappersModules.niri-noctalia
 │   └── niri-noctalia.nix    # packages.niri-noctalia + den.aspects.niri-noctalia
 ├── noctalia.nix             # packages.noctalia-shell (compositor-agnostic)
-├── dms.nix                  # den.aspects.dms (still uses DMS flake — not in nixpkgs)
 └── wayland/                 # Shared Wayland base (polkit, packages)
 ```
 
-- **`common.nix`** — Reusable `wrappersModules.niri-common` imported by both variants. Contains input, cursor, layout, workspaces, window-rules, environment, all navigation keybinds.
-- **`niri-dms.nix`** — Niri + DMS IPC keybinds (spotlight, clipboard, notifications, volume, brightness, media, screenshot), layer-rules for quickshell/bar/dock. DMS handles idle/lock internally.
-- **`niri-noctalia.nix`** — Niri + Noctalia IPC keybinds (launcher, lockScreen, volume), playerctl, brightnessctl, swayidle with noctalia lock, spawn-at-startup noctalia-shell.
+- **`wrapper.nix`** — `wrappersModules.niri-noctalia`, containing the full wrapped niri config: input, cursor, layout, workspaces, window-rules, environment, navigation keybinds, and Noctalia shell bindings.
+- **`niri-noctalia.nix`** — Builds the wrapped niri package and wires the host aspect/home-manager services (noctalia service + swayidle lock integration).
 - **`noctalia.nix`** — Wrapped `noctalia-shell` with all settings. Compositor-agnostic — usable with hyprland too.
-- **`dms.nix`** — DMS is closed-source and not in nixpkgs. Still uses its own flake inputs.
 
-### Switching Desktop Shells
+### Desktop Aspect
 
-In `ericus.nix`, swap the desktop aspect:
+In host aspects, use:
 
 ```nix
-# DMS (current):
-den.aspects.niri-dms
-
-# Noctalia:
 den.aspects.niri-noctalia
 ```
 

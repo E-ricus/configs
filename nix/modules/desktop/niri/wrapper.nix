@@ -1,10 +1,10 @@
-# All niri wrapper modules — common + per-variant settings.
+# Niri wrapper modules.
 # All entries live here in one block so flake-parts can expose them as a single
 # flake.wrappersModules attrset without merge conflicts.
 {self, ...}: {
   flake.wrappersModules = {
-    # ── Shared: layout, keybinds, env, window-rules ──────────────────
-    niri-common = {
+    # ── Niri + Noctalia settings ──────────────────────────────────────
+    niri-noctalia = {
       lib,
       pkgs,
       ...
@@ -25,6 +25,11 @@
         props = {allow-inhibiting = false;} // extraProps;
         content.${action} = _: {};
       };
+      noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
+      noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
+      brightnessScript =
+        pkgs.writeShellScript "brightness-control"
+        (builtins.readFile ../wayland/brightness-control.sh);
     in {
       v2-settings = true;
 
@@ -46,7 +51,7 @@
             map-to-focused-output = _: {};
           };
           # focus-follows-mouse is disabled by default (omitted).
-          # To enable, add in a variant:
+          # To enable, add:
           #   focus-follows-mouse = _: { props.max-scroll-amount = "90%"; };
         };
         cursor = {
@@ -61,6 +66,7 @@
         gestures.hot-corners.off = _: {};
 
         layout = {
+          background-color = "transparent";
           gaps = 8;
           center-focused-column = "never";
           preset-column-widths = [
@@ -95,6 +101,7 @@
         screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
         hotkey-overlay.skip-at-startup = _: {};
         overview.backdrop-color = "#1e1e2e"; # Catppuccin Mocha Base
+        spawn-sh-at-startup = ["wl-paste --watch cliphist store"];
 
         environment = {
         };
@@ -139,10 +146,15 @@
             content.spawn = [(lib.getExe pkgs.ghostty)];
           };
 
-          # Fuzzel fallback launcher (DMS/Noctalia override Mod+D)
+          # Fuzzel fallback launcher
           "Mod+Shift+D" = _: {
             props.allow-inhibiting = false;
             content.spawn = [(lib.getExe pkgs.fuzzel)];
+          };
+
+          "Mod+D" = _: {
+            props.allow-inhibiting = false;
+            content.spawn = noctalia "launcher toggle";
           };
 
           # File manager
@@ -293,41 +305,7 @@
           "Ctrl+Print" = ni "screenshot-screen";
           "Alt+Print" = ni "screenshot-window";
 
-          # ── Session ───────────────────────────────────────────────────
-          "Mod+Escape" = ni "toggle-keyboard-shortcuts-inhibit";
-
-          "Mod+Shift+E" = ni "quit";
-          "Ctrl+Alt+Delete" = ni "quit";
-          "Mod+Shift+P" = ni "power-off-monitors";
-        };
-      };
-    };
-
-    # ── Noctalia-specific settings ────────────────────────────────────
-    niri-noctalia = {
-      lib,
-      pkgs,
-      ...
-    }: let
-      noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
-      noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
-      brightnessScript =
-        pkgs.writeShellScript "brightness-control"
-        (builtins.readFile ../wayland/brightness-control.sh);
-    in {
-      v2-settings = true;
-      settings = {
-        layout.background-color = "transparent";
-        spawn-sh-at-startup = ["wl-paste --watch cliphist store"];
-        binds = {
-          "Mod+D" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = noctalia "launcher toggle";
-          };
-          "Super+Alt+L" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = noctalia "lockScreen lock";
-          };
+          # Media, audio, brightness
           "XF86AudioRaiseVolume" = _: {
             props.allow-inhibiting = false;
             props.allow-when-locked = true;
@@ -373,7 +351,12 @@
             props.allow-inhibiting = false;
             content.spawn-sh = "${lib.getExe pkgs.playerctl} next";
           };
-          # Plugins
+
+          # Noctalia shell actions
+          "Super+Alt+L" = _: {
+            props.allow-inhibiting = false;
+            content.spawn = noctalia "lockScreen lock";
+          };
           "Mod+V" = _: {
             props.allow-inhibiting = false;
             content.spawn = noctalia "plugin:clipper toggle";
@@ -382,160 +365,13 @@
             props.allow-inhibiting = false;
             content.spawn = noctalia "plugin:todo togglePanel";
           };
-        };
-      };
-    };
 
-    # ── DMS-specific settings ─────────────────────────────────────────
-    niri-dms = {lib, ...}: let
-      dms = cmd: ["dms" "ipc" "call"] ++ (lib.splitString " " cmd);
-    in {
-      v2-settings = true;
-      settings = {
-        layout.background-color = "transparent";
-        layer-rules = [
-          {
-            matches = [{namespace = "^quickshell$";}];
-            place-within-backdrop = true;
-          }
-          {
-            matches = [{namespace = "dms:blurwallpaper";}];
-            place-within-backdrop = true;
-          }
-          {
-            matches = [{namespace = "^dms:clipboard$";}];
-            block-out-from = "screencast";
-          }
-          {
-            matches = [{namespace = "^dms:polkit$";}];
-            block-out-from = "screencast";
-          }
-          {
-            matches = [{namespace = "^dms:wifi-password$";}];
-            block-out-from = "screencast";
-          }
-          {
-            matches = [
-              {namespace = "^dms:bar$";}
-              {namespace = "^dms:dock$";}
-            ];
-            shadow = {
-              on = _: {};
-              softness = 40;
-              spread = 5;
-              offset = _: {
-                props = {
-                  x = 0;
-                  y = 5;
-                };
-              };
-              draw-behind-window = true;
-              color = "#00000064";
-            };
-          }
-        ];
-        window-rules = [
-          {
-            matches = [{app-id = "^org\\.quickshell$";}];
-            open-floating = true;
-          }
-        ];
-        binds = {
-          "Mod+D" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "spotlight toggle";
-          };
-          "Super+Alt+L" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "lock lock";
-          };
-          "XF86AudioRaiseVolume" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "audio increment 3";
-          };
-          "XF86AudioLowerVolume" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "audio decrement 3";
-          };
-          "XF86AudioMute" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "audio mute";
-          };
-          "XF86AudioMicMute" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "audio micmute";
-          };
-          "XF86MonBrightnessUp" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "brightness increment 5 ";
-          };
-          "XF86MonBrightnessDown" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "brightness decrement 5 ";
-          };
-          "XF86AudioPlay" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "mpris playPause";
-          };
-          "XF86AudioStop" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "mpris stop";
-          };
-          "XF86AudioPrev" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "mpris previous";
-          };
-          "XF86AudioNext" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "mpris next";
-          };
-          "Print" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "niri screenshot";
-          };
-          "Mod+Space" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "spotlight toggle";
-          };
-          "Mod+V" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "clipboard toggle";
-          };
-          "Mod+N" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "notifications toggle";
-          };
-          "Mod+M" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "processlist focusOrToggle";
-          };
-          "Mod+Shift+Comma" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "settings focusOrToggle";
-          };
-          "Mod+X" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "powermenu toggle";
-          };
-          "Mod+Y" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = dms "dankdash wallpaper";
-          };
-          "Mod+Alt+N" = _: {
-            props.allow-inhibiting = false;
-            props.allow-when-locked = true;
-            content.spawn = dms "night toggle";
-          };
+          # ── Session ───────────────────────────────────────────────────
+          "Mod+Escape" = ni "toggle-keyboard-shortcuts-inhibit";
+
+          "Mod+Shift+E" = ni "quit";
+          "Ctrl+Alt+Delete" = ni "quit";
+          "Mod+Shift+P" = ni "power-off-monitors";
         };
       };
     };

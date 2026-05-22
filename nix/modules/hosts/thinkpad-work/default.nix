@@ -6,15 +6,6 @@
   };
 
   den.aspects.thinkpad-work = {
-    # Push desktop homeManager config to all users on this host.
-    provides.to-users = {
-      homeManager.imports = [
-        den.aspects.wayland.homeManager
-        den.aspects.niri-noctalia.homeManager
-        den.aspects.noctalia.homeManager
-      ];
-    };
-
     includes = [
       den.provides.hostname
       # NixOS-only aspects
@@ -31,12 +22,9 @@
       den.aspects.windows-vm
       den.aspects.work-tools
       den.aspects.vpn
-      # Desktop
-      den.aspects.niri-noctalia
-      den.aspects.cosmic
     ];
 
-    nixos = {pkgs, ...}: {
+    nixos = {...}: {
       imports = [./_hardware.nix];
 
       # Disko: host-specific disk device and swap size
