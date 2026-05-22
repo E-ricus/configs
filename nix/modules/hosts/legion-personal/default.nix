@@ -1,7 +1,7 @@
 # Host aspect for legion-personal
 {den, ...}: {
   den.hosts.x86_64-linux.legion-personal = {
-    display.scale = 2.0;
+    display.scale = 1.75;
     users.ericus = {};
   };
 

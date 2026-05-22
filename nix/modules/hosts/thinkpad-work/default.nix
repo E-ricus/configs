@@ -1,7 +1,7 @@
 # Host aspect for thinkpad-work — Intel ThinkPad, Secure Boot, disko
 {den, ...}: {
   den.hosts.x86_64-linux.thinkpad-work = {
-    display.scale = 1.75;
+    display.scale = 1.50;
     users.ericus = {};
   };
 
