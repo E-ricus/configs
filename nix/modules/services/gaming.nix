@@ -1,5 +1,5 @@
 # Steam, GameScope, GameMode, and Minecraft.
-{den, ...}: {
+{...}: {
   den.aspects.gaming = {
     nixos = {
       pkgs,
@@ -26,7 +26,7 @@
 
       programs.gamescope = {
         enable = true;
-        capSysNice = true;
+        capSysNice = false;
         args = [
           "-W 3840"
           "-H 2160"

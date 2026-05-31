@@ -1,10 +1,6 @@
 # C3 language toolchain — compiler (pinned), LSP, and formatter.
 #
 # - Pins `c3c` to v0.8.0_3.
-# - Installs the upstream-built `c3fmt` Linux binary from the v0.2.4 GitHub
-#   release. Building c3fmt from source is currently impractical: c3fmt
-#   v0.2.4 (released 2026-05-01) targets a c3c prerelease that predates
-#   the c3c 0.8.0 release (2026-05-12). So main/the latest relase do not compile with C3 0.8
 {...}: {
   den.aspects.c3 = {
     homeManager = {
@@ -24,16 +20,15 @@
         };
       });
 
-      # c3fmt — a C3 source code formatter, written in C3.
+      # c3fmt — a C3 source code formatter.
       # Upstream: https://github.com/lmichaudel/c3fmt
-      # Installed from the prebuilt Linux release binary (see header).
       c3fmt = pkgs.stdenvNoCC.mkDerivation {
         pname = "c3fmt";
-        version = "0.2.4";
+        version = "0.2.5";
 
         src = pkgs.fetchurl {
-          url = "https://github.com/lmichaudel/c3fmt/releases/download/v0.2.4/c3fmt-linux";
-          hash = "sha256-jKb6v0ofveLd/JZQdarESh2f6K0DWmiJC8W+cUXZQZY=";
+          url = "https://github.com/lmichaudel/c3fmt/releases/download/v0.2.5/c3fmt-linux";
+          hash = "sha256-99XP31KWEyQpdxzzQbWuzFLkPEyamoFNKFc2LTg21P4=";
         };
 
         # The downloaded file is the bare ELF (not an archive).
