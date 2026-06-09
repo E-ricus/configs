@@ -19,6 +19,10 @@
       flake = false;
     };
     # System tools
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     jetbrains-plugins = {
       url = "github:Janrupf/nix-jetbrains-plugin-repository";
       inputs.nixpkgs.follows = "nixpkgs";

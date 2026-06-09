@@ -11,6 +11,7 @@
         gcc
         gnumake
         ffmpeg-headless
+        gimp
       ];
     };
     nixos = {pkgs, ...}: {

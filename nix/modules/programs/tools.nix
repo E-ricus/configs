@@ -1,5 +1,5 @@
 # CLI tools — essential utilities included for all hosts.
-{den, ...}: {
+{...}: {
   den.aspects.tools = {
     homeManager = {pkgs, ...}: {
       home.packages = with pkgs; [

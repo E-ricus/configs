@@ -16,6 +16,7 @@ return {
 
   -- Langs Enhacement
   "vim-test/vim-test",
+  { "rluba/jai.vim", event = "BufReadPre *.jai" },
   { "ziglang/zig.vim", event = "BufReadPre *.zig" },
   { "ChrisWellsWood/roc.vim", event = "BufReadPre *.roc" },
   {

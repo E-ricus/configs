@@ -22,6 +22,7 @@
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
       den.aspects.jetbrains
+      den.aspects.emacs
     ];
 
     nixos = {...}: {
