@@ -3,10 +3,6 @@
 ;;; ---- Package Management ---------------------------------------------------
 
 (require 'package)
-;; Redirect installed packages out of the config dir (which is a git repo).
-(setq package-user-dir
-      (expand-file-name "emacs/elpa/"
-                        (or (getenv "XDG_DATA_HOME") "~/.local/share")))
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
@@ -14,22 +10,13 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;;; ---- No Littering ---------------------------------------------------------
-;; Automatically redirects ALL package data files to XDG locations.
-;; No need to manually set paths for savehist, recentf, save-place, etc.
+;;; ---- Direnv (per-buffer nix shell environments) --------------------------
+;; Loads .envrc / flake.nix devshell per-buffer, so each project gets its
+;; own $PATH, LSP server, compiler, etc. Must be enabled early.
 
-;; Set directories BEFORE loading so they're in effect immediately.
-(setq no-littering-etc-directory
-      (expand-file-name "emacs/etc/"
-                        (or (getenv "XDG_DATA_HOME") "~/.local/share")))
-(setq no-littering-var-directory
-      (expand-file-name "emacs/var/"
-                        (or (getenv "XDG_CACHE_HOME") "~/.cache")))
-
-(use-package no-littering
+(use-package envrc
   :demand t
-  :config
-  (setq custom-file (no-littering-expand-etc-file-name "custom.el")))
+  :init (envrc-global-mode))
 
 ;;; ---- Local Packages -------------------------------------------------------
 ;; Standalone .el files in emacs/local/ (not on MELPA).
@@ -98,8 +85,9 @@
 (setq create-lockfiles nil)
 (setq auto-save-default nil)
 
-;; custom-set-variables go to a separate file (path managed by no-littering)
-(when (and custom-file (file-exists-p custom-file))
+;; Put custom-set-variables in a separate file so they don't pollute init.el
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file)
   (load custom-file 'noerror))
 
 ;; Use y/n instead of yes/no
@@ -131,7 +119,6 @@
 (add-hook 'dired-mode-hook 'dired-omit-mode)
 
 ;; Project persistence — remember known projects across sessions
-;; no-littering handles the file path; we just need to ensure it saves.
 (setq project-remember-projects-under t)
 
 ;; TRAMP — don't litter remote machines with autosave files
@@ -324,11 +311,12 @@
 (use-package yaml-mode
   :mode ("\\.ya?ml\\'"))
 
+
 (use-package c3-ts-mode
   :ensure nil ; installed via package-vc, not MELPA
-  :vc (:url "https://github.com/c3lang/c3-ts-mode")
+  :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main")
   :mode "\\.c3\\'"
-  :init
+  :config
   (add-to-list 'treesit-language-source-alist
                '(c3 "https://github.com/c3lang/tree-sitter-c3"))
   ;; Auto-install the grammar if missing (needs a C compiler).

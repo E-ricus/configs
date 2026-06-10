@@ -198,7 +198,7 @@ link_packages() {
                 continue
             fi
 
-            ((processed++))
+            ((++processed))
 
             # Expand ~ to home directory
             target="${target/#\~/$HOME}"
@@ -270,7 +270,7 @@ unlink_packages() {
                 continue
             fi
 
-            ((processed++))
+            ((++processed))
 
             target="${target/#\~/$HOME}"
 
@@ -353,7 +353,7 @@ show_status() {
                 continue
             fi
 
-            ((processed++))
+            ((++processed))
 
             target="${target/#\~/$HOME}"
 
@@ -413,12 +413,12 @@ count_links() {
         local item_name=$(basename "$item")
         local target_path="$target_dir/$item_name"
         
-        ((total_count++))
+        ((++total_count))
         
         if [ -L "$target_path" ]; then
             local link_target=$(readlink "$target_path")
             if [ "$link_target" = "$item" ]; then
-                ((linked_count++))
+                ((++linked_count))
             fi
         elif [ -d "$item" ] && [ -d "$target_path" ]; then
             count_links "$item" "$target_path"
