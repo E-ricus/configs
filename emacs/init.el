@@ -27,7 +27,9 @@
                         (or (getenv "XDG_CACHE_HOME") "~/.cache")))
 
 (use-package no-littering
-  :demand t)
+  :demand t
+  :config
+  (setq custom-file (no-littering-expand-etc-file-name "custom.el")))
 
 ;;; ---- Local Packages -------------------------------------------------------
 ;; Standalone .el files in emacs/local/ (not on MELPA).
@@ -128,6 +130,10 @@
       (concat dired-omit-files "\\|^\\..+$"))
 (add-hook 'dired-mode-hook 'dired-omit-mode)
 
+;; Project persistence — remember known projects across sessions
+;; no-littering handles the file path; we just need to ensure it saves.
+(setq project-remember-projects-under t)
+
 ;; TRAMP — don't litter remote machines with autosave files
 (setq tramp-auto-save-directory "/tmp")
 
@@ -135,6 +141,14 @@
 (global-set-key (kbd "C-=") 'text-scale-increase)
 (global-set-key (kbd "C--") 'text-scale-decrease)
 (global-set-key (kbd "C-0") 'text-scale-adjust) ; reset with 0
+
+;; Quick access to config
+(global-set-key (kbd "C-c e i") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "C-c e r") (lambda () (interactive) (load-file user-init-file) (message "init.el reloaded")))
+
+;; Buffer management
+(global-set-key (kbd "C-c b k") 'kill-this-buffer)     ; kill current buffer
+(global-set-key (kbd "C-c b K") 'kill-buffer-and-window) ; kill buffer + close window
 
 ;; Native compilation (Emacs 29+) — silence warnings
 (setq native-comp-async-report-warnings-errors nil)
@@ -246,9 +260,14 @@
 ;;   (add-hook 'go-mode-hook      'eglot-ensure)
 ;;   (add-hook 'c-mode-hook       'eglot-ensure)
 ;;   (add-hook 'js-mode-hook      'eglot-ensure)
+;;   (add-hook 'c3-ts-mode-hook   'eglot-ensure)
 ;;
-;; Just install the language server (e.g. pyright, rust-analyzer, gopls)
-;; and uncomment the hook for that language.
+;; For languages without built-in server detection, register the server:
+;;   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3lsp"))
+;;
+;; Just install the language server (e.g. pyright, rust-analyzer, gopls, c3lsp)
+;; and uncomment the hook + server program for that language.
+;; envrc will pick up the LSP binary from your project's nix devshell.
 
 (use-package eglot
   :ensure nil ; built-in
@@ -304,6 +323,17 @@
 
 (use-package yaml-mode
   :mode ("\\.ya?ml\\'"))
+
+(use-package c3-ts-mode
+  :ensure nil ; installed via package-vc, not MELPA
+  :vc (:url "https://github.com/c3lang/c3-ts-mode")
+  :mode "\\.c3\\'"
+  :init
+  (add-to-list 'treesit-language-source-alist
+               '(c3 "https://github.com/c3lang/tree-sitter-c3"))
+  ;; Auto-install the grammar if missing (needs a C compiler).
+  (unless (treesit-language-available-p 'c3)
+    (treesit-install-language-grammar 'c3)))
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
