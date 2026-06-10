@@ -49,6 +49,9 @@
 ;; Makes evil yank/paste (y/p) work with system clipboard.
 (setq select-enable-clipboard t)
 (setq select-enable-primary t)
+;; Ctrl+Shift+V/C to paste/copy globally (minibuffer, etc.)
+(global-set-key (kbd "C-S-v") 'clipboard-yank)
+(global-set-key (kbd "C-S-c") 'clipboard-kill-ring-save)
 
 ;; Encoding
 (set-default-coding-systems 'utf-8)
@@ -266,9 +269,6 @@
   ;; Language server registrations
   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
   ;; Auto-start eglot for these modes (uncomment as needed)
-  ;; (add-hook 'python-mode-hook  'eglot-ensure)
-  ;; (add-hook 'rust-mode-hook    'eglot-ensure)
-  ;; (add-hook 'go-mode-hook      'eglot-ensure)
   (add-hook 'c3-ts-mode-hook   'eglot-ensure))
 
 ;;; ---- Keybinding Discovery -------------------------------------------------
@@ -318,6 +318,14 @@
 (use-package yaml-mode
   :mode ("\\.ya?ml\\'"))
 
+(use-package rust-mode
+  :mode "\\.rs\\'")
+
+(use-package go-mode
+  :mode "\\.go\\'")
+
+(use-package lua-mode
+  :mode "\\.lua\\'")
 
 (use-package c3-ts-mode
   :ensure nil ; installed via package-vc, not MELPA
