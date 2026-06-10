@@ -11,8 +11,7 @@
 (setq use-package-always-ensure t)
 
 ;;; ---- Direnv (per-buffer nix shell environments) --------------------------
-;; Loads .envrc / flake.nix devshell per-buffer, so each project gets its
-;; own $PATH, LSP server, compiler, etc. Must be enabled early.
+;; Loads .envrc / flake.nix devshell per-buffer
 
 (use-package envrc
   :demand t
@@ -34,9 +33,9 @@
 (global-display-line-numbers-mode 1)
 ;; Disable line numbers in some modes where they make no sense.
 (dolist (mode '(term-mode-hook
-               eshell-mode-hook
-               treemacs-mode-hook
-               org-agenda-mode-hook))
+                eshell-mode-hook
+                treemacs-mode-hook
+                org-agenda-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;; Show column number in modeline
@@ -124,6 +123,15 @@
 ;; Project persistence — remember known projects across sessions
 (setq project-remember-projects-under t)
 
+;; Recognize projects by flake.nix or .envrc, not just .git
+(defun my/project-try-flake (dir)
+  "Detect project root by flake.nix or .envrc."
+  (when-let* ((root (or (locate-dominating-file dir "flake.nix")
+                        (locate-dominating-file dir ".envrc"))))
+    (cons 'transient root)))
+(with-eval-after-load 'project
+  (add-to-list 'project-find-functions #'my/project-try-flake))
+
 ;; TRAMP — don't litter remote machines with autosave files
 (setq tramp-auto-save-directory "/tmp")
 
@@ -164,12 +172,21 @@
   (setq evil-want-keybinding nil)   ; required for evil-collection
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-d-scroll t)
+  (setq evil-want-C-i-jump nil)     ; free TAB from jump-forward (GUI can distinguish TAB from C-i)
   (setq evil-want-Y-yank-to-eol t)  ; Y yanks to eol (like modern vim)
   (setq evil-undo-system 'undo-redo) ; native undo-redo (Emacs 28+)
   (setq evil-split-window-below t)
   (setq evil-vsplit-window-right t)
   :config
-  (evil-mode 1))
+  (evil-mode 1)
+
+  ;; Vim-style ]x / [x bracket navigation
+  ;; ]d / [d — diagnostics (flymake/LSP errors)
+  (define-key evil-normal-state-map (kbd "]d") 'flymake-goto-next-error)
+  (define-key evil-normal-state-map (kbd "[d") 'flymake-goto-prev-error)
+  ;; ]q / [q — quickfix (compilation errors, grep results)
+  (define-key evil-normal-state-map (kbd "]q") 'next-error)
+  (define-key evil-normal-state-map (kbd "[q") 'previous-error))
 
 (use-package evil-collection
   :after evil
@@ -257,19 +274,22 @@
 ;;
 ;; Just install the language server (e.g. pyright, rust-analyzer, gopls, c3-lsp)
 ;; and uncomment the hook + server program for that language.
-;; envrc will pick up the LSP binary from your project's nix devshell.
 
 (use-package eglot
   :ensure nil ; built-in
   :custom
   (eglot-autoshutdown t)        ; shut down server when last buffer closes
   (eglot-events-buffer-size 0)  ; disable events log for performance
+  :bind (("C-c d d" . flymake-show-diagnostics-buffer)    ; list all errors in buffer
+         ("C-c d p" . flymake-show-project-diagnostics))   ; list errors across project
   :config
   (setq eglot-ignored-server-capabilities '(:inlayHintProvider))
   ;; Language server registrations
   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
+  (add-to-list 'eglot-server-programs '(odin-ts-mode "ols"))
   ;; Auto-start eglot for these modes (uncomment as needed)
-  (add-hook 'c3-ts-mode-hook   'eglot-ensure))
+  (add-hook 'c3-ts-mode-hook   'eglot-ensure)
+  (add-hook 'odin-ts-mode-hook   'eglot-ensure))
 
 ;;; ---- Keybinding Discovery -------------------------------------------------
 
@@ -328,15 +348,29 @@
   :mode "\\.lua\\'")
 
 (use-package c3-ts-mode
-  :ensure nil ; installed via package-vc, not MELPA
+  :ensure nil
   :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main")
   :mode "\\.c3\\'"
   :config
   (add-to-list 'treesit-language-source-alist
                '(c3 "https://github.com/c3lang/tree-sitter-c3"))
-  ;; Auto-install the grammar if missing (needs a C compiler).
   (unless (treesit-language-available-p 'c3)
-    (treesit-install-language-grammar 'c3)))
+    (treesit-install-language-grammar 'c3))
+  (setq c3-ts-mode-indent-offset 4))
+
+(use-package odin-ts-mode
+  :ensure nil
+  :vc (:url "https://github.com/Sampie159/odin-ts-mode" :branch "main")
+  :mode "\\.odin\\'"
+  :config
+  (add-to-list 'treesit-language-source-alist
+               '(odin "https://github.com/tree-sitter-grammars/tree-sitter-odin"))
+  (unless (treesit-language-available-p 'odin)
+    (treesit-install-language-grammar 'odin))
+  ;; Odin compiler error format: /path/file.odin(16:3) Error: ...
+  (add-to-list 'compilation-error-regexp-alist 'odin)
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(odin "\\(/[^(]+\\.odin\\)(\\([0-9]+\\):\\([0-9]+\\))" 1 2 3)))
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
@@ -351,8 +385,8 @@
 (global-set-key (kbd "M-g n")   'next-error)         ; jump to next error
 (global-set-key (kbd "M-g p")   'previous-error)     ; jump to previous error
 
-(setq compilation-scroll-output t)           ; auto-scroll compilation buffer
-(setq compilation-ask-about-save nil)        ; save files before compiling without asking
+(setq compilation-scroll-output t)            ; auto-scroll compilation buffer
+(setq compilation-ask-about-save nil)         ; save files before compiling without asking
 
 ;;; ---- Quality of Life ------------------------------------------------------
 
