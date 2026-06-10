@@ -250,9 +250,9 @@
 ;;   (add-hook 'c3-ts-mode-hook   'eglot-ensure)
 ;;
 ;; For languages without built-in server detection, register the server:
-;;   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3lsp"))
+;;   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
 ;;
-;; Just install the language server (e.g. pyright, rust-analyzer, gopls, c3lsp)
+;; Just install the language server (e.g. pyright, rust-analyzer, gopls, c3-lsp)
 ;; and uncomment the hook + server program for that language.
 ;; envrc will pick up the LSP binary from your project's nix devshell.
 
@@ -262,7 +262,14 @@
   (eglot-autoshutdown t)        ; shut down server when last buffer closes
   (eglot-events-buffer-size 0)  ; disable events log for performance
   :config
-  (setq eglot-ignored-server-capabilities '(:inlayHintProvider)))
+  (setq eglot-ignored-server-capabilities '(:inlayHintProvider))
+  ;; Language server registrations
+  (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
+  ;; Auto-start eglot for these modes (uncomment as needed)
+  ;; (add-hook 'python-mode-hook  'eglot-ensure)
+  ;; (add-hook 'rust-mode-hook    'eglot-ensure)
+  ;; (add-hook 'go-mode-hook      'eglot-ensure)
+  (add-hook 'c3-ts-mode-hook   'eglot-ensure))
 
 ;;; ---- Keybinding Discovery -------------------------------------------------
 
