@@ -45,9 +45,7 @@
 (global-hl-line-mode 1)
 
 ;; Clipboard — sync kill-ring with system clipboard
-;; Makes evil yank/paste (y/p) work with system clipboard.
 (setq select-enable-clipboard t)
-(setq select-enable-primary t)
 ;; Ctrl+Shift+V/C to paste/copy globally (minibuffer, etc.)
 (global-set-key (kbd "C-S-v") 'clipboard-yank)
 (global-set-key (kbd "C-S-c") 'clipboard-kill-ring-save)
@@ -130,7 +128,24 @@
                         (locate-dominating-file dir ".envrc"))))
     (cons 'transient root)))
 (with-eval-after-load 'project
-  (add-to-list 'project-find-functions #'my/project-try-flake))
+  (add-to-list 'project-find-functions #'my/project-try-flake)
+  ;; Auto-discover projects under ~/code (2 levels: code/{category}/{project})
+  (when (file-directory-p "~/code")
+    (dolist (dir (directory-files "~/code" t "\\`[^.]"))
+      (when (file-directory-p dir)
+        (project-remember-projects-under dir nil))))
+  ;; Replace project-find-file with consult-fd in switch menu
+  ;; (the built-in project-find-file runs `find` and freezes on large trees)
+  (setq project-switch-commands
+        '((consult-fd         "Find file"    ?f)
+          (consult-ripgrep    "Ripgrep"      ?g)
+          (project-dired      "Dired"        ?d)
+          (magit-status       "Magit"        ?m)
+          (project-eshell     "Eshell"       ?e)))
+  ;; Rebind C-x p f to consult-fd (streams results, no freeze)
+  (define-key project-prefix-map "f" #'consult-fd)
+  ;; Bind C-x p d to project-dired (lowercase)
+  (define-key project-prefix-map "d" #'project-dired))
 
 ;; TRAMP — don't litter remote machines with autosave files
 (setq tramp-auto-save-directory "/tmp")
@@ -179,6 +194,10 @@
   (setq evil-vsplit-window-right t)
   :config
   (evil-mode 1)
+
+  ;; Visual paste: don't put replaced text into kill-ring/clipboard.
+  ;; Set in :config (not :init) so it runs after evil's defcustom.
+  (setq evil-kill-on-visual-paste nil)
 
   ;; Vim-style ]x / [x bracket navigation
   ;; ]d / [d — diagnostics (flymake/LSP errors)
@@ -230,11 +249,20 @@
 (use-package consult
   :bind (("C-s"     . consult-line)        ; search current buffer
          ("C-x b"   . consult-buffer)       ; enhanced buffer switching
-         ("C-x f"   . consult-find)         ; find file in project
+         ("C-x f"   . consult-fd)           ; find file in project (uses fd)
          ("C-x /"   . consult-ripgrep)      ; project-wide search (needs ripgrep)
          ("C-x r b" . consult-bookmark)
          ("M-g g"   . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)))
+         ("M-g M-g" . consult-goto-line))
+
+  :config
+  ;; Don't include project files in consult-buffer — it calls project-files
+  ;; which runs `find` and chokes on permission-denied dirs.  Use C-x f for
+  ;; project file finding instead.
+  (setq consult-buffer-sources
+        (delq 'consult--source-project-buffer
+              (delq 'consult--source-project-recent-file
+                    consult-buffer-sources))))
 
 ;; Persist completion history across sessions
 (use-package savehist
