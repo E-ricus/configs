@@ -170,12 +170,20 @@
                     :family "JetBrainsMono Nerd Font"
                     :height 120)  ; 100 = 10pt
 
-;;; ---- Theme ----------------------------------------------------------------
+;;; ---- Themes ---------------------------------------------------------------
 
-(use-package catppuccin-theme
+;; (use-package catppuccin-theme
+;;   :config
+;;   (setq catppuccin-flavor 'mocha)
+;;   (load-theme 'catppuccin :no-confirm))
+
+;; (use-package zenburn-theme
+;;   :config
+;;   (load-theme 'zenburn t))
+
+(use-package gruber-darker-theme
   :config
-  (setq catppuccin-flavor 'mocha)
-  (load-theme 'catppuccin :no-confirm))
+  (load-theme 'gruber-darker t))
 
 ;;; ---- Evil Mode (Vim Keybindings) ------------------------------------------
 
@@ -471,12 +479,12 @@
 ;; lets you jump to each error with next-error / previous-error.
 ;; project-compile runs from the project root (detected via project.el)
 
-(global-set-key (kbd "C-c c c") 'project-compile)  ; compile from project root
+(global-set-key (kbd "C-c c c") 'project-compile)   ; compile from project root
 (global-set-key (kbd "C-c c r") 'recompile)         ; re-run last compile
-(global-set-key (kbd "M-g n")   'next-error)         ; jump to next error
-(global-set-key (kbd "M-g p")   'previous-error)     ; jump to previous error
+(global-set-key (kbd "M-g n")   'next-error)        ; jump to next error
+(global-set-key (kbd "M-g p")   'previous-error)    ; jump to previous error
 
-(setq compilation-scroll-output t)            ; auto-scroll compilation buffer
+(setq compilation-scroll-output 'first-error) ; auto-scroll compilation buffer
 (setq compilation-ask-about-save nil)         ; save files before compiling without asking
 
 ;;; ---- Quality of Life ------------------------------------------------------
