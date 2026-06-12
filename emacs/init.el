@@ -112,8 +112,6 @@
 (setq dired-dwim-target t)
 (setq dired-mouse-drag-files t)              ; drag files out of dired (Emacs 29+)
 (require 'dired-x)                           ; extra commands (C-x C-j jump to dired, etc.)
-(setq dired-omit-files                       ; hide dotfiles; toggle with C-x M-o
-      (concat dired-omit-files "\\|^\\..+$"))
 (add-hook 'dired-mode-hook 'dired-omit-mode)
 
 ;; Project persistence — remember known projects across sessions
@@ -356,7 +354,8 @@
   (add-hook 'completion-at-point-functions #'cape-file))
 
 ;;; ---- LSP (Eglot — built-in) ----------------------------------------------
-;; Eglot is built into Emacs 29+. Enable it per language via hooks:
+;; Eglot is built into Emacs 29+. Enable it per language via hooks anywhere
+;; or adding to the :hook of the package
 ;;
 ;;   (add-hook 'python-mode-hook  'eglot-ensure)
 ;;   (add-hook 'rust-mode-hook    'eglot-ensure)
@@ -373,6 +372,8 @@
 
 (use-package eglot
   :ensure nil ; built-in
+  :hook ((c3-ts-mode . eglot-ensure)
+         (odin-ts-mode . eglot-ensure))
   :custom
   (eglot-autoshutdown t)        ; shut down server when last buffer closes
   (eglot-events-buffer-size 0)  ; disable events log for performance
@@ -382,10 +383,7 @@
   (setq eglot-ignored-server-capabilities '(:inlayHintProvider))
   ;; Language server registrations
   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
-  (add-to-list 'eglot-server-programs '(odin-ts-mode "ols"))
-  ;; Auto-start eglot for these modes (uncomment as needed)
-  (add-hook 'c3-ts-mode-hook   'eglot-ensure)
-  (add-hook 'odin-ts-mode-hook   'eglot-ensure))
+  (add-to-list 'eglot-server-programs '(odin-ts-mode "ols")))
 
 ;;; ---- Keybinding Discovery -------------------------------------------------
 
@@ -499,5 +497,7 @@
 
 ;; Reset GC threshold after init (see early-init.el)
 (setq gc-cons-threshold (* 16 1024 1024)) ; 16 MB
+
+(repeat-mode t) ;; quite nice to resize
 
 ;;; init.el ends here
