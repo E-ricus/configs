@@ -197,6 +197,10 @@
   ;; Set in :config (not :init) so it runs after evil's defcustom.
   (setq evil-kill-on-visual-paste nil)
 
+  ;; Vim-style ]x / [x bracket navigation
+  (define-key evil-normal-state-map (kbd "]d") 'next-error)
+  (define-key evil-normal-state-map (kbd "[d") 'previous-error))
+
 (use-package evil-collection
   :after evil
   :config
@@ -243,7 +247,8 @@
     "c r" #'recompile                          ; SPC c r — re-run last compile
     "s d" #'flymake-show-buffer-diagnostics    ; SPC s d — diagnostics
     "s h" #'describe-function                  ; SPC s h — help
-    "s k" #'describe-key))                     ; SPC s k — keymaps
+    "s k" #'describe-key                       ; SPC s k — keymaps
+    "t t" #'project-eshell))                   ; SPC t t — eshell
 
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
 ;; vertico  — vertical completion UI
