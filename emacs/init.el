@@ -57,10 +57,8 @@
 (set-keyboard-coding-system 'utf-8)
 
 ;; Scrolling
-(setq scroll-margin 8)
-(setq scroll-conservatively 101)
-(setq scroll-preserve-screen-position t)
-(pixel-scroll-precision-mode 1)
+(pixel-scroll-precision-mode 1) ; enable pixel-precise scrolling
+(setq pixel-scroll-precision-interpolate t)
 
 ;; Auto-revert buffers when files change on disk
 (global-auto-revert-mode 1)
@@ -134,16 +132,16 @@
     (dolist (dir (directory-files "~/code" t "\\`[^.]"))
       (when (file-directory-p dir)
         (project-remember-projects-under dir nil))))
-  ;; Replace project-find-file with consult-fd in switch menu
+  ;; Replace project-find-file with fzf in switch menu
   ;; (the built-in project-find-file runs `find` and freezes on large trees)
   (setq project-switch-commands
-        '((consult-fd         "Find file"    ?f)
-          (consult-ripgrep    "Ripgrep"      ?g)
-          (project-dired      "Dired"        ?d)
-          (magit-status       "Magit"        ?m)
-          (project-eshell     "Eshell"       ?e)))
-  ;; Rebind C-x p f to consult-fd (streams results, no freeze)
-  (define-key project-prefix-map "f" #'consult-fd)
+        '((my/fzf-project-files "Find file"    ?f)
+          (consult-ripgrep      "Ripgrep"      ?g)
+          (project-dired        "Dired"        ?d)
+          (magit-status         "Magit"        ?m)
+          (project-eshell       "Eshell"       ?e)))
+  ;; Rebind C-x p f to fzf file finder (fd + fzf, real fuzzy matching)
+  (define-key project-prefix-map "f" #'my/fzf-project-files)
   ;; Bind C-x p d to project-dired (lowercase)
   (define-key project-prefix-map "d" #'project-dired))
 
@@ -203,9 +201,59 @@
   ;; ]d / [d — diagnostics (flymake/LSP errors)
   (define-key evil-normal-state-map (kbd "]d") 'flymake-goto-next-error)
   (define-key evil-normal-state-map (kbd "[d") 'flymake-goto-prev-error)
-  ;; ]q / [q — quickfix (compilation errors, grep results)
-  (define-key evil-normal-state-map (kbd "]q") 'next-error)
-  (define-key evil-normal-state-map (kbd "[q") 'previous-error))
+
+  ;; ---- SPC leader key (mirrors Neovim keybindings) ----
+  ;; which-key will auto-display these when SPC is pressed.
+  (define-prefix-command 'my/leader-map)
+  (define-key evil-normal-state-map (kbd "SPC") 'my/leader-map)
+  (define-key evil-visual-state-map (kbd "SPC") 'my/leader-map)
+
+  ;; SPC f — find
+  (define-prefix-command 'my/leader-find-map)
+  (define-key my/leader-map (kbd "f") 'my/leader-find-map)
+  (define-key my/leader-find-map (kbd "f") #'my/fzf-project-files)   ; SPC f f — find files (fd + fzf, fuzzy)
+  (define-key my/leader-find-map (kbd "F") #'consult-fd)             ; SPC f F — find files (fd, exact/regex)
+  (define-key my/leader-find-map (kbd "g") #'consult-ripgrep)        ; SPC f g — grep (ripgrep)
+  (define-key my/leader-find-map (kbd "w") #'my/consult-ripgrep-word) ; SPC f w — grep word at point
+  (define-key my/leader-find-map (kbd "b") #'consult-buffer)         ; SPC f b — buffers
+  (define-key my/leader-find-map (kbd "r") #'consult-recent-file)    ; SPC f r — recent files
+
+  ;; SPC s — search
+  (define-prefix-command 'my/leader-search-map)
+  (define-key my/leader-map (kbd "s") 'my/leader-search-map)
+  (define-key my/leader-search-map (kbd "b") #'consult-line)         ; SPC s b — buffer lines
+  (define-key my/leader-search-map (kbd "d") #'flymake-show-buffer-diagnostics) ; SPC s d — diagnostics
+  (define-key my/leader-search-map (kbd "h") #'describe-function)    ; SPC s h — help
+  (define-key my/leader-search-map (kbd "k") #'describe-key)         ; SPC s k — keymaps
+
+  ;; SPC / — grep (top-level, like Neovim <leader>/)
+  (define-key my/leader-map (kbd "/") #'consult-ripgrep)
+
+  ;; SPC b — buffers
+  (define-prefix-command 'my/leader-buffer-map)
+  (define-key my/leader-map (kbd "b") 'my/leader-buffer-map)
+  (define-key my/leader-buffer-map (kbd "b") #'consult-buffer)       ; SPC b b — switch buffer
+  (define-key my/leader-buffer-map (kbd "d") #'kill-this-buffer)     ; SPC b d — delete buffer
+
+  ;; SPC p — project
+  (define-prefix-command 'my/leader-project-map)
+  (define-key my/leader-map (kbd "p") 'my/leader-project-map)
+  (define-key my/leader-project-map (kbd "p") #'project-switch-project) ; SPC p p — switch project
+  (define-key my/leader-project-map (kbd "b") #'project-list-buffers)   ; SPC p b — project buffers
+
+  ;; SPC c — compile
+  (define-prefix-command 'my/leader-compile-map)
+  (define-key my/leader-map (kbd "c") 'my/leader-compile-map)
+  (define-key my/leader-compile-map (kbd "c") #'project-compile)     ; SPC c c — compile from project root
+  (define-key my/leader-compile-map (kbd "r") #'recompile)           ; SPC c r — re-run last compile
+
+  ;; SPC g — git
+  (define-prefix-command 'my/leader-git-map)
+  (define-key my/leader-map (kbd "g") 'my/leader-git-map)
+  (define-key my/leader-git-map (kbd "g") #'magit-status)            ; SPC g g — magit status
+
+  ;; SPC SPC — switch to alternate (last) buffer (like Neovim <leader><tab>)
+  (define-key my/leader-map (kbd "SPC") #'evil-switch-to-windows-last-buffer))
 
 (use-package evil-collection
   :after evil
@@ -249,7 +297,7 @@
 (use-package consult
   :bind (("C-s"     . consult-line)        ; search current buffer
          ("C-x b"   . consult-buffer)       ; enhanced buffer switching
-         ("C-x f"   . consult-fd)           ; find file in project (uses fd)
+         ("C-x f"   . consult-fd)           ; find file in project (uses fd, exact match)
          ("C-x /"   . consult-ripgrep)      ; project-wide search (needs ripgrep)
          ("C-x r b" . consult-bookmark)
          ("M-g g"   . consult-goto-line)
@@ -257,12 +305,41 @@
 
   :config
   ;; Don't include project files in consult-buffer — it calls project-files
-  ;; which runs `find` and chokes on permission-denied dirs.  Use C-x f for
-  ;; project file finding instead.
+  ;; which runs `find` and chokes on permission-denied dirs.
   (setq consult-buffer-sources
         (delq 'consult--source-project-buffer
               (delq 'consult--source-project-recent-file
-                    consult-buffer-sources))))
+                    consult-buffer-sources)))
+
+  (defun my/consult-ripgrep-word ()
+    "Grep for the word at point in the current project using ripgrep."
+    (interactive)
+    (consult-ripgrep nil (thing-at-point 'word t))))
+
+;; fzf.el — real fzf fuzzy matching for file finding and grep.
+;; Uses fd + fzf for files, rg + fzf for grep — same pipeline as Neovim.
+;; Renders the fzf TUI in a term buffer (not minibuffer/vertico).
+(use-package fzf
+  :config
+  (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
+        fzf/executable "fzf"
+        fzf/grep-command "rg --no-heading -nH"
+        fzf/position-bottom t
+        fzf/window-height 15)
+
+  (defun my/fzf-project-files ()
+    "Find files in the current project using fd + fzf."
+    (interactive)
+    (let ((d (project-root (project-current t))))
+      (fzf-with-command
+       "fd --type f --hidden --follow --exclude .git"
+       (lambda (x)
+         (let ((f (expand-file-name x d)))
+           (when (file-exists-p f)
+             (find-file f))))
+       d)))
+
+  :bind nil)
 
 ;; Persist completion history across sessions
 (use-package savehist
@@ -347,7 +424,7 @@
 
 (use-package move-text
   :config
-  ;; Alt-j / Alt-k to move lines — natural for vim users
+  ;; Alt-j / Alt-k to move lines
   (define-key evil-normal-state-map (kbd "M-j") 'move-text-down)
   (define-key evil-normal-state-map (kbd "M-k") 'move-text-up)
   (define-key evil-visual-state-map (kbd "M-j") 'move-text-down)
