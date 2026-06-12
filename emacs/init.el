@@ -168,7 +168,7 @@
 
 (set-face-attribute 'default nil
                     :family "JetBrainsMono Nerd Font"
-                    :height 130)  ; 130 = 13pt — adjust to taste (100 = 10pt, 150 = 15pt)
+                    :height 120)  ; 100 = 10pt
 
 ;;; ---- Theme ----------------------------------------------------------------
 
@@ -197,64 +197,6 @@
   ;; Set in :config (not :init) so it runs after evil's defcustom.
   (setq evil-kill-on-visual-paste nil)
 
-  ;; Vim-style ]x / [x bracket navigation
-  ;; ]d / [d — diagnostics (flymake/LSP errors)
-  (define-key evil-normal-state-map (kbd "]d") 'flymake-goto-next-error)
-  (define-key evil-normal-state-map (kbd "[d") 'flymake-goto-prev-error)
-
-  ;; ---- SPC leader key (mirrors Neovim keybindings) ----
-  ;; which-key will auto-display these when SPC is pressed.
-  (define-prefix-command 'my/leader-map)
-  (define-key evil-normal-state-map (kbd "SPC") 'my/leader-map)
-  (define-key evil-visual-state-map (kbd "SPC") 'my/leader-map)
-
-  ;; SPC f — find
-  (define-prefix-command 'my/leader-find-map)
-  (define-key my/leader-map (kbd "f") 'my/leader-find-map)
-  (define-key my/leader-find-map (kbd "f") #'my/fzf-project-files)   ; SPC f f — find files (fd + fzf, fuzzy)
-  (define-key my/leader-find-map (kbd "F") #'consult-fd)             ; SPC f F — find files (fd, exact/regex)
-  (define-key my/leader-find-map (kbd "g") #'consult-ripgrep)        ; SPC f g — grep (ripgrep)
-  (define-key my/leader-find-map (kbd "w") #'my/consult-ripgrep-word) ; SPC f w — grep word at point
-  (define-key my/leader-find-map (kbd "b") #'consult-buffer)         ; SPC f b — buffers
-  (define-key my/leader-find-map (kbd "r") #'consult-recent-file)    ; SPC f r — recent files
-
-  ;; SPC s — search
-  (define-prefix-command 'my/leader-search-map)
-  (define-key my/leader-map (kbd "s") 'my/leader-search-map)
-  (define-key my/leader-search-map (kbd "b") #'consult-line)         ; SPC s b — buffer lines
-  (define-key my/leader-search-map (kbd "d") #'flymake-show-buffer-diagnostics) ; SPC s d — diagnostics
-  (define-key my/leader-search-map (kbd "h") #'describe-function)    ; SPC s h — help
-  (define-key my/leader-search-map (kbd "k") #'describe-key)         ; SPC s k — keymaps
-
-  ;; SPC / — grep (top-level, like Neovim <leader>/)
-  (define-key my/leader-map (kbd "/") #'consult-ripgrep)
-
-  ;; SPC b — buffers
-  (define-prefix-command 'my/leader-buffer-map)
-  (define-key my/leader-map (kbd "b") 'my/leader-buffer-map)
-  (define-key my/leader-buffer-map (kbd "b") #'consult-buffer)       ; SPC b b — switch buffer
-  (define-key my/leader-buffer-map (kbd "d") #'kill-this-buffer)     ; SPC b d — delete buffer
-
-  ;; SPC p — project
-  (define-prefix-command 'my/leader-project-map)
-  (define-key my/leader-map (kbd "p") 'my/leader-project-map)
-  (define-key my/leader-project-map (kbd "p") #'project-switch-project) ; SPC p p — switch project
-  (define-key my/leader-project-map (kbd "b") #'project-list-buffers)   ; SPC p b — project buffers
-
-  ;; SPC c — compile
-  (define-prefix-command 'my/leader-compile-map)
-  (define-key my/leader-map (kbd "c") 'my/leader-compile-map)
-  (define-key my/leader-compile-map (kbd "c") #'project-compile)     ; SPC c c — compile from project root
-  (define-key my/leader-compile-map (kbd "r") #'recompile)           ; SPC c r — re-run last compile
-
-  ;; SPC g — git
-  (define-prefix-command 'my/leader-git-map)
-  (define-key my/leader-map (kbd "g") 'my/leader-git-map)
-  (define-key my/leader-git-map (kbd "g") #'magit-status)            ; SPC g g — magit status
-
-  ;; SPC SPC — switch to alternate (last) buffer (like Neovim <leader><tab>)
-  (define-key my/leader-map (kbd "SPC") #'evil-switch-to-windows-last-buffer))
-
 (use-package evil-collection
   :after evil
   :config
@@ -275,11 +217,39 @@
   :config
   (global-evil-mc-mode 1))
 
+;;; ---- SPC Leader Key (general.el) ------------------------------------------
+;; Technically not needed, and can add everything under evil, but for better org.
+;; general.el provides a clean way to define evil leader keybindings.
+;; my/leader-def creates bindings under SPC in normal+visual states.
+;; Package-specific leader bindings live in each package's :general block.
+
+(use-package general
+  :after evil
+  :config
+  (general-evil-setup)
+  (general-create-definer my/leader-def
+    :states '(normal visual)
+    :keymaps 'override
+    :prefix "SPC")
+
+  ;; Misc leader bindings (not tied to a specific package)
+  (my/leader-def
+    "SPC" #'evil-switch-to-windows-last-buffer ; SPC SPC — alternate buffer
+    "b b" #'consult-buffer                     ; SPC b b — switch buffer
+    "b d" #'kill-this-buffer                   ; SPC b d — delete buffer
+    "p p" #'project-switch-project             ; SPC p p — switch project
+    "p b" #'project-list-buffers               ; SPC p b — project buffers
+    "c c" #'project-compile                    ; SPC c c — compile from project root
+    "c r" #'recompile                          ; SPC c r — re-run last compile
+    "s d" #'flymake-show-buffer-diagnostics    ; SPC s d — diagnostics
+    "s h" #'describe-function                  ; SPC s h — help
+    "s k" #'describe-key))                     ; SPC s k — keymaps
+
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
 ;; vertico  — vertical completion UI
 ;; orderless — flexible fuzzy matching
 ;; marginalia — rich annotations
-;; consult  — enhanced search/navigation commands (like telescope/fzf)
+;; consult  — enhanced search/navigation commands
 
 (use-package vertico
   :init (vertico-mode)
@@ -302,7 +272,14 @@
          ("C-x r b" . consult-bookmark)
          ("M-g g"   . consult-goto-line)
          ("M-g M-g" . consult-goto-line))
-
+  :general
+  (my/leader-def
+    "/"   #'consult-ripgrep              ; SPC /   — grep
+    "f F" #'consult-fd                   ; SPC f F — find files (fd, exact/regex)
+    "f g" #'consult-ripgrep              ; SPC f g — grep (ripgrep)
+    "f w" #'my/consult-ripgrep-word      ; SPC f w — grep word at point
+    "f r" #'consult-recent-file          ; SPC f r — recent files
+    "s b" #'consult-line)                ; SPC s b — buffer lines
   :config
   ;; Don't include project files in consult-buffer — it calls project-files
   ;; which runs `find` and chokes on permission-denied dirs.
@@ -320,6 +297,9 @@
 ;; Uses fd + fzf for files, rg + fzf for grep — same pipeline as Neovim.
 ;; Renders the fzf TUI in a term buffer (not minibuffer/vertico).
 (use-package fzf
+  :general
+  (my/leader-def
+    "f f" #'my/fzf-project-files)        ; SPC f f — find files (fd + fzf, fuzzy)
   :config
   (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
         fzf/executable "fzf"
@@ -337,9 +317,7 @@
          (let ((f (expand-file-name x d)))
            (when (file-exists-p f)
              (find-file f))))
-       d)))
-
-  :bind nil)
+        d))))
 
 ;; Persist completion history across sessions
 (use-package savehist
@@ -408,7 +386,10 @@
 (use-package magit
   :bind (("C-c g s" . magit-status)
          ("C-c g l" . magit-log-current)
-         ("C-c g b" . magit-blame)))
+         ("C-c g b" . magit-blame))
+  :general
+  (my/leader-def
+    "g g" #'magit-status))
 ;; evil-collection already provides vim keybindings in magit buffers.
 
 ;;; ---- Snippets (YASnippet) -------------------------------------------------
@@ -483,7 +464,7 @@
 ;;; ---- Compile Mode ---------------------------------------------------------
 ;; Built-in. Runs a shell command, parses output for file:line errors,
 ;; lets you jump to each error with next-error / previous-error.
-;; project-compile runs from the project root (detected via .git, etc.)
+;; project-compile runs from the project root (detected via project.el)
 
 (global-set-key (kbd "C-c c c") 'project-compile)  ; compile from project root
 (global-set-key (kbd "C-c c r") 'recompile)         ; re-run last compile
