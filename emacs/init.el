@@ -188,11 +188,11 @@
 (use-package evil
   :init
   (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)   ; required for evil-collection
+  (setq evil-want-keybinding nil)    ; required for evil-collection
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-d-scroll t)
-  (setq evil-want-C-i-jump nil)     ; free TAB from jump-forward (GUI can distinguish TAB from C-i)
-  (setq evil-want-Y-yank-to-eol t)  ; Y yanks to eol (like modern vim)
+  (setq evil-want-C-i-jump t)
+  (setq evil-want-Y-yank-to-eol t)   ; Y yanks to eol (like modern vim)
   (setq evil-undo-system 'undo-redo) ; native undo-redo (Emacs 28+)
   (setq evil-split-window-below t)
   (setq evil-vsplit-window-right t)
@@ -203,7 +203,8 @@
   ;; Set in :config (not :init) so it runs after evil's defcustom.
   (setq evil-kill-on-visual-paste nil)
 
-  ;; Vim-style ]x / [x bracket navigation
+  ;; Maps
+  (define-key evil-normal-state-map (kbd "gr") 'xref-find-references)
   (define-key evil-normal-state-map (kbd "]d") 'next-error)
   (define-key evil-normal-state-map (kbd "[d") 'previous-error))
 
@@ -354,8 +355,7 @@
   (add-hook 'completion-at-point-functions #'cape-file))
 
 ;;; ---- LSP (Eglot — built-in) ----------------------------------------------
-;; Eglot is built into Emacs 29+. Enable it per language via hooks anywhere
-;; or adding to the :hook of the package
+;; Eglot is built into Emacs 29+. Enable it per language via hooks anywhere:
 ;;
 ;;   (add-hook 'python-mode-hook  'eglot-ensure)
 ;;   (add-hook 'rust-mode-hook    'eglot-ensure)
@@ -372,8 +372,6 @@
 
 (use-package eglot
   :ensure nil ; built-in
-  :hook ((c3-ts-mode . eglot-ensure)
-         (odin-ts-mode . eglot-ensure))
   :custom
   (eglot-autoshutdown t)        ; shut down server when last buffer closes
   (eglot-events-buffer-size 0)  ; disable events log for performance
@@ -384,6 +382,15 @@
   ;; Language server registrations
   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
   (add-to-list 'eglot-server-programs '(odin-ts-mode "ols")))
+
+;;;===== Dump Jump -(language aware definition and references without lsp) ---
+
+(use-package dumb-jump
+  :custom
+  (dumb-jump-prefer-searcher 'rg)
+  (xref-show-definitions-function #'consult-xref)
+  :config
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
 
 ;;; ---- Keybinding Discovery -------------------------------------------------
 
@@ -454,6 +461,7 @@
   (unless (treesit-language-available-p 'c3)
     (treesit-install-language-grammar 'c3))
   (setq c3-ts-mode-indent-offset 4))
+;;(add-hook 'c3-ts-mode-hook   'eglot-ensure) ;; lsp
 
 (use-package odin-ts-mode
   :ensure nil
@@ -468,6 +476,7 @@
   (add-to-list 'compilation-error-regexp-alist 'odin)
   (add-to-list 'compilation-error-regexp-alist-alist
                '(odin "\\(/[^(]+\\.odin\\)(\\([0-9]+\\):\\([0-9]+\\))" 1 2 3)))
+;; (add-hook 'odin-ts-mode-hook   'eglot-ensure) ;; lsp
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
