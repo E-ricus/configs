@@ -7,7 +7,10 @@
       networking.networkmanager.enable = true;
 
       # Nix settings
-      nix.settings.experimental-features = ["nix-command" "flakes"];
+      nix.settings = {
+        experimental-features = ["nix-command" "flakes"];
+        stalled-download-timeout = 0;
+      };
 
       # Disable command-not-found (prevents database errors with flakes)
       programs.command-not-found.enable = false;

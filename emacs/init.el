@@ -112,6 +112,8 @@
 (setq dired-dwim-target t)
 (setq dired-mouse-drag-files t)              ; drag files out of dired (Emacs 29+)
 (require 'dired-x)                           ; extra commands (C-x C-j jump to dired, etc.)
+(setq dired-omit-files
+      (concat dired-omit-files "\\|\\`\\.direnv\\'"))
 (add-hook 'dired-mode-hook 'dired-omit-mode)
 
 ;; Project persistence — remember known projects across sessions
@@ -304,6 +306,9 @@
     "Grep for the word at point in the current project using ripgrep."
     (interactive)
     (consult-ripgrep nil (thing-at-point 'word t))))
+;; Set a default fd command for fzf that respects .gitignore.
+;; Needed because fzf.el's per-call override doesn't survive buffer switches.
+(setenv "FZF_DEFAULT_COMMAND" "fd --type f --hidden --follow --exclude .git")
 
 ;; fzf.el — real fzf fuzzy matching for file finding and grep.
 ;; Uses fd + fzf for files, rg + fzf for grep — same pipeline as Neovim.
@@ -395,6 +400,7 @@
 ;;; ---- Keybinding Discovery -------------------------------------------------
 
 (use-package which-key
+  :ensure nil; built-in
   :init (which-key-mode)
   :custom
   (which-key-idle-delay 0.5))
