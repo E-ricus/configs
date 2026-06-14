@@ -493,6 +493,33 @@
 (add-to-list 'auto-mode-alist '("\\.[hc]\\(pp\\)?\\'" . simpc-mode))
 (add-to-list 'auto-mode-alist '("\\.[b]\\'" . simpc-mode))
 
+;;; ---- Org Mode -------------------------------------------------------------
+;; Org is built-in; this section just makes it look and behave nicely.
+
+(use-package org
+  :ensure nil ; built-in
+  :hook
+  ;; Soft-wrap lines in org buffers (global truncate-lines is t)
+  (org-mode . visual-line-mode)
+  ;; Disable line numbers — distracting when writing prose
+  (org-mode . (lambda () (display-line-numbers-mode 0)))
+  ;; Disable electric-pair — it fights with org's own emphasis/bracket handling
+  (org-mode . (lambda () (electric-pair-local-mode -1)))
+  :custom
+  (org-hide-leading-stars t)         ; show only one star per heading level
+  (org-startup-indented t)           ; visually indent content under headings
+  (org-hide-emphasis-markers t)      ; hide *bold* /italic/ markers, show styled text
+  (org-return-follows-link t)        ; RET opens links
+  (org-startup-folded 'content)      ; open files with headings visible, bodies folded
+  (org-ellipsis " ▾")               ; nicer fold indicator (instead of "...")
+  (org-pretty-entities t)            ; render \alpha, \beta, etc. as Unicode
+  (org-fontify-quote-and-verse-blocks t)
+  :config
+  ;; Scale heading faces so they actually look like headings
+  (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold)
+  (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold)
+  (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold))
+
 ;;; ---- Compile Mode ---------------------------------------------------------
 ;; Built-in. Runs a shell command, parses output for file:line errors,
 ;; lets you jump to each error with next-error / previous-error.
