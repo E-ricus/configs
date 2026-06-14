@@ -248,16 +248,6 @@
   ;; Misc leader bindings (not tied to a specific package)
   (my/leader-def
     "SPC" #'evil-switch-to-windows-last-buffer ; SPC SPC — alternate buffer
-    "b b" #'consult-buffer                     ; SPC b b — switch buffer
-    "b d" #'kill-this-buffer                   ; SPC b d — delete buffer
-    "p p" #'project-switch-project             ; SPC p p — switch project
-    "p b" #'project-list-buffers               ; SPC p b — project buffers
-    "c c" #'project-compile                    ; SPC c c — compile from project root
-    "c b" #'compile                            ; SPC c b — compile from buffer
-    "c r" #'recompile                          ; SPC c r — re-run last compile
-    "s d" #'flymake-show-buffer-diagnostics    ; SPC s d — diagnostics
-    "s h" #'describe-function                  ; SPC s h — help
-    "s k" #'describe-key                       ; SPC s k — keymaps
     "t t" #'project-eshell))                   ; SPC t t — eshell
 
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
@@ -291,10 +281,8 @@
   (my/leader-def
     "/"   #'consult-ripgrep              ; SPC /   — grep
     "f F" #'consult-fd                   ; SPC f F — find files (fd, exact/regex)
-    "f g" #'consult-ripgrep              ; SPC f g — grep (ripgrep)
     "f w" #'my/consult-ripgrep-word      ; SPC f w — grep word at point
     "f r" #'consult-recent-file          ; SPC f r — recent files
-    "s b" #'consult-line)                ; SPC s b — buffer lines
   :config
   ;; Don't include project files in consult-buffer — it calls project-files
   ;; which runs `find` and chokes on permission-denied dirs.
@@ -363,18 +351,11 @@
 ;;; ---- LSP (Eglot — built-in) ----------------------------------------------
 ;; Eglot is built into Emacs 29+. Enable it per language via hooks anywhere:
 ;;
-;;   (add-hook 'python-mode-hook  'eglot-ensure)
-;;   (add-hook 'rust-mode-hook    'eglot-ensure)
 ;;   (add-hook 'go-mode-hook      'eglot-ensure)
-;;   (add-hook 'c-mode-hook       'eglot-ensure)
-;;   (add-hook 'js-mode-hook      'eglot-ensure)
 ;;   (add-hook 'c3-ts-mode-hook   'eglot-ensure)
 ;;
 ;; For languages without built-in server detection, register the server:
 ;;   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
-;;
-;; Just install the language server (e.g. pyright, rust-analyzer, gopls, c3-lsp)
-;; and uncomment the hook + server program for that language.
 
 (use-package eglot
   :ensure nil ; built-in
