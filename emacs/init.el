@@ -486,6 +486,9 @@
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
+(require 'simpc-mode-mode)
+(add-to-list 'auto-mode-alist '("\\.[hc]\\(pp\\)?\\'" . simpc-mode))
+(add-to-list 'auto-mode-alist '("\\.[b]\\'" . simpc-mode))
 
 ;;; ---- Compile Mode ---------------------------------------------------------
 ;; Built-in. Runs a shell command, parses output for file:line errors,
