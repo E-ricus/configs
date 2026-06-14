@@ -253,6 +253,7 @@
     "p p" #'project-switch-project             ; SPC p p — switch project
     "p b" #'project-list-buffers               ; SPC p b — project buffers
     "c c" #'project-compile                    ; SPC c c — compile from project root
+    "c b" #'compile                            ; SPC c b — compile from buffer
     "c r" #'recompile                          ; SPC c r — re-run last compile
     "s d" #'flymake-show-buffer-diagnostics    ; SPC s d — diagnostics
     "s h" #'describe-function                  ; SPC s h — help
@@ -391,6 +392,8 @@
 ;;;===== Dump Jump -(language aware definition and references without lsp) ---
 
 (use-package dumb-jump
+  :ensure nil ;; TODO: delete when fork branch is merged and avaialble in melpa
+  :load-path "/home/ericus/code/dumb-jump" ;; fork with C3 support
   :custom
   (dumb-jump-prefer-searcher 'rg)
   (xref-show-definitions-function #'consult-xref)
@@ -495,6 +498,7 @@
 ;; lets you jump to each error with next-error / previous-error.
 ;; project-compile runs from the project root (detected via project.el)
 
+(global-set-key (kbd "C-c c b") 'compile)           ; compile from buffer
 (global-set-key (kbd "C-c c c") 'project-compile)   ; compile from project root
 (global-set-key (kbd "C-c c r") 'recompile)         ; re-run last compile
 (global-set-key (kbd "M-g n")   'next-error)        ; jump to next error

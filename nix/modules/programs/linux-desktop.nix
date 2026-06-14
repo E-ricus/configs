@@ -12,6 +12,7 @@
         gnumake
         ffmpeg-headless
         gimp
+        unzip
       ];
     };
     nixos = {pkgs, ...}: {
