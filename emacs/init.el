@@ -459,7 +459,7 @@
 
 (use-package c3-ts-mode
   :ensure nil
-  :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main")
+  :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main" :rev :newest)
   :mode "\\.c3\\'"
   :config
   (add-to-list 'treesit-language-source-alist
@@ -471,7 +471,7 @@
 
 (use-package odin-ts-mode
   :ensure nil
-  :vc (:url "https://github.com/Sampie159/odin-ts-mode" :branch "main")
+  :vc (:url "https://github.com/Sampie159/odin-ts-mode" :branch "main" :rev :newest)
   :mode "\\.odin\\'"
   :config
   (add-to-list 'treesit-language-source-alist
@@ -486,7 +486,7 @@
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
-(require 'simpc-mode-mode)
+(require 'simpc-mode)
 (add-to-list 'auto-mode-alist '("\\.[hc]\\(pp\\)?\\'" . simpc-mode))
 (add-to-list 'auto-mode-alist '("\\.[b]\\'" . simpc-mode))
 
