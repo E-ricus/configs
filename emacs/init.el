@@ -490,7 +490,7 @@
   (org-hide-emphasis-markers t)      ; hide *bold* /italic/ markers, show styled text
   (org-return-follows-link t)        ; RET opens links
   (org-startup-folded 'content)      ; open files with headings visible, bodies folded
-  (org-ellipsis " ▾")               ; nicer fold indicator (instead of "...")
+  (org-ellipsis " ▾")                ; nicer fold indicator (instead of "...")
   (org-pretty-entities t)            ; render \alpha, \beta, etc. as Unicode
   (org-fontify-quote-and-verse-blocks t)
   :config
