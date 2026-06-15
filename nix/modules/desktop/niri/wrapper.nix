@@ -41,7 +41,7 @@
         input = {
           keyboard.xkb = {
             layout = "us";
-            options = "compose:ralt";
+            options = "compose:ralt,ctrl:nocaps";
           };
           touchpad = {
             tap = _: {};

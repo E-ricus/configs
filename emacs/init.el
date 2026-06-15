@@ -282,7 +282,7 @@
     "/"   #'consult-ripgrep              ; SPC /   — grep
     "f F" #'consult-fd                   ; SPC f F — find files (fd, exact/regex)
     "f w" #'my/consult-ripgrep-word      ; SPC f w — grep word at point
-    "f r" #'consult-recent-file          ; SPC f r — recent files
+    "f r" #'consult-recent-file)         ; SPC f r — recent files
   :config
   ;; Don't include project files in consult-buffer — it calls project-files
   ;; which runs `find` and chokes on permission-denied dirs.
@@ -482,8 +482,6 @@
   :hook
   ;; Soft-wrap lines in org buffers (global truncate-lines is t)
   (org-mode . visual-line-mode)
-  ;; Disable line numbers — distracting when writing prose
-  (org-mode . (lambda () (display-line-numbers-mode 0)))
   ;; Disable electric-pair — it fights with org's own emphasis/bracket handling
   (org-mode . (lambda () (electric-pair-local-mode -1)))
   :custom
@@ -500,6 +498,17 @@
   (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold)
   (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold)
   (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold))
+
+;; Reveal hidden markers (bold, links, etc.) only when cursor is on them.
+;; In Evil: markers appear in Insert mode, hidden in Normal mode.
+(use-package org-appear
+  :hook (org-mode . org-appear-mode)
+  :custom
+  (org-appear-autoemphasis t)       ; reveal *bold* /italic/ markers
+  (org-appear-autolinks t)          ; reveal [[link]] markup
+  (org-appear-autosubmarkers t)     ; reveal sub/superscripts
+  (org-appear-autoentities t)       ; reveal \alpha etc.
+  (org-appear-trigger 'always))     ; reveal when cursor enters element
 
 ;;; ---- Compile Mode ---------------------------------------------------------
 ;; Built-in. Runs a shell command, parses output for file:line errors,
