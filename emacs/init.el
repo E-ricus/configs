@@ -226,7 +226,13 @@
   :config
   (global-evil-surround-mode 1))
 
-(use-package multiple-cursors)
+;;; ---- (multiple cursors) ----------------------------------------------
+(use-package multiple-cursors
+  :bind (("C-c m l"  .  mc/edit-lines)
+         ("C->"      .  mc/mark-next-like-this)
+         ("C-<"      .  mc/mark-previous-like-this)
+         ("C-c C-<"  .  mc/mark-all-like-this)))
+
 
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
 ;; vertico  — vertical completion UI
@@ -276,7 +282,7 @@
 ;; Renders the fzf TUI in a term buffer (not minibuffer/vertico).
 (use-package fzf
   :bind
-  ("C-x F"   . my/fzf-project-file)           ; find file using fzf
+  ("C-x F"   . my/fzf-project-files)           ; find file using fzf
   :config
   (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
         fzf/executable "fzf"
