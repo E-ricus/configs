@@ -14,12 +14,12 @@
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       c3c = pkgs.c3c.overrideAttrs (old: {
-        version = "0.8.0_3";
+        version = "0.8.1";
         src = pkgs.fetchFromGitHub {
           owner = "c3lang";
           repo = "c3c";
-          tag = "v0.8.0_3";
-          hash = "sha256-7RqRnExQNnB4eM2LSLWdvHrDA7tJbiF6pzKGPRDgqHs=";
+          tag = "v0.8.1";
+          hash = "sha256-HPPeedpbEgG6Zx6a+eV8CBO3rxMXMstLa4kx2NkNYnM=";
         };
       });
       # Main not working correctly yet.

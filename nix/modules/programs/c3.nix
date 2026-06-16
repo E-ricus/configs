@@ -1,6 +1,6 @@
 # C3 language toolchain — compiler (pinned), LSP, and formatter.
 #
-# - Pins `c3c` to v0.8.0_3.
+# - Pins `c3c` to v0.8.1.
 {...}: {
   den.aspects.c3 = {
     homeManager = {
@@ -9,14 +9,14 @@
       config,
       ...
     }: let
-      # Override c3c to 0.8.0_3 (same override as nix/devshells/c3.nix).
+      # Override c3c to 0.8.1 (same override as nix/devshells/c3.nix).
       c3c = pkgs.c3c.overrideAttrs (_old: {
-        version = "0.8.0_3";
+        version = "0.8.1";
         src = pkgs.fetchFromGitHub {
           owner = "c3lang";
           repo = "c3c";
-          tag = "v0.8.0_3";
-          hash = "sha256-7RqRnExQNnB4eM2LSLWdvHrDA7tJbiF6pzKGPRDgqHs=";
+          tag = "v0.8.1";
+          hash = "sha256-HPPeedpbEgG6Zx6a+eV8CBO3rxMXMstLa4kx2NkNYnM=";
         };
       });
 

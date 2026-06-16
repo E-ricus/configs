@@ -208,7 +208,8 @@
   ;; Maps
   (define-key evil-normal-state-map (kbd "gr") 'xref-find-references)
   (define-key evil-normal-state-map (kbd "]d") 'next-error)
-  (define-key evil-normal-state-map (kbd "[d") 'previous-error))
+  (define-key evil-normal-state-map (kbd "[d") 'previous-error)
+  (define-key evil-normal-state-map (kbd "SPC SPC") 'evil-switch-to-windows-last-buffer))
 
 (use-package evil-collection
   :after evil
@@ -225,30 +226,7 @@
   :config
   (global-evil-surround-mode 1))
 
-(use-package evil-mc
-  :after evil
-  :config
-  (global-evil-mc-mode 1))
-
-;;; ---- SPC Leader Key (general.el) ------------------------------------------
-;; Technically not needed, and can add everything under evil, but for better org.
-;; general.el provides a clean way to define evil leader keybindings.
-;; my/leader-def creates bindings under SPC in normal+visual states.
-;; Package-specific leader bindings live in each package's :general block.
-
-(use-package general
-  :after evil
-  :config
-  (general-evil-setup)
-  (general-create-definer my/leader-def
-    :states '(normal visual)
-    :keymaps 'override
-    :prefix "SPC")
-
-  ;; Misc leader bindings (not tied to a specific package)
-  (my/leader-def
-    "SPC" #'evil-switch-to-windows-last-buffer ; SPC SPC — alternate buffer
-    "t t" #'project-eshell))                   ; SPC t t — eshell
+(use-package multiple-cursors)
 
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
 ;; vertico  — vertical completion UI
@@ -270,19 +248,13 @@
   :init (marginalia-mode))
 
 (use-package consult
-  :bind (("C-s"     . consult-line)        ; search current buffer
-         ("C-x b"   . consult-buffer)       ; enhanced buffer switching
-         ("C-x f"   . consult-fd)           ; find file in project (uses fd, exact match)
-         ("C-x /"   . consult-ripgrep)      ; project-wide search (needs ripgrep)
-         ("C-x r b" . consult-bookmark)
-         ("M-g g"   . consult-goto-line)
-         ("M-g M-g" . consult-goto-line))
-  :general
-  (my/leader-def
-    "/"   #'consult-ripgrep              ; SPC /   — grep
-    "f F" #'consult-fd                   ; SPC f F — find files (fd, exact/regex)
-    "f w" #'my/consult-ripgrep-word      ; SPC f w — grep word at point
-    "f r" #'consult-recent-file)         ; SPC f r — recent files
+  :bind (("C-s"      . my/consult-ripgrep-word)       ; find word under cursor
+         ("C-x b"    . consult-buffer)                ; enhanced buffer switching
+         ("C-x f"    . consult-fd)                    ; find file in project (uses fd, exact match)
+         ("C-x g"    . consult-ripgrep)               ; project-wide search (needs ripgrep)
+         ("C-x r b"  . consult-bookmark)
+         ("M-g g"    . consult-goto-line)
+         ("M-g M-g"  . consult-goto-line))
   :config
   ;; Don't include project files in consult-buffer — it calls project-files
   ;; which runs `find` and chokes on permission-denied dirs.
@@ -303,9 +275,8 @@
 ;; Uses fd + fzf for files, rg + fzf for grep — same pipeline as Neovim.
 ;; Renders the fzf TUI in a term buffer (not minibuffer/vertico).
 (use-package fzf
-  :general
-  (my/leader-def
-    "f f" #'my/fzf-project-files)        ; SPC f f — find files (fd + fzf, fuzzy)
+  :bind
+  ("C-x F"   . my/fzf-project-file)           ; find file using fzf
   :config
   (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
         fzf/executable "fzf"
@@ -394,10 +365,7 @@
 (use-package magit
   :bind (("C-c g s" . magit-status)
          ("C-c g l" . magit-log-current)
-         ("C-c g b" . magit-blame))
-  :general
-  (my/leader-def
-    "g g" #'magit-status))
+         ("C-c g b" . magit-blame)))
 ;; evil-collection already provides vim keybindings in magit buffers.
 
 ;;; ---- Snippets (YASnippet) -------------------------------------------------
@@ -523,6 +491,7 @@
 
 (setq compilation-scroll-output 'first-error) ; auto-scroll compilation buffer
 (setq compilation-ask-about-save nil)         ; save files before compiling without asking
+(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter) ; render ANSI color codes
 
 ;;; ---- Quality of Life ------------------------------------------------------
 
