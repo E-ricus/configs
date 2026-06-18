@@ -185,6 +185,9 @@
   :config
   (load-theme 'gruber-darker t))
 
+;;; ---- Undo ---------------------------------------------------------------
+(use-package undo-fu)
+
 ;;; ---- Evil Mode (Vim Keybindings) ------------------------------------------
 
 (use-package evil
@@ -195,14 +198,13 @@
   (setq evil-want-C-d-scroll t)
   (setq evil-want-C-i-jump t)
   (setq evil-want-Y-yank-to-eol t)   ; Y yanks to eol (like modern vim)
-  (setq evil-undo-system 'undo-redo) ; native undo-redo (Emacs 28+)
+  (setq evil-undo-system 'undo-fu)   ; Simpler predicateble
   (setq evil-split-window-below t)
   (setq evil-vsplit-window-right t)
   :config
   (evil-mode 1)
 
   ;; Visual paste: don't put replaced text into kill-ring/clipboard.
-  ;; Set in :config (not :init) so it runs after evil's defcustom.
   (setq evil-kill-on-visual-paste nil)
 
   ;; Maps
@@ -231,8 +233,9 @@
   :bind (("C-c m l"  .  mc/edit-lines)
          ("C->"      .  mc/mark-next-like-this)
          ("C-<"      .  mc/mark-previous-like-this)
-         ("C-c C-<"  .  mc/mark-all-like-this)))
-
+         ("C-c C-<"  .  mc/mark-all-dwim)
+         :map mc/keymap
+         ("<return>" . newline)))
 
 ;;; ---- Completion (Minibuffer) ----------------------------------------------
 ;; vertico  — vertical completion UI
@@ -507,7 +510,4 @@
 
 ;; Reset GC threshold after init (see early-init.el)
 (setq gc-cons-threshold (* 16 1024 1024)) ; 16 MB
-
-(repeat-mode t) ;; quite nice to resize
-
 ;;; init.el ends here
