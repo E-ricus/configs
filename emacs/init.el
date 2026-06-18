@@ -254,8 +254,7 @@
   :init (marginalia-mode))
 
 (use-package consult
-  :bind (("C-s"      . my/consult-ripgrep-word)       ; find word under cursor
-         ("C-x b"    . consult-buffer)                ; enhanced buffer switching
+  :bind (("C-x b"    . consult-buffer)                ; enhanced buffer switching
          ("C-x f"    . consult-fd)                    ; find file in project (uses fd, exact match)
          ("C-x g"    . consult-ripgrep)               ; project-wide search (needs ripgrep)
          ("C-x r b"  . consult-bookmark)
@@ -372,7 +371,6 @@
   :bind (("C-c g s" . magit-status)
          ("C-c g l" . magit-log-current)
          ("C-c g b" . magit-blame)))
-;; evil-collection already provides vim keybindings in magit buffers.
 
 ;;; ---- Snippets (YASnippet) -------------------------------------------------
 
@@ -388,10 +386,8 @@
 (use-package move-text
   :config
   ;; Alt-j / Alt-k to move lines
-  (define-key evil-normal-state-map (kbd "M-j") 'move-text-down)
-  (define-key evil-normal-state-map (kbd "M-k") 'move-text-up)
-  (define-key evil-visual-state-map (kbd "M-j") 'move-text-down)
-  (define-key evil-visual-state-map (kbd "M-k") 'move-text-up))
+  (global-set-key (kbd "M-n") 'move-text-down)
+  (global-set-key (kbd "M-p") 'move-text-up))
 
 ;;; ---- Language Modes -------------------------------------------------------
 
