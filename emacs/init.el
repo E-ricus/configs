@@ -414,6 +414,9 @@
 (use-package lua-mode
   :mode "\\.lua\\'")
 
+(use-package zig-mode
+  :mode "\\.zig\\'")
+
 (use-package c3-ts-mode
   :ensure nil
   :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main" :rev :newest)

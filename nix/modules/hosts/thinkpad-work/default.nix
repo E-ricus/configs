@@ -28,6 +28,27 @@
     nixos = {...}: {
       imports = [./_hardware.nix];
 
+      # TODO: This was done by a clanker, and kinda works, but I gotta chek it deeper
+      # Force the Speaker profile on the sof-hda-dsp card so internal speakers
+      # are always available (the default auto-profile wrongly picks Headphones
+      # even when nothing is plugged in, hiding the Speaker sink).
+      services.pipewire.wireplumber.extraConfig."51-thinkpad-speaker-profile" = {
+        "monitor.alsa.rules" = [
+          {
+            matches = [
+              {
+                "device.name" = "~alsa_card.pci-0000_00_1f.3-platform-skl_hda_dsp_generic";
+              }
+            ];
+            actions = {
+              update-props = {
+                "device.profile" = "HiFi (HDMI1, HDMI2, HDMI3, Mic1, Mic2, Speaker)";
+              };
+            };
+          }
+        ];
+      };
+
       # Disko: host-specific disk device and swap size
       diskoConfig.device = "/dev/nvme0n1";
       diskoConfig.swapSize = "75G";
