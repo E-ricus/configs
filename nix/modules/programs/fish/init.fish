@@ -1,6 +1,8 @@
 # Set greeting
 set -U fish_greeting
 
+string match -qr '^ghostel(,|$)' -- "$INSIDE_EMACS"; and source "$EMACS_GHOSTEL_PATH/etc/shell/ghostel.fish"
+
 # Globals
 set -x EDITOR nvim
 set -x KUBE_EDITOR nvim

@@ -139,6 +139,7 @@
           (consult-ripgrep      "Ripgrep"      ?g)
           (project-dired        "Dired"        ?d)
           (magit-status         "Magit"        ?m)
+          (ghostel-project      "Terminal"     ?t)
           (project-eshell       "Eshell"       ?e)))
   ;; Rebind C-x p f to fzf file finder (fd + fzf, real fuzzy matching)
   (define-key project-prefix-map "f" #'my/fzf-project-files)
@@ -187,6 +188,19 @@
 
 ;;; ---- Undo ---------------------------------------------------------------
 (use-package undo-fu)
+
+;;; ---- Ghostell terminal ---------------------------------------------------
+(use-package ghostel
+  :bind (("C-c t" . ghostel)))
+
+(use-package ghostel-eshell
+  :ensure nil ;; bundled in ghostel
+  :hook (eshell-load . ghostel-eshell-visual-command-mode))
+
+(use-package evil-ghostel
+  :ensure nil ;; bundled in ghostel
+  :after (ghostel evil)
+  :hook (ghostel-mode . evil-ghostel-mode))
 
 ;;; ---- Evil Mode (Vim Keybindings) ------------------------------------------
 
