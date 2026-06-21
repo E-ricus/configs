@@ -198,7 +198,6 @@
   :hook (eshell-load . ghostel-eshell-visual-command-mode))
 
 (use-package evil-ghostel
-  :ensure nil ;; bundled in ghostel
   :after (ghostel evil)
   :hook (ghostel-mode . evil-ghostel-mode))
 

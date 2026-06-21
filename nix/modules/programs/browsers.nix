@@ -1,9 +1,16 @@
 # Web browsers — Firefox + Brave.
-{den, ...}: {
+{...}: {
   den.aspects.browsers = {
-    homeManager = {pkgs, ...}: {
+    homeManager = {
+      pkgs,
+      config,
+      ...
+    }: {
       home.packages = [pkgs.brave];
-      programs.firefox.enable = true;
+      programs.firefox = {
+        enable = true;
+        configPath = "${config.xdg.configHome}/mozilla/firefox";
+      };
     };
   };
 }

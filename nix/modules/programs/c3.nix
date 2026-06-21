@@ -24,11 +24,11 @@
       # Upstream: https://github.com/lmichaudel/c3fmt
       c3fmt = pkgs.stdenvNoCC.mkDerivation {
         pname = "c3fmt";
-        version = "0.2.5";
+        version = "0.3.0";
 
         src = pkgs.fetchurl {
-          url = "https://github.com/lmichaudel/c3fmt/releases/download/v0.2.5/c3fmt-linux";
-          hash = "sha256-99XP31KWEyQpdxzzQbWuzFLkPEyamoFNKFc2LTg21P4=";
+          url = "https://github.com/lmichaudel/c3fmt/releases/download/v0.3.0/c3fmt-linux";
+          hash = "sha256-V8sRFZ9B/jmUzatKOxSHvDshvAYOB00wnlUP+ncQ1Jg=";
         };
 
         # The downloaded file is the bare ELF (not an archive).
