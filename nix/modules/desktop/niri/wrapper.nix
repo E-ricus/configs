@@ -1,7 +1,11 @@
 # Niri wrapper modules.
 # All entries live here in one block so flake-parts can expose them as a single
 # flake.wrappersModules attrset without merge conflicts.
-{self, ...}: {
+{
+  self,
+  inputs,
+  ...
+}: {
   flake.wrappersModules = {
     # ── Niri + Noctalia settings ──────────────────────────────────────
     niri-noctalia = {
@@ -25,8 +29,9 @@
         props = {allow-inhibiting = false;} // extraProps;
         content.${action} = _: {};
       };
-      noctaliaExe = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
-      noctalia = cmd: [noctaliaExe "ipc" "call"] ++ (lib.splitString " " cmd);
+      # Noctalia v5 IPC: `noctalia msg <subcommand>` (see docs.noctalia.dev/v5/ipc).
+      noctaliaExe = lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      noctalia = cmd: [noctaliaExe "msg"] ++ (lib.splitString " " cmd);
       brightnessScript =
         pkgs.writeShellScript "brightness-control"
         (builtins.readFile ../wayland/brightness-control.sh);
@@ -155,7 +160,7 @@
 
           "Mod+D" = _: {
             props.allow-inhibiting = false;
-            content.spawn = noctalia "launcher toggle";
+            content.spawn = noctalia "panel-toggle launcher";
           };
 
           # File manager
@@ -310,17 +315,17 @@
           "XF86AudioRaiseVolume" = _: {
             props.allow-inhibiting = false;
             props.allow-when-locked = true;
-            content.spawn = noctalia "volume increase";
+            content.spawn = noctalia "volume-up";
           };
           "XF86AudioLowerVolume" = _: {
             props.allow-inhibiting = false;
             props.allow-when-locked = true;
-            content.spawn = noctalia "volume decrease";
+            content.spawn = noctalia "volume-down";
           };
           "XF86AudioMute" = _: {
             props.allow-inhibiting = false;
             props.allow-when-locked = true;
-            content.spawn = noctalia "volume muteOutput";
+            content.spawn = noctalia "volume-mute";
           };
           "XF86AudioMicMute" = _: {
             props.allow-inhibiting = false;
@@ -356,15 +361,11 @@
           # Noctalia shell actions
           "Super+Alt+L" = _: {
             props.allow-inhibiting = false;
-            content.spawn = noctalia "lockScreen lock";
+            content.spawn = noctalia "session lock";
           };
           "Mod+V" = _: {
             props.allow-inhibiting = false;
-            content.spawn = noctalia "plugin:clipper toggle";
-          };
-          "Mod+T" = _: {
-            props.allow-inhibiting = false;
-            content.spawn = noctalia "plugin:todo togglePanel";
+            content.spawn = noctalia "panel-toggle clipboard";
           };
 
           # ── Session ───────────────────────────────────────────────────

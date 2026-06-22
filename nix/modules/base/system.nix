@@ -10,6 +10,11 @@
       nix.settings = {
         experimental-features = ["nix-command" "flakes"];
         stalled-download-timeout = 0;
+        # Allow this user to set substituters/keys via CLI flags.
+        trusted-users = ["root" "ericus"];
+        # Noctalia v5 binary cache — skip compiling the shell locally.
+        extra-substituters = ["https://noctalia.cachix.org"];
+        extra-trusted-public-keys = ["noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="];
       };
 
       # Disable command-not-found (prevents database errors with flakes)

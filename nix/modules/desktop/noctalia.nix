@@ -1,455 +1,219 @@
-# Noctalia desktop shell — wrapped with baked-in config.
-# Run standalone: nix run .#noctalia-shell
-# Compositor-agnostic: composable with niri, hyprland, etc.
+# Noctalia v5 desktop shell — installed via the official Home Manager module.
+# Docs: https://docs.noctalia.dev/v5/
+# Config is written declaratively as programs.noctalia.settings (a Nix attrset);
+# the module serializes it to ~/.config/noctalia/config.toml and validates it at
+# build time with `noctalia config validate`.
 {
   self,
   inputs,
   ...
 }: {
-  perSystem = {pkgs, ...}: let
-    powerAwareSuspend = pkgs.writeShellScript "power-aware-suspend" ''
-      on_battery=$(${pkgs.upower}/bin/upower -d | ${pkgs.gnugrep}/bin/grep -oP 'on-battery:\s+\K\w+')
+  den.aspects.noctalia = {
+    homeManager = {pkgs, ...}: let
+      # Suspend-then-hibernate on battery, plain suspend on AC.
+      powerAwareSuspend = pkgs.writeShellScript "power-aware-suspend" ''
+        on_battery=$(${pkgs.upower}/bin/upower -d | ${pkgs.gnugrep}/bin/grep -oP 'on-battery:\s+\K\w+')
 
-      if [ "$on_battery" = "yes" ]; then
-        ${pkgs.systemd}/bin/systemctl suspend-then-hibernate
-      else
-        ${pkgs.systemd}/bin/systemctl suspend
-      fi
-    '';
-  in {
-    packages.noctalia-shell = inputs.wrapper-modules.wrappers.noctalia-shell.wrap {
-      inherit pkgs;
-      # TODO: If using the $HOME variable the env variable set by the wrapper seems to have the literal value breaking this. Not having it set. doesn't allow runtime modifications. And I would prefer to not have my user hardcoded. but fine for now
-      outOfStoreConfig = "/home/ericus/.config/noctalia";
-      env.NOCTALIA_CACHE_DIR = "/tmp/noctalia-cache/";
-      colors = {
-        mPrimary = "#cba6f7"; # Mauve
-        mOnPrimary = "#11111b"; # Crust
-        mSecondary = "#fab387"; # Peach
-        mOnSecondary = "#11111b"; # Crust
-        mTertiary = "#94e2d5"; # Teal
-        mOnTertiary = "#11111b"; # Crust
-        mError = "#f38ba8"; # Red
-        mOnError = "#11111b"; # Crust
-        mSurface = "#1e1e2e"; # Base
-        mSurfaceVariant = "#313244"; # Surface0
-        mOnSurface = "#cdd6f4"; # Text
-        mOnSurfaceVariant = "#a3b4eb"; # custom blue-lavender
-        mOutline = "#4c4f69"; # Overlay2
-        mShadow = "#11111b"; # Crust
-        mHover = "#94e2d5"; # Teal
-        mOnHover = "#11111b"; # Crust
-      };
-      settings = {
-        settingsVersion = 37;
-        bar = {
-          position = "top";
-          backgroundOpacity = 1;
-          monitors = [];
-          density = "default";
-          showCapsule = false;
-          capsuleOpacity = 1;
-          floating = false;
-          marginVertical = 0.25;
-          marginHorizontal = 0.25;
-          outerCorners = true;
-          exclusive = true;
-          widgets = {
-            left = [
-              {id = "ControlCenter";}
-              {id = "Workspace";}
-              {id = "ActiveWindow";}
-              {id = "MediaMini";}
-              {id = "plugin:catwalk";}
-            ];
-            center = [
+        if [ "$on_battery" = "yes" ]; then
+          ${pkgs.systemd}/bin/systemctl suspend-then-hibernate
+        else
+          ${pkgs.systemd}/bin/systemctl suspend
+        fi
+      '';
+    in {
+      imports = [inputs.noctalia.homeModules.default];
+
+      programs.noctalia = {
+        enable = true;
+        # Run Noctalia as a systemd user service bound to the graphical session.
+        systemd.enable = true;
+
+        settings = {
+          # ── Theme ──────────────────────────────────────────────────────
+          theme = {
+            mode = "dark";
+            source = "builtin";
+            builtin = "Catppuccin";
+          };
+
+          # ── Global shell behavior ──────────────────────────────────────
+          shell = {
+            # Built-in features that replaced v4 plugins.
+            polkit_agent = true; # was the polkit-agent plugin
+            clipboard_enabled = true; # was the clipper plugin
+            # Run launched apps as transient systemd scopes so they survive a
+            # shell restart (recommended when running as a systemd service).
+            launch_apps_as_systemd_services = true;
+            show_location = true;
+
+            shadow = {
+              direction = "down_right";
+              alpha = 0.55;
+            };
+
+            panel = {
+              launcher_placement = "centered";
+              launcher_sort_by_usage = true;
+            };
+          };
+
+          # ── Bar ────────────────────────────────────────────────────────
+          bar = {
+            order = ["main"];
+            main = {
+              position = "top";
+              background_opacity = 1.0;
+              reserve_space = true;
+              margin_ends = 10;
+              widget_spacing = 16;
+              start = [
+                "control-center"
+                "workspaces"
+                "active_window"
+                "media"
+                "audio_visualizer" # was the catwalk plugin
+              ];
+              center = ["clock"];
+              end = [
+                "tray"
+                "spacer_end"
+                "group:recorder_privacy"
+                "sysmon"
+                "battery"
+                "volume"
+                "network"
+                "bluetooth"
+                "notifications"
+              ];
+              # Capsule group: screen recorder + privacy indicator share one pill.
+              capsule_group = [
+                {
+                  id = "recorder_privacy";
+                  members = [
+                    "noctalia/screen_recorder:recorder" # screen-recorder plugin
+                    "privacy" # was the privacy-indicator plugin
+                  ];
+                  fill = "surface_variant";
+                  opacity = 1.0;
+                  padding = 6.0;
+                }
+              ];
+            };
+          };
+
+          # Media widget: compact album-art style (matched v4 MediaMini intent).
+          widget.media = {
+            album_art_only = true;
+            hide_when_no_media = true;
+          };
+
+          # Spacer used in the bar end lane.
+          widget.spacer_end = {
+            type = "spacer";
+          };
+
+          # ── OSD ────────────────────────────────────────────────────────
+          osd = {
+            position = "top_right";
+            background_opacity = 1.0;
+          };
+
+          # ── Notifications ──────────────────────────────────────────────
+          notification = {
+            enable_daemon = true;
+            position = "top_right";
+            background_opacity = 1.0;
+          };
+
+          # ── Audio ──────────────────────────────────────────────────────
+          audio = {
+            enable_overdrive = false;
+            enable_sounds = false;
+          };
+
+          # ── System monitor ─────────────────────────────────────────────
+          system.monitor = {
+            enabled = true;
+            cpu_poll_seconds = 3.0;
+            memory_poll_seconds = 3.0;
+            network_poll_seconds = 3.0;
+            disk_poll_seconds = 10.0;
+          };
+
+          # ── Dock ───────────────────────────────────────────────────────
+          dock = {
+            enabled = true;
+            auto_hide = true;
+            icon_size = 26;
+            reserve_space = false;
+          };
+
+          # ── Location & weather ─────────────────────────────────────────
+          location = {
+            address = "Berlin";
+          };
+
+          # ── Lock screen ────────────────────────────────────────────────
+          lockscreen = {
+            enabled = true;
+            fingerprint = true; # was general.allowPasswordWithFprintd
+          };
+
+          # ── Wallpaper ──────────────────────────────────────────────────
+          wallpaper = {
+            enabled = true;
+            fill_mode = "crop";
+            directory = "/home/ericus/Pictures/wallpapers";
+            default.path = "/home/ericus/Pictures/wallpapers/Cairn_Wallpaper_MorningRidge_4k.jpg";
+          };
+
+          # ── Idle ───────────────────────────────────────────────────────
+          # v5 models idle as named behaviors. Lock → screen off → suspend,
+          # with screen power handled by niri and a battery-aware suspend.
+          idle = {
+            pre_action_fade_seconds = 5.0;
+            behavior = {
+              lock = {
+                enabled = true;
+                timeout = 300;
+                command = "noctalia:session lock";
+              };
+              screen-off = {
+                enabled = true;
+                timeout = 600;
+                command = "${pkgs.niri}/bin/niri msg action power-off-monitors";
+                resume_command = "${pkgs.niri}/bin/niri msg action power-on-monitors";
+              };
+              suspend = {
+                enabled = true;
+                timeout = 1800;
+                command = "${powerAwareSuspend}";
+                # We lock via the lock behavior above; powerAwareSuspend handles
+                # the suspend/hibernate decision itself.
+                lock_before_suspend = true;
+              };
+            };
+          };
+
+          # ── Plugins ────────────────────────────────────────────────────
+          # v5 fetches plugins from git sources. The official source ships
+          # screen_recorder (used by the bar widget above). The v4 plugins
+          # catwalk, clipper, polkit-agent, privacy-indicator, todo, and
+          # network-manager-vpn have no v5 plugin equivalent — they are either
+          # built into the shell or replaced by built-in widgets.
+          plugins = {
+            enabled = ["noctalia/screen_recorder"];
+            source = [
               {
-                id = "Clock";
-                usePrimaryColor = false;
+                name = "official";
+                kind = "git";
+                location = "https://github.com/noctalia-dev/official-plugins";
+                auto_update = false;
               }
             ];
-            right = [
-              {id = "plugin:privacy-indicator";}
-              {id = "Tray";}
-              {id = "plugin:network-manager-vpn";}
-              {id = "plugin:screen-recorder";}
-              {id = "SystemMonitor";}
-              {id = "Battery";}
-              {id = "Volume";}
-              {id = "Network";}
-              {id = "Bluetooth";}
-              {id = "NotificationHistory";}
-            ];
           };
-        };
-        general = {
-          avatarImage = "";
-          dimmerOpacity = 0.6;
-          showScreenCorners = false;
-          forceBlackScreenCorners = false;
-          scaleRatio = 1;
-          radiusRatio = 1;
-          iRadiusRatio = 1;
-          boxRadiusRatio = 1;
-          screenRadiusRatio = 1;
-          animationSpeed = 1;
-          animationDisabled = false;
-          compactLockScreen = false;
-          autoStartAuth = true;
-          allowPasswordWithFprintd = true;
-          lockOnSuspend = true;
-          showSessionButtonsOnLockScreen = true;
-          showHibernateOnLockScreen = false;
-          enableShadows = true;
-          shadowDirection = "bottom_right";
-          shadowOffsetX = 2;
-          shadowOffsetY = 3;
-          language = "";
-          allowPanelsOnScreenWithoutBar = true;
-        };
-        ui = {
-          fontDefault = "";
-          fontFixed = "";
-          fontDefaultScale = 1;
-          fontFixedScale = 1;
-          tooltipsEnabled = true;
-          panelBackgroundOpacity = 1;
-          panelsAttachedToBar = true;
-          settingsPanelMode = "centered";
-        };
-        location = {
-          name = "Berlin";
-          weatherEnabled = true;
-          weatherShowEffects = true;
-          useFahrenheit = false;
-          use12hourFormat = false;
-          showWeekNumberInCalendar = false;
-          showCalendarEvents = true;
-          showCalendarWeather = true;
-          analogClockInCalendar = false;
-          firstDayOfWeek = -1;
-        };
-        calendar = {
-          cards = [
-            {
-              enabled = true;
-              id = "calendar-header-card";
-            }
-            {
-              enabled = true;
-              id = "calendar-month-card";
-            }
-            {
-              enabled = true;
-              id = "timer-card";
-            }
-            {
-              enabled = true;
-              id = "weather-card";
-            }
-          ];
-        };
-        wallpaper = {
-          enabled = true;
-          overviewEnabled = false;
-          directory = "";
-          monitorDirectories = [];
-          enableMultiMonitorDirectories = false;
-          viewMode = "single";
-          setWallpaperOnAllMonitors = true;
-          fillMode = "crop";
-          fillColor = "#000000";
-          automationEnabled = false;
-          randomIntervalSec = 300;
-          transitionDuration = 1500;
-          transitionType = "random";
-          transitionEdgeSmoothness = 0.05;
-          panelPosition = "follow_bar";
-          hideWallpaperFilenames = false;
-          useWallhaven = false;
-          wallhavenQuery = "";
-          wallhavenSorting = "relevance";
-          wallhavenOrder = "desc";
-          wallhavenCategories = "111";
-          wallhavenPurity = "100";
-          wallhavenResolutionMode = "atleast";
-          wallhavenResolutionWidth = "";
-          wallhavenResolutionHeight = "";
-        };
-        appLauncher = {
-          enableClipboardHistory = false;
-          enableClipPreview = true;
-          position = "center";
-          pinnedExecs = [];
-          useApp2Unit = false;
-          sortByMostUsed = true;
-          terminalCommand = "ghostty -e";
-          customLaunchPrefixEnabled = false;
-          customLaunchPrefix = "";
-          viewMode = "list";
-          showCategories = true;
-        };
-        controlCenter = {
-          position = "close_to_bar_button";
-          shortcuts = {
-            left = [
-              {id = "Network";}
-              {id = "Bluetooth";}
-              {id = "WallpaperSelector";}
-              {id = "NoctaliaPerformance";}
-            ];
-            right = [
-              {id = "Notifications";}
-              {id = "PowerProfile";}
-              {id = "KeepAwake";}
-              {id = "NightLight";}
-            ];
-          };
-          cards = [
-            {
-              enabled = true;
-              id = "profile-card";
-            }
-            {
-              enabled = true;
-              id = "shortcuts-card";
-            }
-            {
-              enabled = true;
-              id = "audio-card";
-            }
-            {
-              enabled = true;
-              id = "weather-card";
-            }
-            {
-              enabled = true;
-              id = "media-sysmon-card";
-            }
-          ];
-        };
-        systemMonitor = {
-          cpuWarningThreshold = 80;
-          cpuCriticalThreshold = 90;
-          tempWarningThreshold = 80;
-          tempCriticalThreshold = 90;
-          memWarningThreshold = 80;
-          memCriticalThreshold = 90;
-          diskWarningThreshold = 80;
-          diskCriticalThreshold = 90;
-          cpuPollingInterval = 3000;
-          tempPollingInterval = 3000;
-          memPollingInterval = 3000;
-          diskPollingInterval = 3000;
-          networkPollingInterval = 3000;
-          useCustomColors = false;
-          warningColor = "";
-          criticalColor = "";
-        };
-        dock = {
-          enabled = true;
-          displayMode = "auto_hide";
-          backgroundOpacity = 1;
-          floatingRatio = 1;
-          size = 1;
-          onlySameOutput = true;
-          monitors = [];
-          pinnedApps = [];
-          colorizeIcons = false;
-          pinnedStatic = false;
-          inactiveIndicators = false;
-          deadOpacity = 0.6;
-        };
-        network = {wifiEnabled = true;};
-        sessionMenu = {
-          enableCountdown = true;
-          countdownDuration = 10000;
-          position = "center";
-          showHeader = true;
-          powerOptions = [
-            {
-              action = "lock";
-              enabled = true;
-            }
-            {
-              action = "suspend";
-              enabled = true;
-            }
-            {
-              action = "hibernate";
-              enabled = true;
-            }
-            {
-              action = "reboot";
-              enabled = true;
-            }
-            {
-              action = "logout";
-              enabled = true;
-            }
-            {
-              action = "shutdown";
-              enabled = true;
-            }
-          ];
-        };
-        notifications = {
-          enabled = true;
-          monitors = [];
-          location = "top_right";
-          overlayLayer = true;
-          backgroundOpacity = 1;
-          respectExpireTimeout = false;
-          lowUrgencyDuration = 3;
-          normalUrgencyDuration = 5;
-          criticalUrgencyDuration = 10;
-          enableKeyboardLayoutToast = true;
-          sounds = {
-            enabled = false;
-            volume = 0.5;
-            separateSounds = false;
-            criticalSoundFile = "";
-            normalSoundFile = "";
-            lowSoundFile = "";
-            excludedApps = "discord,firefox,chrome,chromium,edge";
-          };
-        };
-        osd = {
-          enabled = true;
-          location = "top_right";
-          autoHideMs = 2000;
-          overlayLayer = true;
-          backgroundOpacity = 1;
-          enabledTypes = [0 1 2];
-          monitors = [];
-        };
-        audio = {
-          volumeStep = 5;
-          volumeOverdrive = false;
-          cavaFrameRate = 30;
-          visualizerType = "linear";
-          visualizerQuality = "high";
-          mprisBlacklist = [];
-          preferredPlayer = "";
-          externalMixer = "pwvucontrol || pavucontrol";
-        };
-        brightness = {
-          brightnessStep = 5;
-          enforceMinimum = true;
-          enableDdcSupport = false;
-        };
-        colorSchemes = {
-          useWallpaperColors = false;
-          predefinedScheme = "Catppuccin";
-          darkMode = true;
-          schedulingMode = "off";
-          manualSunrise = "06:30";
-          manualSunset = "18:30";
-          matugenSchemeType = "scheme-fruit-salad";
-          generateTemplatesForPredefined = true;
-        };
-        templates = {
-          gtk = true;
-          qt = true;
-          kcolorscheme = true;
-          alacritty = false;
-          kitty = false;
-          ghostty = false;
-          foot = false;
-          wezterm = false;
-          fuzzel = true;
-          discord = false;
-          pywalfox = false;
-          vicinae = false;
-          walker = false;
-          code = false;
-          spicetify = false;
-          telegram = false;
-          cava = false;
-          emacs = false;
-          niri = false;
-          enableUserTemplates = false;
-        };
-        nightLight = {
-          enabled = false;
-          forced = false;
-          autoSchedule = true;
-          nightTemp = "4000";
-          dayTemp = "6500";
-          manualSunrise = "06:30";
-          manualSunset = "18:30";
-        };
-        hooks = {
-          enabled = false;
-          wallpaperChange = "";
-          darkModeChange = "";
-        };
-        # Same timeout when on battery or AC, not ideal
-        idle = {
-          enabled = true;
-          lockTimeout = 300;
-          screenOffTimeout = 600;
-          suspendTimeout = 1800;
-          fadeDuration = 5;
-          screenOffCommand = "${pkgs.niri}/bin/niri msg action power-off-monitors";
-          lockCommand = "";
-          suspendCommand = "${powerAwareSuspend}";
-          resumeScreenOffCommand = "${pkgs.niri}/bin/niri msg action power-on-monitors";
-          resumeLockCommand = "";
-          resumeSuspendCommand = "";
-          customCommands = "[]";
         };
       };
-      plugins = {
-        sources = [
-          {
-            enabled = true;
-            name = "Official Noctalia Plugins";
-            url = "https://github.com/noctalia-dev/noctalia-plugins";
-          }
-        ];
-        version = 2;
-      };
-      preInstalledPlugins = {
-        catwalk = {
-          src = "${inputs.noctalia-plugins}/catwalk";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-          settings = {
-            minimumThreshold = 25;
-            hideBackground = true;
-          };
-        };
-        polkit-agent = {
-          src = "${inputs.noctalia-plugins}/polkit-agent";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-        screen-recorder = {
-          src = "${inputs.noctalia-plugins}/screen-recorder";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-        privacy-indicator = {
-          src = "${inputs.noctalia-plugins}/privacy-indicator";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-        network-manager-vpn = {
-          src = "${inputs.noctalia-plugins}/network-manager-vpn";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-        clipper = {
-          src = "${inputs.noctalia-plugins}/clipper";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-        todo = {
-          src = "${inputs.noctalia-plugins}/todo";
-          sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-        };
-      };
-    };
-  };
-
-  den.aspects.noctalia = {
-    homeManager = {pkgs, ...}: {
-      home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell];
     };
   };
 }

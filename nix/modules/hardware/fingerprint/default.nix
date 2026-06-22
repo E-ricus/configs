@@ -38,6 +38,13 @@
         lib.mkMerge ([
             {
               greetd.fprintAuth = false;
+              # Noctalia drives the fingerprint reader itself over D-Bus on its
+              # lock screen (lockscreen.fingerprint = true) and authenticates the
+              # password via the `login` PAM stack. Leaving pam_fprintd on `login`
+              # makes the two contend for the sensor, so the password path stalls
+              # until a fingerprint completes. Removing fprintd from `login` lets
+              # password and Noctalia's native fingerprint work in parallel.
+              login.fprintAuth = false;
             }
           ]
           ++ (map mkGrosshackService pamServices));

@@ -19,14 +19,14 @@
           brightnessScript = pkgs.writeShellScript "brightness-control" (builtins.readFile ./wayland/brightness-control.sh);
           volumeScript = pkgs.writeShellScript "volume-control" (builtins.readFile ./wayland/volume-control.sh);
 
-          isNoctalia = config.programs.noctalia-shell.enable or false;
+          isNoctalia = config.programs.noctalia.enable or false;
 
           cfg = config.desktop.hyprland;
           scale = host.display.scale;
 
           lockScript =
             if isNoctalia
-            then pkgs.writeShellScript "lock-screen" "${config.programs.noctalia-shell.package}/bin/noctalia-shell ipc call lockScreen lock"
+            then pkgs.writeShellScript "lock-screen" "${config.programs.noctalia.package}/bin/noctalia msg session lock"
             else pkgs.writeShellScript "lock-screen" "${pkgs.hyprlock}/bin/hyprlock";
         in {
           options.desktop.hyprland = {
@@ -58,15 +58,16 @@
                 "$terminal" = "ghostty";
                 "$menu" =
                   if isNoctalia
-                  then "noctalia-shell ipc call launcher toggle"
+                  then "noctalia msg panel-toggle launcher"
                   else "fuzzel";
 
                 misc.focus_on_activate = true;
                 monitor = [",preferred,auto,auto"];
 
+                # Noctalia is started by its systemd user service
+                # (programs.noctalia.systemd.enable), so it is not launched here.
                 exec-once =
-                  (lib.optionals isNoctalia ["noctalia-shell"])
-                  ++ (lib.optionals (!isNoctalia) ["hyprpaper"]);
+                  lib.optionals (!isNoctalia) ["hyprpaper"];
 
                 general = {
                   gaps_in = 5;
@@ -166,17 +167,17 @@
                     "SHIFT, Print, exec, grim - | ${sattyCmd}"
                     ", XF86AudioRaiseVolume, exec, ${
                       if isNoctalia
-                      then "noctalia-shell ipc call volume increase"
+                      then "noctalia msg volume-up"
                       else "${volumeScript} raise"
                     }"
                     ", XF86AudioLowerVolume, exec, ${
                       if isNoctalia
-                      then "noctalia-shell ipc call volume decrease"
+                      then "noctalia msg volume-down"
                       else "${volumeScript} lower"
                     }"
                     ", XF86AudioMute, exec, ${
                       if isNoctalia
-                      then "noctalia-shell ipc call volume muteOutput"
+                      then "noctalia msg volume-mute"
                       else "${volumeScript} toggle-mute"
                     }"
                     ", XF86MonBrightnessUp, exec, ${brightnessScript} raise"

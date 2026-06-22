@@ -50,34 +50,33 @@
       config,
       ...
     }: let
-      noctaliaShell = self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-shell;
+      # Noctalia v5 binary from the HM module's package (see noctalia.nix).
+      noctaliaShell = config.programs.noctalia.package;
       lockScript =
         pkgs.writeShellScript "lock-screen"
-        "${noctaliaShell}/bin/noctalia-shell ipc call lockScreen lock";
+        "${noctaliaShell}/bin/noctalia msg session lock";
     in {
       home.packages = [pkgs.hyprlock pkgs.satty];
 
-      # Noctalia as a systemd user service — starts with niri, restarts on crash,
-      # logs to journal, and can be managed via systemctl --user.
-      systemd.user.services.noctalia = {
-        Unit = {
-          Description = "Noctalia Shell Service";
-          BindsTo = ["graphical-session.target"];
-          PartOf = ["graphical-session.target"];
-          Requisite = ["graphical-session.target"];
-          After = ["graphical-session.target"];
-        };
-        Service = {
-          ExecStart = "${noctaliaShell}/bin/noctalia-shell";
-          Restart = "on-failure";
-          RestartSec = 1;
-        };
-        Install = {
-          WantedBy = ["niri.service"];
-        };
-      };
+      # Suppress the NetworkManager applet under niri. It is pulled in by the
+      # COSMIC desktop manager (network-manager-applet ships an XDG autostart
+      # file) and its NotShowIn list covers COSMIC/GNOME/KDE but not niri, so it
+      # would otherwise spawn an unclickable tray icon. Noctalia provides network
+      # status in the bar, so we hide the autostart entry for this user.
+      xdg.configFile."autostart/nm-applet.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=NetworkManager Applet
+        Exec=nm-applet
+        Hidden=true
+      '';
 
-      # Noctalia idle management is not handling the lock when the suspend is with
+      # The Noctalia systemd user service is provided by the HM module via
+      # programs.noctalia.systemd.enable (set in noctalia.nix). It binds to the
+      # graphical-session target, which niri provides.
+
+      # Belt-and-suspenders lock for external suspend triggers (e.g. lid close,
+      # systemctl suspend) that bypass Noctalia's own idle behaviors.
       services.swayidle = {
         enable = true;
         systemdTargets = [config.wayland.systemd.target "graphical-session.target"];
