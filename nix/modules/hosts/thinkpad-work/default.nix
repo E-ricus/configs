@@ -28,10 +28,26 @@
     nixos = {...}: {
       imports = [./_hardware.nix];
 
-      # TODO: This was done by a clanker, and kinda works, but I gotta chek it deeper
-      # Force the Speaker profile on the sof-hda-dsp card so internal speakers
-      # are always available (the default auto-profile wrongly picks Headphones
-      # even when nothing is plugged in, hiding the Speaker sink).
+      # sof-hda-dsp (UCM2) exposes Speaker and Headphones as two separate,
+      # mutually-exclusive analog profiles (each carries its own analog sink;
+      # both also contain all the HDMI sinks). The Headphones profile has a
+      # higher built-in priority (10300 > 10200), so on any card re-evaluation
+      # — e.g. plugging in HDMI — WirePlumber's auto-profile policy would jump
+      # to the Headphones profile and drop the Speaker sink, killing speaker
+      # audio even with nothing in the headphone jack. That was the annoying
+      # HDMI-steals-the-speakers bug.
+      #
+      # Fix: pin Speaker as the initial profile AND disable automatic profile
+      # re-selection (api.acp.auto-profile = false) so the policy stops chasing
+      # the higher-priority Headphones profile on unrelated events like HDMI
+      # hotplug. WirePlumber still remembers and restores manual choices.
+      #
+      # Trade-off (hardware limitation): because Speaker/Headphones are distinct
+      # profiles, the wired headphone jack does NOT auto-switch with this
+      # setting — switch to the Headphones profile manually in the audio menu
+      # when you plug in. The manual switch is honored and persists. This is the
+      # deliberate choice: reliable speakers (HDMI-proof) over automatic jack
+      # switching.
       services.pipewire.wireplumber.extraConfig."51-thinkpad-speaker-profile" = {
         "monitor.alsa.rules" = [
           {
@@ -43,6 +59,7 @@
             actions = {
               update-props = {
                 "device.profile" = "HiFi (HDMI1, HDMI2, HDMI3, Mic1, Mic2, Speaker)";
+                "api.acp.auto-profile" = false;
               };
             };
           }
