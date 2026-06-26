@@ -3,6 +3,15 @@ return {
     "mrcjkb/rustaceanvim",
     event = { "BufReadPre *.rs", "BufReadPre Cargo.toml" },
     config = function()
+      -- RA_TARGET keys the lspmux instance per target: "target|feat|feat" ("" = host)
+      local function ra_target_env()
+        local parts = { vim.g.rust_analyzer_cargo_target or "" }
+        for _, f in ipairs(vim.g.rust_analyzer_cargo_features or {}) do
+          table.insert(parts, f)
+        end
+        vim.env.RA_TARGET = table.concat(parts, "|")
+      end
+
       -- Prompt for target selection before server starts (synchronous)
       local choice = vim.fn.confirm("Select Rust target:", "&Host\n&Windows\nWindows-&codebase", 1)
 
@@ -20,10 +29,13 @@ return {
         vim.g.rust_analyzer_cargo_target = ""
         vim.g.rust_analyzer_cargo_features = {}
       end
+      ra_target_env()
       --- @module 'rustaceanvim'
       --- @type rustaceanvim.Opts
       vim.g.rustaceanvim = {
         server = {
+          -- rust-analyzer via lspmux
+          cmd = { "lspmux", "client", "--server-path", "rust-analyzer" },
           settings = function(_)
             local base_settings = {
               ["rust-analyzer"] = {
@@ -68,6 +80,7 @@ return {
       local function set_rust_target(target, features)
         vim.g.rust_analyzer_cargo_target = target
         vim.g.rust_analyzer_cargo_features = features or {}
+        ra_target_env() -- update RA_TARGET before the restart
         vim.cmd.RustAnalyzer("restart")
         local target_name = target ~= "" and target or "host"
         local features_str = features and #features > 0 and " with features: " .. table.concat(features, ", ") or ""

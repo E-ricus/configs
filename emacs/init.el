@@ -132,17 +132,14 @@
     (dolist (dir (directory-files "~/code" t "\\`[^.]"))
       (when (file-directory-p dir)
         (project-remember-projects-under dir nil))))
-  ;; Replace project-find-file with fzf in switch menu
-  ;; (the built-in project-find-file runs `find` and freezes on large trees)
   (setq project-switch-commands
-        '((my/fzf-project-files "Find file"    ?f)
-          (consult-ripgrep      "Ripgrep"      ?g)
-          (project-dired        "Dired"        ?d)
-          (magit-status         "Magit"        ?m)
-          (ghostel-project      "Terminal"     ?t)
-          (project-eshell       "Eshell"       ?e)))
-  ;; Rebind C-x p f to fzf file finder (fd + fzf, real fuzzy matching)
-  (define-key project-prefix-map "f" #'my/fzf-project-files)
+        '((my/find-file-fuzzy  "Find file"    ?f)
+          (consult-ripgrep     "Ripgrep"      ?g)
+          (project-dired       "Dired"        ?d)
+          (magit-status        "Magit"        ?m)
+          (ghostel-project     "Terminal"     ?t)
+          (project-eshell      "Eshell"       ?e)))
+  (define-key project-prefix-map "f" #'my/find-file-fuzzy)
   ;; Bind C-x p d to project-dired (lowercase)
   (define-key project-prefix-map "d" #'project-dired))
 
@@ -264,14 +261,40 @@
 (use-package orderless
   :custom
   (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles partial-completion)))))
+  ;; Flex = fzf/telescope-style fuzzy: chars match in order with gaps allowed.
+  ;; A query like `int-conf/nel/med` is ONE component; the literal - and /
+  ;; become anchors that must appear in order, so it's fuzzy *and* precise.
+  (orderless-matching-styles '(orderless-flex))
+  ;; Dispatchers — per-component escape hatches from flex:
+  ;;   =foo  literal substring   !foo  exclude   ,    split into components
+  (orderless-style-dispatchers
+   '(my/orderless-literal-dispatcher
+     my/orderless-not-dispatcher
+     my/orderless-split-dispatcher))
+  ;; Files keep partial-completion so path/ tab-completion still works,
+  ;; with flex as the fallback for fuzzy fragments.
+  (completion-category-overrides
+   '((file (styles partial-completion orderless))))
+  :config
+  (defun my/orderless-literal-dispatcher (pattern _index _total)
+    "Match PATTERN literally when it ends in =."
+    (when (string-suffix-p "=" pattern)
+      `(orderless-literal . ,(substring pattern 0 -1))))
+  (defun my/orderless-not-dispatcher (pattern _index _total)
+    "Exclude candidates matching PATTERN when it ends in !."
+    (when (string-suffix-p "!" pattern)
+      `(orderless-without-literal . ,(substring pattern 0 -1))))
+  (defun my/orderless-split-dispatcher (pattern _index _total)
+    "Treat , as a component separator (match the rest as a new flex term)."
+    (when (string-suffix-p "," pattern)
+      `(orderless-flex . ,(substring pattern 0 -1)))))
 
 (use-package marginalia
   :init (marginalia-mode))
 
 (use-package consult
   :bind (("C-x b"    . consult-buffer)                ; enhanced buffer switching
-         ("C-x f"    . consult-fd)                    ; find file in project (uses fd, exact match)
+         ("C-x f"    . my/find-file-fuzzy)            ; find file in project (fuzzy, preview)
          ("C-x g"    . consult-ripgrep)               ; project-wide search (needs ripgrep)
          ("C-x r b"  . consult-bookmark)
          ("M-g g"    . consult-goto-line)
@@ -287,40 +310,52 @@
   (defun my/consult-ripgrep-word ()
     "Grep for the word at point in the current project using ripgrep."
     (interactive)
-    (consult-ripgrep nil (thing-at-point 'word t))))
-;; Set a default fd command for fzf that respects .gitignore.
-;; Needed because fzf.el's per-call override doesn't survive buffer switches.
-(setenv "FZF_DEFAULT_COMMAND" "fd --type f --hidden --follow --exclude .git")
+    (consult-ripgrep nil (thing-at-point 'word t)))
 
-;; fzf.el — real fzf fuzzy matching for file finding and grep.
-;; Uses fd + fzf for files, rg + fzf for grep — same pipeline as Neovim.
-;; Renders the fzf TUI in a term buffer (not minibuffer/vertico).
-(use-package fzf
-  :bind
-  ("C-x F"   . my/fzf-project-files)           ; find file using fzf
-  :config
-  (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
-        fzf/executable "fzf"
-        fzf/grep-command "rg --no-heading -nH"
-        fzf/position-bottom t
-        fzf/window-height 15)
-
-  (defun my/fzf-project-files ()
-    "Find files in the current project using fd + fzf."
+  ;; Fuzzy file finder. fd enumerates the whole tree into a static list
+  ;; (fast: ~100k files in 50ms), then orderless-flex matches full relative
+  ;; paths in-memory, so queries like `int/medatixx` match with gaps.
+  ;; A static collection (not consult's async pipeline) is required so the
+  ;; input reaches orderless instead of being consumed as a command/# split.
+  (defun my/find-file-fuzzy ()
+    "Find a file under the current project (or `default-directory') fuzzily."
     (interactive)
-    (let ((d (project-root (project-current t))))
-      (fzf-with-command
-       "fd --type f --hidden --follow --exclude .git"
-       (lambda (x)
-         (let ((f (expand-file-name x d)))
-           (when (file-exists-p f)
-             (find-file f))))
-        d))))
+    (let* ((root (if-let* ((p (project-current))) (project-root p) default-directory))
+           (default-directory root)
+           (files (process-lines "fd" "--type" "f" "--strip-cwd-prefix"
+                                 "--hidden" "--follow" "--exclude" ".git")))
+      (find-file
+       (consult--read
+        files
+        :prompt (format "File (%s): " (abbreviate-file-name root))
+        :category 'file
+        :state (consult--file-preview)
+        :require-match t
+        :sort nil)))))
 
 ;; Persist completion history across sessions
 (use-package savehist
   :ensure nil ; built-in
   :init (savehist-mode))
+
+;; embark — act on the candidate at point (like telescope actions / fzf binds).
+;;   C-.  embark-act    :
+;;                        (open in split, copy path, insert, run command, ...)
+;;   C-;  embark-dwim   :
+;;   C-h  (after C-.)   : browse all available actions with which-key
+;; embark-consult bridges consult commands (consult-fd / consult-ripgrep) so
+;; their candidates carry the right actions, and exports results to a buffer.
+(use-package embark
+  :bind (("C-."   . embark-act)         ;; menu of actions for the current candidate
+         ("C-;"   . embark-dwim)        ;; run the most likely default action
+         ("C-h B" . embark-bindings))   ; list all embark keybindings
+  :init
+  ;; Use embark to show the keymap prompt when you pause after a prefix key.
+  (setq prefix-help-command #'embark-prefix-help-command))
+
+(use-package embark-consult
+  :after (embark consult)
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 ;;; ---- Completion (In-buffer) -----------------------------------------------
 ;; corfu — lightweight popup completion at point (like nvim cmp)
@@ -354,13 +389,25 @@
   :custom
   (eglot-autoshutdown t)        ; shut down server when last buffer closes
   (eglot-events-buffer-size 0)  ; disable events log for performance
+  ;; Don't block the UI on the connect/initialize handshake.
+  (eglot-sync-connect nil)
+  ;; Don't ask for semantic-tokens fontification — it's a large
+  ;; chunk of the initial message burst.
+  (eglot-ignored-server-capabilities
+   '(:inlayHintProvider :semanticTokensProvider))
   :bind (("C-c d d" . flymake-show-diagnostics-buffer)    ; list all errors in buffer
          ("C-c d p" . flymake-show-project-diagnostics))   ; list errors across project
   :config
-  (setq eglot-ignored-server-capabilities '(:inlayHintProvider))
+  ;; Belt-and-suspenders: ensure semantic tokens stay off per managed buffer.
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (when (fboundp 'eglot-semantic-tokens-mode)
+                (eglot-semantic-tokens-mode -1))))
   ;; Language server registrations
   (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
   (add-to-list 'eglot-server-programs '(odin-ts-mode "ols")))
+
+
 
 ;;;===== Dump Jump -(language aware definition and references without lsp) ---
 
@@ -420,6 +467,9 @@
 
 (use-package rust-mode
   :mode "\\.rs\\'")
+
+(require 'rust-lspmux)
+(add-hook 'rust-mode-hook      'eglot-ensure)
 
 (use-package go-mode
   :mode "\\.go\\'")
