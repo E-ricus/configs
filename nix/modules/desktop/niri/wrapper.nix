@@ -148,8 +148,8 @@
           # Terminal
           "Mod+Return" = _: {
             props.allow-inhibiting = false;
-            #content.spawn = [(lib.getExe pkgs.ghostty)];
-            content.spawn = [(lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.alacritty)];
+            content.spawn = [(lib.getExe pkgs.ghostty)];
+            #content.spawn = [(lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.alacritty)];
           };
 
           # Fuzzel fallback launcher
