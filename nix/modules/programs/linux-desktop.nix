@@ -13,6 +13,8 @@
         ffmpeg-headless
         gimp
         unzip
+        doxx
+        xleak
       ];
     };
     nixos = {pkgs, ...}: {

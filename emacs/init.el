@@ -262,7 +262,7 @@
   :custom
   (completion-styles '(orderless basic))
   ;; Flex = fzf/telescope-style fuzzy: chars match in order with gaps allowed.
-  ;; A query like `int-conf/nel/med` is ONE component; the literal - and /
+  ;; A query like `conf/n/mod` is ONE component; the literal - and /
   ;; become anchors that must appear in order, so it's fuzzy *and* precise.
   (orderless-matching-styles '(orderless-flex))
   ;; Dispatchers — per-component escape hatches from flex:
@@ -295,7 +295,8 @@
 (use-package consult
   :bind (("C-x b"    . consult-buffer)                ; enhanced buffer switching
          ("C-x f"    . my/find-file-fuzzy)            ; find file in project (fuzzy, preview)
-         ("C-x g"    . consult-ripgrep)               ; project-wide search (needs ripgrep)
+         ("C-x g"    . my/consult-ripgrep-word)       ; searchs for current word (needs ripgrep)
+         ("C-x /"    . consult-ripgrep)               ; project-wide search (needs ripgrep)
          ("C-x r b"  . consult-bookmark)
          ("M-g g"    . consult-goto-line)
          ("M-g M-g"  . consult-goto-line))
