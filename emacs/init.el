@@ -217,6 +217,12 @@
   ;; Visual paste: don't put replaced text into kill-ring/clipboard.
   (setq evil-kill-on-visual-paste nil)
 
+  ;; TODO: Finish
+  (defun my/next-error ()
+    "Goes to next-error fom comp mode if avaialble, otherwise tries flymake-goto-next-error"
+    (interactive)
+    (next-error))
+
   ;; Maps
   (define-key evil-normal-state-map (kbd "gr") 'xref-find-references)
   (define-key evil-normal-state-map (kbd "]d") 'next-error)

@@ -61,7 +61,7 @@
           bar = {
             order = ["main"];
             main = {
-              position = "top";
+              position = "bottom";
               background_opacity = 1.0;
               reserve_space = true;
               margin_ends = 10;
@@ -112,16 +112,20 @@
             type = "spacer";
           };
 
+          widget.clock = {
+            format = "{:%d/%m %H:%M}";
+          };
+
           # ── OSD ────────────────────────────────────────────────────────
           osd = {
-            position = "top_right";
+            position = "bottom_right";
             background_opacity = 1.0;
           };
 
           # ── Notifications ──────────────────────────────────────────────
           notification = {
             enable_daemon = true;
-            position = "top_right";
+            position = "bottom_right";
             background_opacity = 1.0;
           };
 
