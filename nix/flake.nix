@@ -13,6 +13,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Helix editor — mattwparas' fork with the Steel (Scheme) plugin system.
+    # See PR helix-editor/helix#8675. Built with the `steel,git` features.
+    helix-steel = {
+      url = "github:mattwparas/helix/steel-event-system";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Desktop environment
     # Noctalia v5 (alpha) shell. nixpkgs is intentionally NOT followed so the
     # Cachix binary cache (noctalia.cachix.org) can be used — see base/system.nix.

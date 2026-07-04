@@ -13,8 +13,15 @@
         # Allow this user to set substituters/keys via CLI flags.
         trusted-users = ["root" "ericus"];
         # Noctalia v5 binary cache — skip compiling the shell locally.
-        extra-substituters = ["https://noctalia.cachix.org"];
-        extra-trusted-public-keys = ["noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="];
+        # helix.cachix.org — binary cache for the helix (steel fork) build.
+        extra-substituters = [
+          "https://noctalia.cachix.org"
+          "https://helix.cachix.org"
+        ];
+        extra-trusted-public-keys = [
+          "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+          "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
+        ];
       };
 
       # Disable command-not-found (prevents database errors with flakes)

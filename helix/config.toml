@@ -1,0 +1,28 @@
+# Helix (steel fork) — standard TOML configuration.
+# Steel scripting lives alongside this in init.scm / helix.scm.
+
+theme = "gruber-darker"
+
+[editor]
+line-number = "relative"
+cursorline = true
+bufferline = "multiple"
+color-modes = true
+end-of-line-diagnostics = "disable"
+
+[editor.inline-diagnostics]
+cursor-line = "hint"
+other-lines = "disable"
+
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.file-picker]
+hidden = false
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
