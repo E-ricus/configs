@@ -17,6 +17,7 @@
       den.aspects.media
       den.aspects.fingerprint
       den.aspects.keyboards-zsa
+      den.aspects.keyboards-qmk
       den.aspects.jetbrains
       den.aspects.virtualization
       den.aspects.windows-vm

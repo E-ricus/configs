@@ -19,10 +19,10 @@
       den.aspects.gaming.provides.minecraft
       den.aspects.fingerprint-elan
       den.aspects.keyboards-zsa
+      den.aspects.keyboards-qmk
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
-      den.aspects.jetbrains
-      den.aspects.emacs
+      # den.aspects.emacs
     ];
 
     nixos = {...}: {
