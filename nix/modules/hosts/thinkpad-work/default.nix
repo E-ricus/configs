@@ -23,7 +23,6 @@
       den.aspects.windows-vm
       den.aspects.work-tools
       den.aspects.vpn
-      den.aspects.emacs
     ];
 
     nixos = {...}: {

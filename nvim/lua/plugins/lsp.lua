@@ -124,6 +124,5 @@ return {
     { "<C-k>", vim.lsp.buf.signature_help, mode = { "n", "i" }, desc = "LSP signature help" },
     { "<leader>ca", vim.lsp.buf.code_action, desc = "LSP code actions" },
     { "<leader>lR", vim.lsp.codelens.run, desc = "LSP run lens" },
-    { "<leader>ll", vim.lsp.codelens.refresh, desc = "LSP refresh lens" },
   },
 }

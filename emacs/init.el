@@ -41,7 +41,8 @@
 ;; Show column number in modeline
 (column-number-mode 1)
 
-;; Highlight current line
+;; Highlight current line — disabled: full-line rehighlight on every cursor
+;; move adds perceptible latency to j/k motion.
 (global-hl-line-mode 1)
 
 ;; Clipboard — sync kill-ring with system clipboard
@@ -56,9 +57,18 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 
-;; Scrolling
-(pixel-scroll-precision-mode 1) ; enable pixel-precise scrolling
-(setq pixel-scroll-precision-interpolate t)
+;; Scrolling — line-by-line
+(setq scroll-conservatively 101)     ; never auto-recenter; scroll one line at a time
+(setq scroll-margin 5)               ; keep 5 lines of context (like Vim scrolloff)
+(setq scroll-step 1)
+(setq auto-window-vscroll nil)       ; stop per-move pixel-height calc — big j/k speedup
+(setq fast-but-imprecise-scrolling t)
+
+;; Redisplay — don't fully fontify while input is pending (keeps motion snappy)
+(setq redisplay-skip-fontification-on-input t)
+
+(pixel-scroll-precision-mode 1)      ; pixel-precise mouse/trackpad scrolling
+;; (setq pixel-scroll-precision-interpolate t)
 
 ;; Auto-revert buffers when files change on disk
 (global-auto-revert-mode 1)
@@ -381,7 +391,7 @@ otherwise fall back to `flymake-goto-prev-error'."
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 ;;; ---- Completion (In-buffer) -----------------------------------------------
-;; corfu — lightweight popup completion at point (like nvim cmp)
+;; corfu — lightweight popup completion at point
 ;; cape  — extra completion-at-point backends
 
 (use-package corfu
@@ -425,18 +435,18 @@ otherwise fall back to `flymake-goto-prev-error'."
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
               (when (fboundp 'eglot-semantic-tokens-mode)
-                (eglot-semantic-tokens-mode -1))))
+                (eglot-semantic-tokens-mode -1)))))
   ;; Language server registrations
-  (add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
-  (add-to-list 'eglot-server-programs '(odin-ts-mode "ols")))
+  ;;(add-to-list 'eglot-server-programs '(c3-ts-mode "c3-lsp"))
+  ;;(add-to-list 'eglot-server-programs '(odin-ts-mode "ols")))
 
 
 
 ;;;===== Dump Jump -(language aware definition and references without lsp) ---
 
 (use-package dumb-jump
-  :ensure nil ;; TODO: delete when fork branch is merged and avaialble in melpa
-  :load-path "/home/ericus/code/dumb-jump" ;; fork with C3 support
+  :ensure nil ;; TODO: delete if fork branch is merged and avaialble in melpa
+  :load-path "/home/ericus/code/dumb-jump" ;; fork with improvements
   :custom
   (dumb-jump-prefer-searcher 'rg)
   (xref-show-definitions-function #'consult-xref)
@@ -457,6 +467,20 @@ otherwise fall back to `flymake-goto-prev-error'."
   :bind (("C-c g s" . magit-status)
          ("C-c g l" . magit-log-current)
          ("C-c g b" . magit-blame)))
+
+;;; ---- VCS Gutter (diff-hl) -------------------------------------------------
+
+(use-package diff-hl
+  :init (global-diff-hl-mode)
+  :config
+  (diff-hl-flydiff-mode)
+  (add-hook 'magit-pre-refresh-hook  #'diff-hl-magit-pre-refresh)
+  (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)
+  (unless (display-graphic-p) (diff-hl-margin-mode))
+  (with-eval-after-load 'evil
+    (define-key evil-normal-state-map (kbd "]g") #'diff-hl-next-hunk)
+    (define-key evil-normal-state-map (kbd "[g") #'diff-hl-previous-hunk)
+    (define-key evil-normal-state-map (kbd "gh") #'diff-hl-show-hunk)))
 
 ;;; ---- Snippets (YASnippet) -------------------------------------------------
 
@@ -491,8 +515,8 @@ otherwise fall back to `flymake-goto-prev-error'."
 (use-package rust-mode
   :mode "\\.rs\\'")
 
-(require 'rust-lspmux)
-(add-hook 'rust-mode-hook      'eglot-ensure)
+;; (require 'rust-lspmux)
+;;(add-hook 'rust-mode-hook      'eglot-ensure)
 
 (use-package go-mode
   :mode "\\.go\\'")

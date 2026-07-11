@@ -33,6 +33,7 @@
       den.aspects.aseprite
       den.aspects.linux-desktop
       den.aspects.containers
+      den.aspects.emacs
     ];
 
     user = {...}: {
