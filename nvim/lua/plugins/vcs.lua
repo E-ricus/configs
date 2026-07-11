@@ -4,6 +4,19 @@ return {
     event = "VeryLazy",
   },
   {
+    "NeogitOrg/neogit",
+    lazy = true,
+    dependencies = {
+      "esmuellert/codediff.nvim", -- optional
+      "m00qek/baleia.nvim", -- optional
+      "folke/snacks.nvim", -- optional
+    },
+    cmd = "Neogit",
+    keys = {
+      { "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
+    },
+  },
+  {
     "algmyr/vcsigns.nvim",
     event = "VeryLazy",
     config = function()

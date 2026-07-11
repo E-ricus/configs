@@ -217,16 +217,32 @@
   ;; Visual paste: don't put replaced text into kill-ring/clipboard.
   (setq evil-kill-on-visual-paste nil)
 
-  ;; TODO: Finish
   (defun my/next-error ()
-    "Goes to next-error fom comp mode if avaialble, otherwise tries flymake-goto-next-error"
+    "Go to next error from a compilation/next-error buffer if available,
+otherwise fall back to `flymake-goto-next-error'."
     (interactive)
-    (next-error))
+    (if (and next-error-last-buffer
+             (buffer-live-p next-error-last-buffer))
+        (next-error)
+      (if (bound-and-true-p flymake-mode)
+          (flymake-goto-next-error nil nil t)
+        (next-error))))
+
+  (defun my/previous-error ()
+    "Go to previous error from a compilation/next-error buffer if available,
+otherwise fall back to `flymake-goto-prev-error'."
+    (interactive)
+    (if (and next-error-last-buffer
+             (buffer-live-p next-error-last-buffer))
+        (previous-error)
+      (if (bound-and-true-p flymake-mode)
+          (flymake-goto-prev-error nil nil t)
+        (previous-error))))
 
   ;; Maps
   (define-key evil-normal-state-map (kbd "gr") 'xref-find-references)
-  (define-key evil-normal-state-map (kbd "]d") 'next-error)
-  (define-key evil-normal-state-map (kbd "[d") 'previous-error)
+  (define-key evil-normal-state-map (kbd "]d") 'my/next-error)
+  (define-key evil-normal-state-map (kbd "[d") 'my/previous-error)
   (define-key evil-normal-state-map (kbd "SPC SPC") 'evil-switch-to-windows-last-buffer))
 
 (use-package evil-collection

@@ -35,7 +35,7 @@ map("n", "N", "Nzzzv")
 
 map("i", "<C-c>", "<Esc>")
 
-map("n", "<leader><tab>", "<C-^>", { noremap = true, desc = "Last buffer" })
+map("n", "<leader><leader>", "<C-^>", { noremap = true, desc = "Last buffer" })
 map("n", "<leader><left>", "<cmd>bp<CR>", { noremap = true, desc = "Previous buffer" })
 map("n", "<leader><right>", "<cmd>bn<CR>", { noremap = true, desc = "Next buffer" })
 

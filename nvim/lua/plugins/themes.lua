@@ -25,7 +25,7 @@ return {
   },
   {
     "catppuccin/nvim",
-    enabled = true,
+    enabled = false,
     lazy = false,
     priority = 1000,
     config = function()
@@ -61,10 +61,10 @@ return {
     opts = ...,
   },
   {
-    "folke/tokyonight.nvim",
-    enabled = false,
+    "blazkowolf/gruber-darker.nvim",
+    enabled = true,
     config = function()
-      vim.cmd("colorscheme tokyonight")
+      vim.cmd("colorscheme gruber-darker")
     end,
     lazy = false,
     priority = 1000,

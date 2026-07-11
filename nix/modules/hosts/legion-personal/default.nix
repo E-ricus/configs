@@ -22,7 +22,7 @@
       den.aspects.keyboards-qmk
       den.aspects.vpn
       den.aspects.vpn.provides.mullvad
-      # den.aspects.emacs
+      den.aspects.emacs
     ];
 
     nixos = {...}: {

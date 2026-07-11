@@ -22,13 +22,6 @@ return {
   },
   keys = {
     {
-      "<leader><space>",
-      function()
-        Snacks.picker.smart()
-      end,
-      desc = "Smart Find Files",
-    },
-    {
       "<leader>/",
       function()
         Snacks.picker.grep()
@@ -432,13 +425,6 @@ return {
       end,
       desc = "Git Browse",
       mode = { "n", "v" },
-    },
-    {
-      "<leader>gg",
-      function()
-        Snacks.lazygit()
-      end,
-      desc = "Lazygit",
     },
     {
       "<leader>un",
