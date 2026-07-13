@@ -25,7 +25,7 @@
       den.aspects.vpn
     ];
 
-    nixos = {...}: {
+    nixos = {pkgs, ...}: {
       imports = [./_hardware.nix];
 
       # sof-hda-dsp (UCM2) exposes Speaker and Headphones as two separate,
@@ -64,6 +64,38 @@
             };
           }
         ];
+      };
+
+      # ── Analog jack (3.5mm) fix ────────────────────────────────────────
+      # On this sof-hda-dsp codec, the analog Speaker sink drives both the
+      # built-in speakers and the 3.5mm headphone/line-out jack. Two ALSA
+      # hardware mixer switches were blocking jack output out of the box:
+      #   • "Headphone" playback switch was muted ([off]).
+      #   • "Auto-Mute Mode" was Enabled, but jack-detect on this machine did
+      #     not un-mute Headphone on insertion, leaving the jack silent.
+      # The jack itself has a working hardware presence-detect that physically
+      # cuts the internal speakers while a plug is inserted (verified via the
+      # HP Out pin Detect capability in /proc/asound/card0/codec#0), so we do
+      # NOT need software auto-mute for clean switching. With Auto-Mute off and
+      # Headphone unmuted, plugging in routes to the (powered) external
+      # speakers and unplugging falls back to the built-in speakers
+      # automatically — no manual profile switching required.
+      #
+      # ALSA mixer state is not persisted across reboots by default, so restore
+      # it declaratively after the sound card is up.
+      systemd.services.thinkpad-analog-jack-fix = {
+        description = "Restore analog Headphone jack mixer state (sof-hda-dsp)";
+        wantedBy = ["multi-user.target"];
+        after = ["sound.target"];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Auto-Mute Mode" Disabled || true
+          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Headphone" unmute 80% || true
+          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Master" unmute 100% || true
+        '';
       };
 
       # Disko: host-specific disk device and swap size

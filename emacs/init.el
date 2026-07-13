@@ -527,6 +527,9 @@ otherwise fall back to `flymake-goto-prev-error'."
 (use-package zig-mode
   :mode "\\.zig\\'")
 
+(use-package typescript-mode
+  :mode "\\.ts\\'" "\\.js\\'")
+
 (use-package c3-ts-mode
   :ensure nil
   :vc (:url "https://github.com/c3lang/c3-ts-mode" :branch "main" :rev :newest)
