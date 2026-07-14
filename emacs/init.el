@@ -198,7 +198,19 @@
 
 ;;; ---- Ghostell terminal ---------------------------------------------------
 (use-package ghostel
-  :bind (("C-c t" . ghostel)))
+  :bind (;; --- open ---
+         ("C-c t t" . ghostel-project)         ; open at PROJECT ROOT (reuse project's terminal)
+         ("C-c t b" . ghostel)                  ; open at current BUFFER's dir (reuse) — old C-c t
+         ("C-c t n" . my/ghostel-project-new)   ; always open a NEW project terminal
+         ;; --- navigate (project-scoped) ---
+         ("C-c t ]" . ghostel-project-next)
+         ("C-c t [" . ghostel-project-previous)
+         ("C-c t l" . ghostel-project-list-buffers))
+  :config
+  (defun my/ghostel-project-new ()
+    "Always create a new ghostel terminal scoped to the current project."
+    (interactive)
+    (ghostel-project '(4))))   ; non-numeric prefix -> ghostel forces a fresh buffer
 
 (use-package ghostel-eshell
   :ensure nil ;; bundled in ghostel
@@ -468,6 +480,9 @@ otherwise fall back to `flymake-goto-prev-error'."
          ("C-c g l" . magit-log-current)
          ("C-c g b" . magit-blame)))
 
+(use-package browse-at-remote
+  :bind ("C-c g r" . browse-at-remote))
+
 ;;; ---- VCS Gutter (diff-hl) -------------------------------------------------
 
 (use-package diff-hl
@@ -515,8 +530,8 @@ otherwise fall back to `flymake-goto-prev-error'."
 (use-package rust-mode
   :mode "\\.rs\\'")
 
-;; (require 'rust-lspmux)
-;;(add-hook 'rust-mode-hook      'eglot-ensure)
+(require 'rust-lspmux)
+(add-hook 'rust-mode-hook      'eglot-ensure)
 
 (use-package go-mode
   :mode "\\.go\\'")
