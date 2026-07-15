@@ -16,6 +16,7 @@
         unzip
         doxx
         xleak
+        dragon-drop
       ];
     };
     nixos = {pkgs, ...}: {

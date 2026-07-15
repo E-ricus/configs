@@ -66,6 +66,32 @@
         ];
       };
 
+      # ── Bluetooth A2DP source role ─────────────────────────────────────
+      # WirePlumber's bluez monitor must expose the `a2dp_source` role for
+      # this machine to *send* audio to Bluetooth headphones (the computer is
+      # the A2DP source; the headphones are the sink). Without it, BlueZ has
+      # no source SEP to offer and codec negotiation fails with
+      # "a2dp_select_capabilities() Unable to select SEP", so no Bluetooth
+      # audio sink is ever created and the headphones never appear as an
+      # output device.
+      #
+      # We enable both A2DP directions plus the HSP/HFP head-unit *and*
+      # gateway roles: `*_hf`/`*_hs` let the machine drive a headset (mic +
+      # call audio), while `*_ag`/`*_ag` keep the audio-gateway side available
+      # too. This matches the WirePlumber upstream default role set.
+      services.pipewire.wireplumber.extraConfig."52-bluez-a2dp-source" = {
+        "monitor.bluez.properties" = {
+          "bluez5.roles" = [
+            "a2dp_sink"
+            "a2dp_source"
+            "hfp_hf"
+            "hfp_ag"
+            "hsp_hs"
+            "hsp_ag"
+          ];
+        };
+      };
+
       # ── Analog jack (3.5mm) fix ────────────────────────────────────────
       # On this sof-hda-dsp codec, the analog Speaker sink drives both the
       # built-in speakers and the 3.5mm headphone/line-out jack. Two ALSA
