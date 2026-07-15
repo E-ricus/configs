@@ -59,16 +59,25 @@
 
 ;; Scrolling — line-by-line
 (setq scroll-conservatively 101)     ; never auto-recenter; scroll one line at a time
-(setq scroll-margin 5)               ; keep 5 lines of context (like Vim scrolloff)
+(setq scroll-margin 5)               ; keep 5 lines of context.
 (setq scroll-step 1)
 (setq auto-window-vscroll nil)       ; stop per-move pixel-height calc — big j/k speedup
-(setq fast-but-imprecise-scrolling t)
 
 ;; Redisplay — don't fully fontify while input is pending (keeps motion snappy)
 (setq redisplay-skip-fontification-on-input t)
 
 (pixel-scroll-precision-mode 1)      ; pixel-precise mouse/trackpad scrolling
 ;; (setq pixel-scroll-precision-interpolate t)
+
+;; Let mouse/trackpad scroll ignore `scroll-margin' so it can scroll past
+;; point smoothly (keyboard j/k still keep the 5-line peek margin).
+(defun my/scroll-without-margin (orig-fn &rest args)
+  "Run ORIG-FN with `scroll-margin' temporarily disabled."
+  (let ((scroll-margin 0))
+    (apply orig-fn args)))
+(advice-add 'pixel-scroll-precision             :around #'my/scroll-without-margin)
+(advice-add 'pixel-scroll-precision-scroll-down :around #'my/scroll-without-margin)
+(advice-add 'pixel-scroll-precision-scroll-up   :around #'my/scroll-without-margin)
 
 ;; Auto-revert buffers when files change on disk
 (global-auto-revert-mode 1)

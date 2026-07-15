@@ -19,6 +19,7 @@
         clang-tools
         lua-language-server
         gopls
+        vtsls
       ];
     };
 
