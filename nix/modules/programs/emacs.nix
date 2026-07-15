@@ -14,14 +14,12 @@ in {
 
       services.emacs = {
         enable = true;
-        package = pkgs.emacs-unstable;
 
-        # To bundle Nix-managed packages alongside MELPA ones, replace the
-        # line above with something like:
-        # package = (pkgs.emacsPackagesFor pkgs.emacs-unstable).emacsWithPackages (epkgs: with epkgs; [
-        #   vterm
-        #   treesit-grammars.with-all-grammars
-        # ]);
+        # Most packages are managed by use-package + MELPA from within Emacs.
+        package = (pkgs.emacsPackagesFor pkgs.emacs-unstable).emacsWithPackages (epkgs:
+          with epkgs; [
+            hotfuzz
+          ]);
       };
     };
 

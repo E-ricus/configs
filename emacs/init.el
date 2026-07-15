@@ -210,7 +210,8 @@
   (defun my/ghostel-project-new ()
     "Always create a new ghostel terminal scoped to the current project."
     (interactive)
-    (ghostel-project '(4))))   ; non-numeric prefix -> ghostel forces a fresh buffer
+    (ghostel-project '(4)))   ; non-numeric prefix -> ghostel forces a fresh buffer
+  (define-key ghostel-mode-map (kbd "C-S-v") #'ghostel-yank))
 
 (use-package ghostel-eshell
   :ensure nil ;; bundled in ghostel
@@ -333,6 +334,21 @@ otherwise fall back to `flymake-goto-prev-error'."
     (when (string-suffix-p "," pattern)
       `(orderless-flex . ,(substring pattern 0 -1)))))
 
+;; NOTE: moving from Nix, install hotfuzz from MELPA (drop :ensure nil),
+;; build the C module from the git repo (cmake), put hotfuzz-module.so on the
+;; load-path, and add: (load "hotfuzz-module" 'noerror 'nomessage)
+(use-package hotfuzz
+  :ensure nil
+  :config
+  ;; One-time sanity check at startup: warn (don't error) if the fast C module
+  ;; didn't load — hotfuzz still works via pure elisp, just slower on big repos.
+  (unless (featurep 'hotfuzz-module)
+    (display-warning
+     'hotfuzz
+     "hotfuzz C module not loaded — falling back to slow elisp scorer. \
+Check the Nix emacsWithPackages build."
+     :warning)))
+
 (use-package marginalia
   :init (marginalia-mode))
 
@@ -345,6 +361,12 @@ otherwise fall back to `flymake-goto-prev-error'."
          ("M-g g"    . consult-goto-line)
          ("M-g M-g"  . consult-goto-line))
   :config
+  ;; hotfuzz's C module can't read consult's default "tofu" chars (invalid
+  ;; Unicode appended to disambiguate candidates). Move them into a valid
+  ;; private-use range so the module can score consult candidates.
+  (setq consult--tofu-char #x100000
+        consult--tofu-range #x00fffe)
+
   ;; Don't include project files in consult-buffer — it calls project-files
   ;; which runs `find` and chokes on permission-denied dirs.
   (setq consult-buffer-sources
@@ -357,16 +379,16 @@ otherwise fall back to `flymake-goto-prev-error'."
     (interactive)
     (consult-ripgrep nil (thing-at-point 'word t)))
 
-  ;; Fuzzy file finder. fd enumerates the whole tree into a static list
-  ;; (fast: ~100k files in 50ms), then orderless-flex matches full relative
-  ;; paths in-memory, so queries like `int/medatixx` match with gaps.
-  ;; A static collection (not consult's async pipeline) is required so the
-  ;; input reaches orderless instead of being consumed as a command/# split.
+  ;; `completion-styles' is let-bound to hotfuzz *only here* so the rest of
+  ;; Emacs keeps orderless-flex. `:sort nil' is intentionally omitted so the
+  ;; UI presents candidates in hotfuzz's scored order rather than fd's raw
+  ;; directory-walk order.
   (defun my/find-file-fuzzy ()
     "Find a file under the current project (or `default-directory') fuzzily."
     (interactive)
     (let* ((root (if-let* ((p (project-current))) (project-root p) default-directory))
            (default-directory root)
+           (completion-styles '(hotfuzz))
            (files (process-lines "fd" "--type" "f" "--strip-cwd-prefix"
                                  "--hidden" "--follow" "--exclude" ".git")))
       (find-file
@@ -375,15 +397,14 @@ otherwise fall back to `flymake-goto-prev-error'."
         :prompt (format "File (%s): " (abbreviate-file-name root))
         :category 'file
         :state (consult--file-preview)
-        :require-match t
-        :sort nil)))))
+        :require-match t)))))
 
 ;; Persist completion history across sessions
 (use-package savehist
   :ensure nil ; built-in
   :init (savehist-mode))
 
-;; embark — act on the candidate at point (like telescope actions / fzf binds).
+;; embark — act on the candidate at point.
 ;;   C-.  embark-act    :
 ;;                        (open in split, copy path, insert, run command, ...)
 ;;   C-;  embark-dwim   :

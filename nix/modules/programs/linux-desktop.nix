@@ -10,6 +10,7 @@
         vlc
         gcc
         gnumake
+        cmake
         ffmpeg-headless
         gimp
         unzip
