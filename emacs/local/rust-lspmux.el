@@ -46,8 +46,29 @@
   (when (derived-mode-p 'rust-mode 'rust-ts-mode)
     (setq-local eglot-workspace-configuration #'my/rust-workspace-config)))
 
+(defun my/rust--project-rust-buffers ()
+  "Rust buffers belonging to the current buffer's project (or just this buffer)."
+  (let ((proj (project-current)))
+    (if (not proj)
+        (list (current-buffer))
+      (let ((root (project-root proj)))
+        (seq-filter
+         (lambda (buf)
+           (with-current-buffer buf
+             (and (derived-mode-p 'rust-mode 'rust-ts-mode)
+                  buffer-file-name
+                  (let ((bp (project-current nil (file-name-directory buffer-file-name))))
+                    (and bp (equal (project-root bp) root))))))
+         (buffer-list))))))
+
 (defun my/rust-set-target (name)
-  "Switch rust-analyzer to preset NAME and reconnect to its warm instance."
+  "Switch rust-analyzer to preset NAME for the current project.
+
+Fully shuts down the running server and re-runs `eglot-ensure' so
+`my/rust-eglot-server' launches a fresh lspmux client with the new
+RA_TARGET (eglot-reconnect would reuse the old launch context and keep
+the old target). Applies per-project: every open rust buffer in the
+current project is reconnected to the new target's warm instance."
   (interactive
    (list (completing-read "Rust target: " (mapcar #'car my/rust-targets) nil t)))
   (let ((preset (cdr (assoc name my/rust-targets))))
@@ -55,8 +76,14 @@
     (setq my/rust-target (nth 0 preset)
           my/rust-features (nth 1 preset))
     (setenv "RA_TARGET" (my/rust-fingerprint))
+    ;; Shut down the current server once (all project buffers share it), then
+    ;; re-ensure across the project's rust buffers so a fresh lspmux client is
+    ;; spawned with the new RA_TARGET.
     (when (and (fboundp 'eglot-current-server) (eglot-current-server))
-      (eglot-reconnect (eglot-current-server)))
+      (eglot-shutdown (eglot-current-server)))
+    (dolist (buf (my/rust--project-rust-buffers))
+      (with-current-buffer buf
+        (eglot-ensure)))
     (message "Rust target: %s%s"
              (if (string-empty-p my/rust-target) "host" my/rust-target)
              (if my/rust-features

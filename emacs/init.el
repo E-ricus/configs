@@ -189,18 +189,18 @@
 
 ;;; ---- Themes ---------------------------------------------------------------
 
-;; (use-package catppuccin-theme
-;;   :config
-;;   (setq catppuccin-flavor 'mocha)
-;;   (load-theme 'catppuccin :no-confirm))
+(use-package catppuccin-theme
+  :config
+  (setq catppuccin-flavor 'mocha)
+  (load-theme 'catppuccin :no-confirm))
 
 ;; (use-package zenburn-theme
 ;;   :config
 ;;   (load-theme 'zenburn t))
 
-(use-package gruber-darker-theme
-  :config
-  (load-theme 'gruber-darker t))
+;; (use-package gruber-darker-theme
+;;   :config
+;;   (load-theme 'gruber-darker t))
 
 ;;; ---- Undo ---------------------------------------------------------------
 (use-package undo-fu)
