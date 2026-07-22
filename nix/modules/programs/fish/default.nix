@@ -1,5 +1,5 @@
 # Fish shell configuration.
-{den, ...}: {
+{...}: {
   den.aspects.fish = {
     homeManager = {pkgs, ...}: {
       programs.fish = {
@@ -16,11 +16,8 @@
           lta = "lt -a";
           ff = "fzf --preview 'bat --style=numbers --color=always {}'";
 
-          nos = "sudo nixos-rebuild switch --flake ~/configs/nix#(hostname)";
-          nom = "sudo darwin-rebuild switch --flake ~/configs/nix#(hostname)";
-          nosu = "cd ~/configs/nix && nix flake update && sudo nixos-rebuild switch --flake .#(hostname)";
-          # Test build without switching
-          nob = "sudo nixos-rebuild build --flake ~/configs/nix#(hostname)";
+          nos = "nix build ~/configs/nix#nixosConfigurations.(hostname).config.system.build.toplevel && sudo nixos-rebuild switch --flake ~/configs/nix#(hostname)";
+          nob = "nixos-rebuild build --flake ~/configs/nix#(hostname)";
           ngc = "sudo nix-collect-garbage --delete-older-than 2d";
         };
         plugins = [

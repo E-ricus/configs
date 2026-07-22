@@ -128,6 +128,19 @@
             open-floating = true;
           }
           {
+            # dragon-drop: floating, unfocused, pinned to bottom-right (20px margin).
+            matches = [{app-id = "^dragon-drop$";}];
+            open-floating = true;
+            open-focused = false;
+            default-floating-position = _: {
+              props = {
+                x = 20;
+                y = 20;
+                relative-to = "bottom-right";
+              };
+            };
+          }
+          {
             matches = [{app-id = ".*";}];
             geometry-corner-radius = _: {
               props = [8.0 8.0 8.0 8.0];
