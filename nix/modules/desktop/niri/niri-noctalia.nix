@@ -39,6 +39,11 @@
           xdg.portal = {
             enable = true;
             extraPortals = [pkgs.xdg-desktop-portal-gnome];
+            # Electron/Chromium apps route custom-scheme opens
+            # through the portal's OpenURI chooser,  which on niri fails to match
+            # x-scheme-handler/* and shows "No Apps Available".
+            # Disabling this makes xdg-open resolve handlers via the desktop DB directly.
+            xdgOpenUsePortal = false;
           };
           environment.systemPackages = [pkgs.xwayland-satellite];
         };

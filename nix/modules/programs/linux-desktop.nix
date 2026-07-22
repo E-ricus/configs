@@ -4,7 +4,8 @@
     homeManager = {pkgs, ...}: {
       home.packages = with pkgs; [
         nautilus
-        jmtpfs
+        android-file-transfer
+        gvfs
         font-awesome
         btop
         vlc
