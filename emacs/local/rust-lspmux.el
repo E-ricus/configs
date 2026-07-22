@@ -25,50 +25,63 @@
   "RA_TARGET value for the current target+features (\"target|feat|feat\")."
   (mapconcat #'identity (cons my/rust-target my/rust-features) "|"))
 
+(defun my/rust-settings ()
+  "rust-analyzer settings for the current target/features (unwrapped).
+
+This is the inner settings object rust-analyzer expects under
+`initializationOptions' (no `:rust-analyzer' wrapper). cargo.target and
+cargo.features are applied only when set. checkOnSave off; run a check
+manually for diagnostics."
+  `( :checkOnSave :json-false
+     :cargo ( :buildScripts (:enable t)
+              ,@(unless (string-empty-p my/rust-target)
+                  (list :target my/rust-target))
+              ,@(when my/rust-features
+                  (list :features (vconcat my/rust-features))))
+     :procMacro (:enable t)))
+
+(defun my/rust-init-options (&rest _)
+  "rust-analyzer `initializationOptions'.
+
+Passed as a *function* in the eglot server contact so eglot re-evaluates
+it on every connect — including `eglot-reconnect' (via saved-initargs) —
+picking up the current target. This is the channel that actually reaches
+rust-analyzer at `initialize' time (mirrors helix/neovim); the
+`eglot-workspace-configuration' hook alone runs too late, after the
+initial handshake, so it would send an empty config on a fresh connect."
+  (my/rust-settings))
+
 (defun my/rust-eglot-server (&optional _interactive _project)
-  "rust-analyzer-via-lspmux server command; sets RA_TARGET for the instance key."
+  "rust-analyzer-via-lspmux server command; sets RA_TARGET for the instance key.
+
+Ends with `:initializationOptions' so the target/features ride the
+`initialize' request rather than a (mistimed) post-handshake
+`didChangeConfiguration'."
   (setenv "RA_TARGET" (my/rust-fingerprint))
-  '("lspmux" "client" "--server-path" "rust-analyzer"))
+  (list "lspmux" "client" "--server-path" "rust-analyzer"
+        :initializationOptions #'my/rust-init-options))
 
 (defun my/rust-workspace-config (&rest _)
-  "rust-analyzer settings. checkOnSave off; run a check manually for diagnostics."
-  `(:rust-analyzer
-    ( :checkOnSave :json-false
-      :cargo ( :buildScripts (:enable t)
-               ,@(unless (string-empty-p my/rust-target)
-                   (list :target my/rust-target))
-               ,@(when my/rust-features
-                   (list :features (vconcat my/rust-features))))
-      :procMacro (:enable t))))
+  "rust-analyzer settings for `eglot-workspace-configuration' (wrapped).
+
+Belt-and-suspenders: keeps runtime `workspace/didChangeConfiguration' in
+sync. `initializationOptions' (`my/rust-init-options') is the primary
+channel at connect time."
+  (list :rust-analyzer (my/rust-settings)))
 
 (defun my/rust-eglot-config-hook ()
   "Feed `my/rust-workspace-config' to rust-analyzer buffers."
   (when (derived-mode-p 'rust-mode 'rust-ts-mode)
     (setq-local eglot-workspace-configuration #'my/rust-workspace-config)))
 
-(defun my/rust--project-rust-buffers ()
-  "Rust buffers belonging to the current buffer's project (or just this buffer)."
-  (let ((proj (project-current)))
-    (if (not proj)
-        (list (current-buffer))
-      (let ((root (project-root proj)))
-        (seq-filter
-         (lambda (buf)
-           (with-current-buffer buf
-             (and (derived-mode-p 'rust-mode 'rust-ts-mode)
-                  buffer-file-name
-                  (let ((bp (project-current nil (file-name-directory buffer-file-name))))
-                    (and bp (equal (project-root bp) root))))))
-         (buffer-list))))))
-
 (defun my/rust-set-target (name)
-  "Switch rust-analyzer to preset NAME for the current project.
+  "Switch rust-analyzer to preset NAME and reconnect to its warm instance.
 
-Fully shuts down the running server and re-runs `eglot-ensure' so
-`my/rust-eglot-server' launches a fresh lspmux client with the new
-RA_TARGET (eglot-reconnect would reuse the old launch context and keep
-the old target). Applies per-project: every open rust buffer in the
-current project is reconnected to the new target's warm instance."
+Updates RA_TARGET, then `eglot-reconnect's the running server. Because
+`:initializationOptions' is a function (`my/rust-init-options'), eglot
+re-evaluates it on reconnect and sends the new target/features in the
+fresh `initialize' request. The reconnect re-manages every buffer of the
+server (i.e. the whole project) automatically."
   (interactive
    (list (completing-read "Rust target: " (mapcar #'car my/rust-targets) nil t)))
   (let ((preset (cdr (assoc name my/rust-targets))))
@@ -76,14 +89,8 @@ current project is reconnected to the new target's warm instance."
     (setq my/rust-target (nth 0 preset)
           my/rust-features (nth 1 preset))
     (setenv "RA_TARGET" (my/rust-fingerprint))
-    ;; Shut down the current server once (all project buffers share it), then
-    ;; re-ensure across the project's rust buffers so a fresh lspmux client is
-    ;; spawned with the new RA_TARGET.
     (when (and (fboundp 'eglot-current-server) (eglot-current-server))
-      (eglot-shutdown (eglot-current-server)))
-    (dolist (buf (my/rust--project-rust-buffers))
-      (with-current-buffer buf
-        (eglot-ensure)))
+      (eglot-reconnect (eglot-current-server)))
     (message "Rust target: %s%s"
              (if (string-empty-p my/rust-target) "host" my/rust-target)
              (if my/rust-features
