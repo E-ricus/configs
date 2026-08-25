@@ -10,7 +10,6 @@
   "conjure": { "branch": "main", "commit": "9842bf38464df071f72546f65fa6ec44942ca7b2" },
   "crates.nvim": { "branch": "main", "commit": "afcd1cc3eeceb5783676fc8464389b9216a29d05" },
   "friendly-snippets": { "branch": "main", "commit": "b4d01b0fdf3c9a549961c2f9ffe8dc09be166219" },
-  "gruber-darker.nvim": { "branch": "main", "commit": "9b68f84bfd6c1278fef2143802ca40c60f2471c0" },
   "grug-far.nvim": { "branch": "main", "commit": "11595bf747edc270bce2069d1020502ad4ae56cf" },
   "indent-blankline.nvim": { "branch": "master", "commit": "f1e186e44d3b7f9ae918008e2c28ce37c6023d2d" },
   "jai.vim": { "branch": "master", "commit": "c5c9ec952fb4db2e5d71881dfd2d099c06725e68" },

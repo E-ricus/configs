@@ -49,6 +49,7 @@
         wtype
         localsend
         desktop-file-utils
+        bitwarden-cli
       ];
 
       systemd.user.services.refresh-desktop-database = {
