@@ -39,8 +39,6 @@
       # Defined in dragon-capture.nix (niri has no sticky/all-workspaces window).
       dragonSummon = lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.dragon-summon;
     in {
-      v2-settings = true;
-
       env = {
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         QT_WAYLAND_RECONNECT = "1";
