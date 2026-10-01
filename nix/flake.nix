@@ -52,6 +52,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # nixpkgs pinned at the commit immediately BEFORE bun 1.3.13 -> 1.4.2
+    # (4ba99f3, 2026-09-12). Used ONLY to build opencode, which the newer bun
+    # miscompiles — see programs/llms.nix. Deliberately does not follow nixpkgs;
+    # remove this input once that workaround goes away.
+    nixpkgs-bun.url = "github:nixos/nixpkgs/d1248566e477e313530ea7f64e46ba3563bd895e";
+
     # Claude Desktop for Linux.
     claude-desktop = {
       url = "github:aaddrick/claude-desktop-debian";

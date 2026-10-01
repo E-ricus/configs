@@ -380,6 +380,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-bun": {
+      "locked": {
+        "lastModified": 1789152404,
+        "narHash": "sha256-Yh6KUbKbh3kcihPbWbX2kH0wQNXlOf0YmdnN9m7KPOs=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "d1248566e477e313530ea7f64e46ba3563bd895e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "d1248566e477e313530ea7f64e46ba3563bd895e",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1788057806,
@@ -494,6 +510,7 @@
         "jj-starship": "jj-starship",
         "lanzaboote": "lanzaboote",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-bun": "nixpkgs-bun",
         "noctalia": "noctalia",
         "wrapper-modules": "wrapper-modules"
       }

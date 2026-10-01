@@ -40,10 +40,14 @@
           xdg.portal = {
             enable = true;
             extraPortals = [pkgs.xdg-desktop-portal-gnome];
-            # Electron/Chromium apps route custom-scheme opens
-            # through the portal's OpenURI chooser,  which on niri fails to match
-            # x-scheme-handler/* and shows "No Apps Available".
-            # Disabling this makes xdg-open resolve handlers via the desktop DB directly.
+            # Keep xdg-open on the direct desktop-DB path rather than routing
+            # every open through the portal's OpenURI chooser.
+            #
+            # NOTE: this is NOT the cure for "No Apps Available" on
+            # x-scheme-handler/* links — Chromium/Electron call the portal
+            # directly and ignore this. That symptom comes from a stale
+            # ~/.local/share/applications/mimeinfo.cache; see the
+            # refresh-desktop-database units in programs/linux-desktop.nix.
             xdgOpenUsePortal = false;
           };
           environment.systemPackages = [pkgs.xwayland-satellite];
