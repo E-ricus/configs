@@ -26,7 +26,19 @@
     # The fork's flake exposes `packages.<system>.helix` (steel feature OFF by
     # default). Turn on `steel` + `git` to match `cargo xtask steel`.
     packages.helix-steel =
-      inputs.helix-steel.packages.${system}.helix.overrideAttrs (old: {
+      (inputs.helix-steel.packages.${system}.helix.override {
+        grammarOverlays = [
+          # tree-sitter-perl defines its own `bsearch` (src/bsearch.h). With
+          # glibc >= 2.44 + GCC's C23 default, <stdlib.h> turns `bsearch` into a
+          # const-generic macro and the definition fails to compile. Build as
+          # C17 so the macro isn't defined. Drop once upstream grammar is fixed.
+          (_: prev: {
+            perl = prev.perl.overrideAttrs (old: {
+              FLAGS = old.FLAGS ++ ["-std=gnu17"];
+            });
+          })
+        ];
+      }).overrideAttrs (old: {
         buildFeatures = (old.buildFeatures or []) ++ ["steel" "git"];
       });
   };

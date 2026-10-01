@@ -1,11 +1,7 @@
 # Niri wrapper modules.
 # All entries live here in one block so flake-parts can expose them as a single
 # flake.wrappersModules attrset without merge conflicts.
-{
-  self,
-  inputs,
-  ...
-}: {
+{self, ...}: {
   flake.wrappersModules = {
     # ── Niri + Noctalia settings ──────────────────────────────────────
     niri-noctalia = {
@@ -30,7 +26,8 @@
         content.${action} = _: {};
       };
       # Noctalia v5 IPC: `noctalia msg <subcommand>` (see docs.noctalia.dev/v5/ipc).
-      noctaliaExe = lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      # Same nixpkgs package the HM programs.noctalia module installs.
+      noctaliaExe = lib.getExe pkgs.noctalia;
       noctalia = cmd: [noctaliaExe "msg"] ++ (lib.splitString " " cmd);
       brightnessScript =
         pkgs.writeShellScript "brightness-control"

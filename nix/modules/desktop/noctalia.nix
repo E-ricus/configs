@@ -1,13 +1,10 @@
-# Noctalia v5 desktop shell — installed via the official Home Manager module.
+# Noctalia v5 desktop shell — uses Home Manager's built-in programs.noctalia
+# module with the nixpkgs `noctalia` package (no separate flake input).
 # Docs: https://docs.noctalia.dev/v5/
 # Config is written declaratively as programs.noctalia.settings (a Nix attrset);
 # the module serializes it to ~/.config/noctalia/config.toml and validates it at
 # build time with `noctalia config validate`.
-{
-  self,
-  inputs,
-  ...
-}: {
+{...}: {
   den.aspects.noctalia = {
     homeManager = {pkgs, ...}: let
       # Suspend-then-hibernate on battery, plain suspend on AC.
@@ -21,8 +18,6 @@
         fi
       '';
     in {
-      imports = [inputs.noctalia.homeModules.default];
-
       programs.noctalia = {
         enable = true;
         # Run Noctalia as a systemd user service bound to the graphical session.

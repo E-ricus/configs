@@ -20,10 +20,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Desktop environment
-    # Noctalia v5 (alpha) shell. nixpkgs is intentionally NOT followed so the
-    # Cachix binary cache (noctalia.cachix.org) can be used — see base/system.nix.
-    noctalia.url = "github:noctalia-dev/noctalia";
     # System tools
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
