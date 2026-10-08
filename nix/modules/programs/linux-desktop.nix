@@ -47,7 +47,6 @@
         dragon-drop
         handy
         wtype
-        localsend
         desktop-file-utils
         bitwarden-cli
       ];
@@ -73,6 +72,10 @@
       programs.appimage = {
         enable = true;
         binfmt = true;
+      };
+      programs.localsend = {
+        enable = true;
+        openFirewall = true;
       };
     };
   };
