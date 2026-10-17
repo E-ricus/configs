@@ -52,6 +52,8 @@
 
       # Enable fish shell system-wide
       programs.fish.enable = true;
+      # Fixes using dynamic linked non nixos binaries.
+      programs.nix-ld.enable = true;
     };
   };
 }

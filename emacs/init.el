@@ -189,18 +189,18 @@
 
 ;;; ---- Themes ---------------------------------------------------------------
 
-(use-package catppuccin-theme
-  :config
-  (setq catppuccin-flavor 'mocha)
-  (load-theme 'catppuccin :no-confirm))
+;; (use-package catppuccin-theme
+;;   :config
+;;   (setq catppuccin-flavor 'mocha)
+;;   (load-theme 'catppuccin :no-confirm))
 
 ;; (use-package zenburn-theme
 ;;   :config
 ;;   (load-theme 'zenburn t))
 
-;; (use-package gruber-darker-theme
-;;   :config
-;;   (load-theme 'gruber-darker t))
+(use-package gruber-darker-theme
+  :config
+  (load-theme 'gruber-darker t))
 
 ;;; ---- Undo ---------------------------------------------------------------
 (use-package undo-fu)
@@ -600,7 +600,7 @@ Check the Nix emacsWithPackages build."
   (add-to-list 'compilation-error-regexp-alist 'odin)
   (add-to-list 'compilation-error-regexp-alist-alist
                '(odin "\\(/[^(]+\\.odin\\)(\\([0-9]+\\):\\([0-9]+\\))" 1 2 3)))
-;; (add-hook 'odin-ts-mode-hook   'eglot-ensure) ;; lsp
+(add-hook 'odin-ts-mode-hook   'eglot-ensure) ;; lsp
 
 ;; Local modes (from emacs/local/)
 (require 'jai-mode)
