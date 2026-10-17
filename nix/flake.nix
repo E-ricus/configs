@@ -13,13 +13,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Helix editor — mattwparas' fork with the Steel (Scheme) plugin system.
-    # See PR helix-editor/helix#8675. Built with the `steel,git` features.
-    helix-steel = {
-      url = "github:mattwparas/helix/steel-event-system";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # System tools
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";

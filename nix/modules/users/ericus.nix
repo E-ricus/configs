@@ -12,7 +12,6 @@
       den.aspects.lspmux
       den.aspects.yazi
       den.aspects.nvim
-      den.aspects.helix
       den.aspects.gram
       den.aspects.langs
       den.aspects.c3
