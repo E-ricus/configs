@@ -32,7 +32,7 @@
 (auto-format #t)
   (language-servers '("steel-language-server")))
 
-;; rust-analyzer via lspmux, with host/windows target switching.
+;; rust-analyzer with host/windows target switching.
 (require "cogs/rust.scm")
 
 ;; Configure rust-analyzer for the host target by default on startup.

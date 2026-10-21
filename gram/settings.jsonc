@@ -13,17 +13,12 @@
       },
       "enable_lsp_tasks": true
     },
-    // rust-analyzer through lspmux, same as nvim/helix/emacs. RA_TARGET keys
-    // the lspmux instance per cargo target ("" = host). Switch targets with
-    // `gram-rust-target` (space r t h/w) — it writes a project-local
-    // .gram/settings.jsonc that overrides this block.
+    // rust-analyzer from PATH (rustup), same as nvim/helix/emacs. Switch cargo
+    // targets with `gram-rust-target` (space r t h/w) — it writes a
+    // project-local .gram/settings.jsonc that overrides this block.
     "rust-analyzer": {
       "binary": {
-        "path": "lspmux",
-        "arguments": ["client", "--server-path", "rust-analyzer"],
-        "env": {
-          "RA_TARGET": ""
-        }
+        "path": "rust-analyzer"
       },
       "initialization_options": {
         "checkOnSave": false,

@@ -9,7 +9,6 @@
       den.aspects.git
       den.aspects.jujutsu
       den.aspects.direnv
-      den.aspects.lspmux
       den.aspects.yazi
       den.aspects.nvim
       den.aspects.gram

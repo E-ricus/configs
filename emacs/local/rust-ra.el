@@ -1,8 +1,8 @@
-;;; rust-lspmux.el --- rust-analyzer via the lspmux multiplexer -*- lexical-binding: t; -*-
+;;; rust-ra.el --- rust-analyzer with cargo target switching -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Runs rust-analyzer behind lspmux. RA_TARGET keys the lspmux instance per
-;; cargo target, so `C-c r t' switches target (host default on first connect).
+;; Runs rust-analyzer from PATH. `C-c r t' switches cargo target and
+;; reconnects the server (host default on first connect).
 ;; Edit targets in `my/rust-targets': (NAME . TARGET), TARGET "" = host.
 
 ;;; Code:
@@ -16,10 +16,6 @@
   '(("host"        . "")
     ("windows-gnu" . "x86_64-pc-windows-gnu"))
   "Alist of NAME -> TARGET presets for `my/rust-set-target'.")
-
-(defun my/rust-fingerprint ()
-  "RA_TARGET value for the current target (\"\" = host)."
-  my/rust-target)
 
 (defun my/rust-settings ()
   "rust-analyzer settings for the current target (unwrapped).
@@ -46,13 +42,12 @@ initial handshake, so it would send an empty config on a fresh connect."
   (my/rust-settings))
 
 (defun my/rust-eglot-server (&optional _interactive _project)
-  "rust-analyzer-via-lspmux server command; sets RA_TARGET for the instance key.
+  "rust-analyzer server command.
 
 Ends with `:initializationOptions' so the target rides the
 `initialize' request rather than a (mistimed) post-handshake
 `didChangeConfiguration'."
-  (setenv "RA_TARGET" (my/rust-fingerprint))
-  (list "lspmux" "client" "--server-path" "rust-analyzer"
+  (list "rust-analyzer"
         :initializationOptions #'my/rust-init-options))
 
 (defun my/rust-workspace-config (&rest _)
@@ -69,9 +64,9 @@ channel at connect time."
     (setq-local eglot-workspace-configuration #'my/rust-workspace-config)))
 
 (defun my/rust-set-target (name)
-  "Switch rust-analyzer to preset NAME and reconnect to its warm instance.
+  "Switch rust-analyzer to preset NAME and restart it.
 
-Updates RA_TARGET, then `eglot-reconnect's the running server. Because
+`eglot-reconnect's the running server. Because
 `:initializationOptions' is a function (`my/rust-init-options'), eglot
 re-evaluates it on reconnect and sends the new target in the fresh
 `initialize' request. The reconnect re-manages every buffer of the
@@ -81,7 +76,6 @@ server (i.e. the whole project) automatically."
   (let ((preset (assoc name my/rust-targets)))
     (unless preset (user-error "Unknown target: %s" name))
     (setq my/rust-target (cdr preset))
-    (setenv "RA_TARGET" (my/rust-fingerprint))
     (when (and (fboundp 'eglot-current-server) (eglot-current-server))
       (eglot-reconnect (eglot-current-server)))
     (message "Rust target: %s"
@@ -96,5 +90,5 @@ server (i.e. the whole project) automatically."
 (with-eval-after-load 'rust-mode
   (define-key rust-mode-map (kbd "C-c r t") #'my/rust-set-target))
 
-(provide 'rust-lspmux)
-;;; rust-lspmux.el ends here
+(provide 'rust-ra)
+;;; rust-ra.el ends here

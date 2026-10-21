@@ -560,7 +560,7 @@ Check the Nix emacsWithPackages build."
 (use-package rust-mode
   :mode "\\.rs\\'")
 
-(require 'rust-lspmux)
+(require 'rust-ra)
 (add-hook 'rust-mode-hook      'eglot-ensure)
 
 (use-package go-mode

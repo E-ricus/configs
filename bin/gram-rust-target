@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # gram-rust-target — switch rust-analyzer's cargo target for a Gram project.
 #
-# lspmux presets: RA_TARGET keys the lspmux
-# instance per cargo target ("" = host), cargo.target is passed via
-# initialization_options. Writes <root>/.gram/settings.jsonc; Gram watches
+# cargo.target is passed via initialization_options ("" = host). Writes <root>/.gram/settings.jsonc; Gram watches
 # local settings and restarts rust-analyzer with the new config. If it ever
 # doesn't pick it up, run "editor: restart language server" from the palette.
 #
@@ -37,9 +35,6 @@ if [[ -f "$settings_file" ]] && ! grep -q "$MARKER" "$settings_file"; then
   exit 1
 fi
 
-# RA_TARGET fingerprint: "" = host, otherwise the target triple.
-ra_target="$target"
-
 # cargo block: only include "target" when one is set.
 if [[ -n "$target" ]]; then
   cargo_block=$(printf '{\n          "buildScripts": { "enable": true },\n          "target": "%s"\n        }' "$target")
@@ -56,11 +51,7 @@ cat > "$settings_file" <<EOF
   "lsp": {
     "rust-analyzer": {
       "binary": {
-        "path": "lspmux",
-        "arguments": ["client", "--server-path", "rust-analyzer"],
-        "env": {
-          "RA_TARGET": "${ra_target}"
-        }
+        "path": "rust-analyzer"
       },
       "initialization_options": {
         "checkOnSave": false,
