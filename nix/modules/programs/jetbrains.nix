@@ -5,25 +5,23 @@
 {inputs, ...}: let
   jetbrainsOverlay = inputs.jetbrains-plugins.overlays.default;
 in {
-  den.aspects.jetbrains = {
-    nixos = {pkgs, ...}: {
-      nixpkgs.overlays = [
-        jetbrainsOverlay
-      ];
+  flake.modules.nixos.jetbrains = {pkgs, ...}: {
+    nixpkgs.overlays = [
+      jetbrainsOverlay
+    ];
 
-      environment.systemPackages = [
-        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.clion (with pkgs.jetbrains-plugins; [
-          IdeaVIM
-          com.github.catppuccin.jetbrains
-          org.c3lang.c3intellij
-        ]))
-        (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.datagrip (with pkgs.jetbrains-plugins; [
-          IdeaVIM
-          aws.toolkit
-          org.jetbrains.plugins.yaml
-          com.github.catppuccin.jetbrains
-        ]))
-      ];
-    };
+    environment.systemPackages = [
+      (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.clion (with pkgs.jetbrains-plugins; [
+        IdeaVIM
+        com.github.catppuccin.jetbrains
+        org.c3lang.c3intellij
+      ]))
+      (pkgs.jetbrains-plugins.lib.buildIdeWithPlugins pkgs.jetbrains.datagrip (with pkgs.jetbrains-plugins; [
+        IdeaVIM
+        aws.toolkit
+        org.jetbrains.plugins.yaml
+        com.github.catppuccin.jetbrains
+      ]))
+    ];
   };
 }

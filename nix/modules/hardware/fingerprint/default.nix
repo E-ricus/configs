@@ -1,85 +1,83 @@
 # Fingerprint authentication with parallel password support (pam-fprint-grosshack).
 {
-  den,
+  config,
   self,
   ...
-}: {
+}: let
+  inherit (config.flake.modules) nixos;
+in {
   # Package definition — colocated with the aspect that uses it
   perSystem = {pkgs, ...}: {
     packages.pam-fprint-grosshack = pkgs.callPackage ./_pam-fprint-grosshack.nix {};
   };
 
-  den.aspects.fingerprint = {
-    nixos = {
-      pkgs,
-      lib,
-      config,
-      ...
-    }: let
-      pam-fprint-grosshack = self.packages.${pkgs.stdenv.hostPlatform.system}.pam-fprint-grosshack;
-      pam_fprintd_grosshack = "${pam-fprint-grosshack}/lib/security/pam_fprintd_grosshack.so";
-      # Note to self: login can conflict with noctalia trying to claim the device.
-      pamServices = ["sudo" "hyprlock" "swaylock" "gtklock"];
-    in {
-      services.fprintd.enable = true;
+  flake.modules.nixos.fingerprint = {
+    pkgs,
+    lib,
+    config,
+    ...
+  }: let
+    pam-fprint-grosshack = self.packages.${pkgs.stdenv.hostPlatform.system}.pam-fprint-grosshack;
+    pam_fprintd_grosshack = "${pam-fprint-grosshack}/lib/security/pam_fprintd_grosshack.so";
+    # Note to self: login can conflict with noctalia trying to claim the device.
+    pamServices = ["sudo" "hyprlock" "swaylock" "gtklock"];
+  in {
+    services.fprintd.enable = true;
 
-      security.pam.services = let
-        mkGrosshackService = name: {
-          ${name} = {
-            fprintAuth = false;
-            rules.auth.fprintd-grosshack = {
-              order = config.security.pam.services.${name}.rules.auth.unix.order - 10;
-              control = "sufficient";
-              modulePath = pam_fprintd_grosshack;
-            };
+    security.pam.services = let
+      mkGrosshackService = name: {
+        ${name} = {
+          fprintAuth = false;
+          rules.auth.fprintd-grosshack = {
+            order = config.security.pam.services.${name}.rules.auth.unix.order - 10;
+            control = "sufficient";
+            modulePath = pam_fprintd_grosshack;
           };
         };
-      in
-        lib.mkMerge ([
-            {
-              greetd.fprintAuth = false;
-              # Noctalia drives the fingerprint reader itself over D-Bus on its
-              # lock screen (lockscreen.fingerprint = true) and authenticates the
-              # password via the `login` PAM stack. Leaving pam_fprintd on `login`
-              # makes the two contend for the sensor, so the password path stalls
-              # until a fingerprint completes. Removing fprintd from `login` lets
-              # password and Noctalia's native fingerprint work in parallel.
-              login.fprintAuth = false;
-            }
-          ]
-          ++ (map mkGrosshackService pamServices));
-      # Sometimes it seems not needed. But when it fails to reclaim is annoying.
-      # It doesn't harm for more consistency.
-      systemd.services.fprintd-resume = {
-        description = "Restart fprintd after resume";
-        after = [
-          "suspend.target"
-          "hibernate.target"
-          "hybrid-sleep.target"
-          "suspend-then-hibernate.target"
-        ];
-        wantedBy = [
-          "suspend.target"
-          "hibernate.target"
-          "hybrid-sleep.target"
-          "suspend-then-hibernate.target"
-        ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
-        };
+      };
+    in
+      lib.mkMerge ([
+          {
+            greetd.fprintAuth = false;
+            # Noctalia drives the fingerprint reader itself over D-Bus on its
+            # lock screen (lockscreen.fingerprint = true) and authenticates the
+            # password via the `login` PAM stack. Leaving pam_fprintd on `login`
+            # makes the two contend for the sensor, so the password path stalls
+            # until a fingerprint completes. Removing fprintd from `login` lets
+            # password and Noctalia's native fingerprint work in parallel.
+            login.fprintAuth = false;
+          }
+        ]
+        ++ (map mkGrosshackService pamServices));
+    # Sometimes it seems not needed. But when it fails to reclaim is annoying.
+    # It doesn't harm for more consistency.
+    systemd.services.fprintd-resume = {
+      description = "Restart fprintd after resume";
+      after = [
+        "suspend.target"
+        "hibernate.target"
+        "hybrid-sleep.target"
+        "suspend-then-hibernate.target"
+      ];
+      wantedBy = [
+        "suspend.target"
+        "hibernate.target"
+        "hybrid-sleep.target"
+        "suspend-then-hibernate.target"
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
       };
     };
   };
 
   # Fingerprint with Elan TOD driver (for specific hardware)
-  den.aspects.fingerprint-elan = {
-    includes = [den.aspects.fingerprint];
-    nixos = {pkgs, ...}: {
-      services.fprintd.tod = {
-        enable = true;
-        driver = pkgs.libfprint-2-tod1-elan;
-      };
+  flake.modules.nixos.fingerprint-elan = {pkgs, ...}: {
+    imports = [nixos.fingerprint];
+    services.fprintd.tod = {
+      enable = true;
+      driver = pkgs.libfprint-2-tod1-elan;
     };
   };
 }

@@ -1,11 +1,9 @@
 {...}: {
-  den.aspects.nvim = {
-    homeManager = {pkgs, ...}: {
-      home.packages = with pkgs; [
-        neovim
-        neovide
-        luajitPackages.luarocks-nix
-      ];
-    };
+  flake.modules.homeManager.nvim = {pkgs, ...}: {
+    home.packages = with pkgs; [
+      neovim
+      neovide
+      luajitPackages.luarocks-nix
+    ];
   };
 }

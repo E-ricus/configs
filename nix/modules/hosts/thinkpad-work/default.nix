@@ -1,163 +1,165 @@
-# Host aspect for thinkpad-work — Intel ThinkPad, Secure Boot, disko
-{den, ...}: {
-  den.hosts.x86_64-linux.thinkpad-work = {
-    display.scale = 1.50;
-    users.ericus = {};
-  };
+# Host: thinkpad-work — Intel ThinkPad, Secure Boot, disko
+{
+  inputs,
+  config,
+  ...
+}: {
+  flake.nixosConfigurations.thinkpad-work = inputs.nixpkgs.lib.nixosSystem {
+    modules = with config.flake.modules.nixos; [
+      defaults
+      ericus
+      base-system
+      locale
+      boot-lanzaboote
+      disko-luks-btrfs
+      intel-graphics
+      media
+      fingerprint
+      keyboards-zsa
+      keyboards-qmk
+      jetbrains
+      virtualization
+      windows-vm
+      work-tools
+      vpn
 
-  den.aspects.thinkpad-work = {
-    includes = [
-      den.provides.hostname
-      # NixOS-only aspects
-      den.aspects.base-system
-      den.aspects.locale
-      den.aspects.boot-lanzaboote
-      den.aspects.disko-luks-btrfs
-      den.aspects.intel-graphics
-      den.aspects.media
-      den.aspects.fingerprint
-      den.aspects.keyboards-zsa
-      den.aspects.keyboards-qmk
-      den.aspects.jetbrains
-      den.aspects.virtualization
-      den.aspects.windows-vm
-      den.aspects.work-tools
-      den.aspects.vpn
-    ];
+      ({pkgs, ...}: {
+        networking.hostName = "thinkpad-work";
+        my.display.scale = 1.50;
 
-    nixos = {pkgs, ...}: {
-      imports = [./_hardware.nix];
+        imports = [./_hardware.nix];
 
-      # sof-hda-dsp (UCM2) exposes Speaker and Headphones as two separate,
-      # mutually-exclusive analog profiles (each carries its own analog sink;
-      # both also contain all the HDMI sinks). The Headphones profile has a
-      # higher built-in priority (10300 > 10200), so on any card re-evaluation
-      # — e.g. plugging in HDMI — WirePlumber's auto-profile policy would jump
-      # to the Headphones profile and drop the Speaker sink, killing speaker
-      # audio even with nothing in the headphone jack. That was the annoying
-      # HDMI-steals-the-speakers bug.
-      #
-      # Fix: pin Speaker as the initial profile AND disable automatic profile
-      # re-selection (api.acp.auto-profile = false) so the policy stops chasing
-      # the higher-priority Headphones profile on unrelated events like HDMI
-      # hotplug. WirePlumber still remembers and restores manual choices.
-      #
-      # Trade-off (hardware limitation): because Speaker/Headphones are distinct
-      # profiles, the wired headphone jack does NOT auto-switch with this
-      # setting — switch to the Headphones profile manually in the audio menu
-      # when you plug in. The manual switch is honored and persists. This is the
-      # deliberate choice: reliable speakers (HDMI-proof) over automatic jack
-      # switching.
-      services.pipewire.wireplumber.extraConfig."51-thinkpad-speaker-profile" = {
-        "monitor.alsa.rules" = [
-          {
-            matches = [
-              {
-                "device.name" = "~alsa_card.pci-0000_00_1f.3-platform-skl_hda_dsp_generic";
-              }
-            ];
-            actions = {
-              update-props = {
-                "device.profile" = "HiFi (HDMI1, HDMI2, HDMI3, Mic1, Mic2, Speaker)";
-                "api.acp.auto-profile" = false;
+        # sof-hda-dsp (UCM2) exposes Speaker and Headphones as two separate,
+        # mutually-exclusive analog profiles (each carries its own analog sink;
+        # both also contain all the HDMI sinks). The Headphones profile has a
+        # higher built-in priority (10300 > 10200), so on any card re-evaluation
+        # — e.g. plugging in HDMI — WirePlumber's auto-profile policy would jump
+        # to the Headphones profile and drop the Speaker sink, killing speaker
+        # audio even with nothing in the headphone jack. That was the annoying
+        # HDMI-steals-the-speakers bug.
+        #
+        # Fix: pin Speaker as the initial profile AND disable automatic profile
+        # re-selection (api.acp.auto-profile = false) so the policy stops chasing
+        # the higher-priority Headphones profile on unrelated events like HDMI
+        # hotplug. WirePlumber still remembers and restores manual choices.
+        #
+        # Trade-off (hardware limitation): because Speaker/Headphones are distinct
+        # profiles, the wired headphone jack does NOT auto-switch with this
+        # setting — switch to the Headphones profile manually in the audio menu
+        # when you plug in. The manual switch is honored and persists. This is the
+        # deliberate choice: reliable speakers (HDMI-proof) over automatic jack
+        # switching.
+        services.pipewire.wireplumber.extraConfig."51-thinkpad-speaker-profile" = {
+          "monitor.alsa.rules" = [
+            {
+              matches = [
+                {
+                  "device.name" = "~alsa_card.pci-0000_00_1f.3-platform-skl_hda_dsp_generic";
+                }
+              ];
+              actions = {
+                update-props = {
+                  "device.profile" = "HiFi (HDMI1, HDMI2, HDMI3, Mic1, Mic2, Speaker)";
+                  "api.acp.auto-profile" = false;
+                };
               };
-            };
-          }
-        ];
-      };
-
-      # ── Bluetooth A2DP source role ─────────────────────────────────────
-      # WirePlumber's bluez monitor must expose the `a2dp_source` role for
-      # this machine to *send* audio to Bluetooth headphones (the computer is
-      # the A2DP source; the headphones are the sink). Without it, BlueZ has
-      # no source SEP to offer and codec negotiation fails with
-      # "a2dp_select_capabilities() Unable to select SEP", so no Bluetooth
-      # audio sink is ever created and the headphones never appear as an
-      # output device.
-      #
-      # We enable both A2DP directions plus the HSP/HFP head-unit *and*
-      # gateway roles: `*_hf`/`*_hs` let the machine drive a headset (mic +
-      # call audio), while `*_ag`/`*_ag` keep the audio-gateway side available
-      # too. This matches the WirePlumber upstream default role set.
-      services.pipewire.wireplumber.extraConfig."52-bluez-a2dp-source" = {
-        "monitor.bluez.properties" = {
-          "bluez5.roles" = [
-            "a2dp_sink"
-            "a2dp_source"
-            "hfp_hf"
-            "hfp_ag"
-            "hsp_hs"
-            "hsp_ag"
+            }
           ];
         };
-      };
 
-      # ── Analog jack (3.5mm) fix ────────────────────────────────────────
-      # On this sof-hda-dsp codec, the analog Speaker sink drives both the
-      # built-in speakers and the 3.5mm headphone/line-out jack. Two ALSA
-      # hardware mixer switches were blocking jack output out of the box:
-      #   • "Headphone" playback switch was muted ([off]).
-      #   • "Auto-Mute Mode" was Enabled, but jack-detect on this machine did
-      #     not un-mute Headphone on insertion, leaving the jack silent.
-      # The jack itself has a working hardware presence-detect that physically
-      # cuts the internal speakers while a plug is inserted (verified via the
-      # HP Out pin Detect capability in /proc/asound/card0/codec#0), so we do
-      # NOT need software auto-mute for clean switching. With Auto-Mute off and
-      # Headphone unmuted, plugging in routes to the (powered) external
-      # speakers and unplugging falls back to the built-in speakers
-      # automatically — no manual profile switching required.
-      #
-      # ALSA mixer state is not persisted across reboots by default, so restore
-      # it declaratively after the sound card is up.
-      systemd.services.thinkpad-analog-jack-fix = {
-        description = "Restore analog Headphone jack mixer state (sof-hda-dsp)";
-        wantedBy = ["multi-user.target"];
-        after = ["sound.target"];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+        # ── Bluetooth A2DP source role ─────────────────────────────────────
+        # WirePlumber's bluez monitor must expose the `a2dp_source` role for
+        # this machine to *send* audio to Bluetooth headphones (the computer is
+        # the A2DP source; the headphones are the sink). Without it, BlueZ has
+        # no source SEP to offer and codec negotiation fails with
+        # "a2dp_select_capabilities() Unable to select SEP", so no Bluetooth
+        # audio sink is ever created and the headphones never appear as an
+        # output device.
+        #
+        # We enable both A2DP directions plus the HSP/HFP head-unit *and*
+        # gateway roles: `*_hf`/`*_hs` let the machine drive a headset (mic +
+        # call audio), while `*_ag`/`*_ag` keep the audio-gateway side available
+        # too. This matches the WirePlumber upstream default role set.
+        services.pipewire.wireplumber.extraConfig."52-bluez-a2dp-source" = {
+          "monitor.bluez.properties" = {
+            "bluez5.roles" = [
+              "a2dp_sink"
+              "a2dp_source"
+              "hfp_hf"
+              "hfp_ag"
+              "hsp_hs"
+              "hsp_ag"
+            ];
+          };
         };
-        script = ''
-          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Auto-Mute Mode" Disabled || true
-          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Headphone" unmute 80% || true
-          ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Master" unmute 100% || true
-        '';
-      };
 
-      # Disko: host-specific disk device and swap size
-      diskoConfig.device = "/dev/nvme0n1";
-      diskoConfig.swapSize = "75G";
+        # ── Analog jack (3.5mm) fix ────────────────────────────────────────
+        # On this sof-hda-dsp codec, the analog Speaker sink drives both the
+        # built-in speakers and the 3.5mm headphone/line-out jack. Two ALSA
+        # hardware mixer switches were blocking jack output out of the box:
+        #   • "Headphone" playback switch was muted ([off]).
+        #   • "Auto-Mute Mode" was Enabled, but jack-detect on this machine did
+        #     not un-mute Headphone on insertion, leaving the jack silent.
+        # The jack itself has a working hardware presence-detect that physically
+        # cuts the internal speakers while a plug is inserted (verified via the
+        # HP Out pin Detect capability in /proc/asound/card0/codec#0), so we do
+        # NOT need software auto-mute for clean switching. With Auto-Mute off and
+        # Headphone unmuted, plugging in routes to the (powered) external
+        # speakers and unplugging falls back to the built-in speakers
+        # automatically — no manual profile switching required.
+        #
+        # ALSA mixer state is not persisted across reboots by default, so restore
+        # it declaratively after the sound card is up.
+        systemd.services.thinkpad-analog-jack-fix = {
+          description = "Restore analog Headphone jack mixer state (sof-hda-dsp)";
+          wantedBy = ["multi-user.target"];
+          after = ["sound.target"];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          script = ''
+            ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Auto-Mute Mode" Disabled || true
+            ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Headphone" unmute 80% || true
+            ${pkgs.alsa-utils}/bin/amixer -c 0 sset "Master" unmute 100% || true
+          '';
+        };
 
-      # LUKS / initrd — required for TPM2 unlock
-      boot.initrd.systemd.enable = true;
+        # Disko: host-specific disk device and swap size
+        diskoConfig.device = "/dev/nvme0n1";
+        diskoConfig.swapSize = "75G";
 
-      # TPM2
-      security.tpm2 = {
-        enable = true;
-        pkcs11.enable = true;
-        tctiEnvironment.enable = true;
-      };
+        # LUKS / initrd — required for TPM2 unlock
+        boot.initrd.systemd.enable = true;
 
-      # Firmware does not bridge usb charging as AC
-      boot.blacklistedKernelModules = ["ac"];
+        # TPM2
+        security.tpm2 = {
+          enable = true;
+          pkcs11.enable = true;
+          tctiEnvironment.enable = true;
+        };
 
-      # Hibernation support
-      boot.resumeDevice = "/dev/mapper/crypted";
-      boot.kernelParams = ["resume_offset=41286002"];
+        # Firmware does not bridge usb charging as AC
+        boot.blacklistedKernelModules = ["ac"];
 
-      # Suspend-then-hibernate
-      systemd.sleep.settings.Sleep.HibernateDelaySec = "15min";
+        # Hibernation support
+        boot.resumeDevice = "/dev/mapper/crypted";
+        boot.kernelParams = ["resume_offset=41286002"];
 
-      # Lid and power button behavior
-      services.logind.settings.Login = {
-        HandleLidSwitch = "suspend-then-hibernate";
-        HandleLidSwitchExternalPower = "suspend";
-        HandlePowerKey = "hibernate";
-        HandlePowerKeyLongPress = "poweroff";
-      };
+        # Suspend-then-hibernate
+        systemd.sleep.settings.Sleep.HibernateDelaySec = "15min";
 
-      services.fstrim.enable = true;
-      hardware.brillo.enable = true;
-    };
+        # Lid and power button behavior
+        services.logind.settings.Login = {
+          HandleLidSwitch = "suspend-then-hibernate";
+          HandleLidSwitchExternalPower = "suspend";
+          HandlePowerKey = "hibernate";
+          HandlePowerKeyLongPress = "poweroff";
+        };
+
+        services.fstrim.enable = true;
+        hardware.brillo.enable = true;
+      })
+    ];
   };
 }

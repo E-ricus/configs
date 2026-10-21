@@ -13,9 +13,7 @@
     };
   };
 
-  den.aspects.tmux = {
-    homeManager = {pkgs, ...}: {
-      home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.tmux];
-    };
+  flake.modules.homeManager.tmux = {pkgs, ...}: {
+    home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.tmux];
   };
 }

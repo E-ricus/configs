@@ -55,21 +55,6 @@
         "type": "github"
       }
     },
-    "den": {
-      "locked": {
-        "lastModified": 1792591525,
-        "narHash": "sha256-AhhXShXJreBCrf6WZWGvzlhMawL7d7FLJu28iqZsjjs=",
-        "owner": "vic",
-        "repo": "den",
-        "rev": "cc236ea21a44969e424cf45a4aba7dffa798ba9b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "vic",
-        "repo": "den",
-        "type": "github"
-      }
-    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -446,7 +431,6 @@
       "inputs": {
         "NixVirt": "NixVirt",
         "claude-desktop": "claude-desktop",
-        "den": "den",
         "disko": "disko",
         "emacs-overlay": "emacs-overlay",
         "flake-parts": "flake-parts_2",

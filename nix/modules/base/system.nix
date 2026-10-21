@@ -1,59 +1,57 @@
 # Base system configuration — networking, nix settings, garbage collection.
 # Included by all Linux hosts.
 {...}: {
-  den.aspects.base-system = {
-    nixos = {pkgs, ...}: {
-      # Networking
-      networking.networkmanager.enable = true;
+  flake.modules.nixos.base-system = {pkgs, ...}: {
+    # Networking
+    networking.networkmanager.enable = true;
 
-      # Nix settings
-      nix.settings = {
-        experimental-features = ["nix-command" "flakes"];
-        stalled-download-timeout = 0;
-        # Allow this user to set substituters/keys via CLI flags.
-        trusted-users = ["root" "ericus"];
-        # helix.cachix.org — binary cache for the helix (steel fork) build.
-        extra-substituters = [
-          "https://helix.cachix.org"
-        ];
-        extra-trusted-public-keys = [
-          "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
-        ];
-      };
-
-      # Disable command-not-found (prevents database errors with flakes)
-      programs.command-not-found.enable = false;
-      programs.nix-index = {
-        enable = true;
-        enableFishIntegration = true;
-        enableZshIntegration = true;
-      };
-
-      # Garbage collection
-      nix.gc = {
-        automatic = true;
-        dates = "weekly";
-        options = "--delete-older-than 2d";
-      };
-
-      # Firmware updates
-      services.fwupd.enable = true;
-
-      # Essential system packages
-      environment.systemPackages = with pkgs; [
-        git
-        wget
-        curl
-        vim
-        home-manager
-        fish
-        usbutils
+    # Nix settings
+    nix.settings = {
+      experimental-features = ["nix-command" "flakes"];
+      stalled-download-timeout = 0;
+      # Allow this user to set substituters/keys via CLI flags.
+      trusted-users = ["root" "ericus"];
+      # helix.cachix.org — binary cache for the helix (steel fork) build.
+      extra-substituters = [
+        "https://helix.cachix.org"
       ];
-
-      # Enable fish shell system-wide
-      programs.fish.enable = true;
-      # Fixes using dynamic linked non nixos binaries.
-      programs.nix-ld.enable = true;
+      extra-trusted-public-keys = [
+        "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
+      ];
     };
+
+    # Disable command-not-found (prevents database errors with flakes)
+    programs.command-not-found.enable = false;
+    programs.nix-index = {
+      enable = true;
+      enableFishIntegration = true;
+      enableZshIntegration = true;
+    };
+
+    # Garbage collection
+    nix.gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 2d";
+    };
+
+    # Firmware updates
+    services.fwupd.enable = true;
+
+    # Essential system packages
+    environment.systemPackages = with pkgs; [
+      git
+      wget
+      curl
+      vim
+      home-manager
+      fish
+      usbutils
+    ];
+
+    # Enable fish shell system-wide
+    programs.fish.enable = true;
+    # Fixes using dynamic linked non nixos binaries.
+    programs.nix-ld.enable = true;
   };
 }

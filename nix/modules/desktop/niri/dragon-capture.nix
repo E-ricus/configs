@@ -80,24 +80,22 @@
   };
 
   # ── Aspect: user service that runs the watcher for the graphical session ──
-  den.aspects.dragon-capture = {
-    homeManager = {pkgs, ...}: let
-      watch = self.packages.${pkgs.stdenv.hostPlatform.system}.dragon-capture-watch;
-    in {
-      systemd.user.services.dragon-capture-watch = {
-        Unit = {
-          Description = "Launch dragon-drop for new screenshots/recordings";
-          PartOf = ["graphical-session.target"];
-          After = ["graphical-session.target"];
-        };
-        Service = {
-          Type = "simple";
-          ExecStart = "${watch}/bin/dragon-capture-watch";
-          Restart = "on-failure";
-          RestartSec = 5;
-        };
-        Install.WantedBy = ["graphical-session.target"];
+  flake.modules.homeManager.dragon-capture = {pkgs, ...}: let
+    watch = self.packages.${pkgs.stdenv.hostPlatform.system}.dragon-capture-watch;
+  in {
+    systemd.user.services.dragon-capture-watch = {
+      Unit = {
+        Description = "Launch dragon-drop for new screenshots/recordings";
+        PartOf = ["graphical-session.target"];
+        After = ["graphical-session.target"];
       };
+      Service = {
+        Type = "simple";
+        ExecStart = "${watch}/bin/dragon-capture-watch";
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+      Install.WantedBy = ["graphical-session.target"];
     };
   };
 }

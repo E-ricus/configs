@@ -1,12 +1,11 @@
 {
-  description = "E-ric's nix configurations — Dendritic with Den + flake-parts";
+  description = "E-ric's nix configurations — dendritic flake-parts modules";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
-    den.url = "github:vic/den";
 
     home-manager = {
       url = "github:nix-community/home-manager";

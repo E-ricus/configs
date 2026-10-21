@@ -1,11 +1,9 @@
 # Yazi — terminal file manager.
 {...}: {
-  den.aspects.yazi = {
-    homeManager = {...}: {
-      programs.yazi = {
-        enable = true;
-        shellWrapperName = "y";
-      };
+  flake.modules.homeManager.yazi = {...}: {
+    programs.yazi = {
+      enable = true;
+      shellWrapperName = "y";
     };
   };
 }

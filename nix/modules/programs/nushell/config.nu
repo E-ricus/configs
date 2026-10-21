@@ -29,7 +29,7 @@ def --env z [path?: string] {
     }
 }
 
-# NixOS rebuild (system + home-manager via den)
+# NixOS rebuild (system + home-manager)
 def nos [] {
   sudo nixos-rebuild switch --flake $"($nu.home-dir)/configs/nix#(hostname)"
 }
