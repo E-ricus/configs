@@ -93,6 +93,22 @@
           };
         };
 
+        # ── Prefer A2DP on Bluetooth headsets ──────────────────────────────
+        # On reconnect, HFP and A2DP race; when A2DP loses ("a2dp-sink profile
+        # connect failed ...: Device or resource busy") and only comes up a
+        # few seconds later, the card is already on `headset-head-unit` (mono,
+        # call-quality mSBC) and stays there. Start every Bluetooth card on
+        # `a2dp-sink`; the autoswitch policy still moves to HFP when a call
+        # app actually captures from the headset mic, and back afterwards.
+        services.pipewire.wireplumber.extraConfig."53-bluez-prefer-a2dp" = {
+          "monitor.bluez.rules" = [
+            {
+              matches = [{"device.name" = "~bluez_card.*";}];
+              actions.update-props."device.profile" = "a2dp-sink";
+            }
+          ];
+        };
+
         # ── Analog jack (3.5mm) fix ────────────────────────────────────────
         # On this sof-hda-dsp codec, the analog Speaker sink drives both the
         # built-in speakers and the 3.5mm headphone/line-out jack. Two ALSA
@@ -128,9 +144,6 @@
         # Disko: host-specific disk device and swap size
         diskoConfig.device = "/dev/nvme0n1";
         diskoConfig.swapSize = "75G";
-
-        # LUKS / initrd — required for TPM2 unlock
-        boot.initrd.systemd.enable = true;
 
         # TPM2
         security.tpm2 = {

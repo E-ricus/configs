@@ -7,6 +7,7 @@
     ];
     programs.nushell = {
       enable = true;
+      loadSessionVariables = true;
       shellAliases = {
         rg = "rg --files --hidden --glob '!.git'";
         ff = "fzf --preview 'bat --style=numbers --color=always {}'";
