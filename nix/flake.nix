@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    # TODO: drop once Brave is replaced — brave was removed from nixpkgs
+    # (no committers among maintainers). Pinned to the last rev that had it;
+    # this Brave will NOT receive security updates.
+    nixpkgs-brave.url = "github:nixos/nixpkgs/0bb2eedc20e4739f29e8045034f2828ad7054f8f";
+
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
 
@@ -39,12 +44,6 @@
       url = "github:BirdeeHub/nix-wrapper-modules";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # nixpkgs pinned at the commit immediately BEFORE bun 1.3.13 -> 1.4.2
-    # (4ba99f3, 2026-09-12). Used ONLY to build opencode, which the newer bun
-    # miscompiles — see programs/llms.nix. Deliberately does not follow nixpkgs;
-    # remove this input once that workaround goes away.
-    nixpkgs-bun.url = "github:nixos/nixpkgs/d1248566e477e313530ea7f64e46ba3563bd895e";
 
     # Claude Desktop for Linux.
     claude-desktop = {
