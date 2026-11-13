@@ -4,11 +4,6 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # TODO: drop once Brave is replaced — brave was removed from nixpkgs
-    # (no committers among maintainers). Pinned to the last rev that had it;
-    # this Brave will NOT receive security updates.
-    nixpkgs-brave.url = "github:nixos/nixpkgs/0bb2eedc20e4739f29e8045034f2828ad7054f8f";
-
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
 
@@ -57,7 +52,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Darwin (inactive — uncomment to enable work-mac)
+    # MacOS
     # nix-darwin = {
     #   url = "github:nix-darwin/nix-darwin/master";
     #   inputs.nixpkgs.follows = "nixpkgs";
