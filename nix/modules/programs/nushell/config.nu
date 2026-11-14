@@ -31,6 +31,7 @@ def --env z [path?: string] {
 
 # NixOS rebuild (system + home-manager)
 def nos [] {
+  nix build $"($nu.home-dir)/configs/nix#nixosConfigurations.(hostname).config.system.build.toplevel"
   sudo nixos-rebuild switch --flake $"($nu.home-dir)/configs/nix#(hostname)"
 }
 
@@ -38,7 +39,7 @@ def nos [] {
 def nosu [] {
   cd $"($nu.home-dir)/configs/nix"
   nix flake update
-  sudo nixos-rebuild switch --flake $".#(hostname)"
+  nos
 }
 
 # Darwin rebuild

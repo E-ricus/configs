@@ -27,7 +27,7 @@
         theme = {
           mode = "dark";
           source = "builtin";
-          builtin = "Catppuccin";
+          builtin = "Kanagawa";
         };
 
         # ── Global shell behavior ──────────────────────────────────────
@@ -87,7 +87,7 @@
                   "noctalia/screen_recorder:recorder" # screen-recorder plugin
                   "privacy" # was the privacy-indicator plugin
                 ];
-                fill = "surface_variant";
+                fill = "surface_container";
                 opacity = 1.0;
                 padding = 6.0;
               }
@@ -112,14 +112,14 @@
 
         # ── OSD ────────────────────────────────────────────────────────
         osd = {
-          position = "bottom_right";
+          position = "top_right";
           background_opacity = 1.0;
         };
 
         # ── Notifications ──────────────────────────────────────────────
         notification = {
           enable_daemon = true;
-          position = "bottom_right";
+          position = "top_right";
           background_opacity = 1.0;
 
           # Shorten how long toasts stay on screen. v5 has no global timeout
@@ -213,12 +213,18 @@
         # network-manager-vpn have no v5 plugin equivalent — they are either
         # built into the shell or replaced by built-in widgets.
         plugins = {
-          enabled = ["noctalia/screen_recorder"];
+          enabled = ["noctalia/screen_recorder" "noctalia/bitwarden" "thaer99ob/default-apps"];
           source = [
             {
               name = "official";
               kind = "git";
               location = "https://github.com/noctalia-dev/official-plugins";
+              auto_update = false;
+            }
+            {
+              name = "coummunity";
+              kind = "git";
+              location = "https://github.com/noctalia-dev/community-plugins";
               auto_update = false;
             }
           ];
