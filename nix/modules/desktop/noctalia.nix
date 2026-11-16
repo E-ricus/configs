@@ -55,7 +55,7 @@
         bar = {
           order = ["main"];
           main = {
-            position = "bottom";
+            position = "top";
             background_opacity = 1.0;
             reserve_space = true;
             margin_ends = 10;

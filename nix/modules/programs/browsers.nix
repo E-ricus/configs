@@ -4,7 +4,7 @@
     config,
     ...
   }: {
-    home.packages = [pkgs.librewolf-bin pkgs.ungoogled-chromium];
+    home.packages = [pkgs.librewolf-bin pkgs.brave];
     programs.firefox = {
       enable = true;
       configPath = "${config.xdg.configHome}/mozilla/firefox";

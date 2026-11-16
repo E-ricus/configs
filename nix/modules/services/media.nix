@@ -8,7 +8,8 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
-      jack.enable = true;
+      # JACK: the global `jack.enable` is deprecated (it sets LD_LIBRARY_PATH
+      # system-wide). Run JACK apps through `pw-jack <app>` instead.
       extraConfig.pipewire."10-clock-rates" = {
         "context.properties" = {
           "default.clock.rate" = 48000;
@@ -16,6 +17,9 @@
         };
       };
     };
+
+    # Provides the `pw-jack` wrapper for JACK clients.
+    environment.systemPackages = [pkgs.pipewire.jack];
 
     # Bluetooth
     hardware.bluetooth = {
