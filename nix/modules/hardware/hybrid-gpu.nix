@@ -4,7 +4,6 @@
   flake.modules.nixos.hybrid-gpu = {
     pkgs,
     lib,
-    config,
     ...
   }: {
     services.xserver.videoDrivers = ["modesetting" "nvidia"];
@@ -50,29 +49,5 @@
         ls -l /sys/bus/pci/devices/$GPU/driver 2>/dev/null || echo "None (unbound)"
       '')
     ];
-
-    specialisation.nvidia-only = {
-      inheritParentConfig = true;
-      configuration = {
-        system.nixos.tags = ["nvidia-only"];
-        services.xserver.videoDrivers = lib.mkForce ["nvidia"];
-        hardware.amdgpu = lib.mkIf (lib.hasAttr "amdgpu" config.hardware) {
-          initrd.enable = lib.mkForce false;
-          opencl.enable = lib.mkForce false;
-        };
-        hardware.nvidia = {
-          powerManagement = {
-            enable = lib.mkForce false;
-            finegrained = lib.mkForce false;
-          };
-          prime = {
-            offload.enable = lib.mkForce false;
-            offload.enableOffloadCmd = lib.mkForce false;
-            sync.enable = lib.mkForce false;
-            reverseSync.enable = lib.mkForce false;
-          };
-        };
-      };
-    };
   };
 }

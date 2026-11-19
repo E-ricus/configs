@@ -9,7 +9,6 @@ in {
       cosmic
       linux-desktop
       containers
-      emacs
     ];
 
     programs.fish.enable = true;
