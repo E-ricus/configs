@@ -1,4 +1,6 @@
--- TODO: Move it to sidekick.nvim when added.
+-- TODO: Nvim 0.12 supports this natively (no plugin needed): install copilot-language-server, then
+--   vim.lsp.enable("copilot") and vim.lsp.inline_completion.enable()
+-- (see :h lsp-inline_completion). sidekick.nvim builds on top of that if you want NES/AI CLI integration.
 return {
   "zbirenbaum/copilot.lua",
   event = "InsertEnter",

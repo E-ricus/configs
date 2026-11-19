@@ -10,8 +10,8 @@ return {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     opts = {
+      extensions = { "fugitive", "lazy", "trouble" },
       options = {
-        extensions = { "fzf", "nvim-tree", "fugitive" },
         globalstatus = true,
         section_separators = { left = "", right = "" },
         component_separators = { left = "|", right = "|" },
@@ -72,34 +72,12 @@ return {
           "diagnostics",
         },
         lualine_c = { { "filename", path = 1 } },
-        lualine_x = { "encoding", "fileformat", "filetype" },
+        -- lsp_status: spinner while servers are busy (indexing, cargo check...), replaces noice's progress
+        lualine_x = { "lsp_status", "encoding", "fileformat", "filetype" },
         lualine_y = { "progress" },
         lualine_z = { "location" },
       },
     },
   },
-  {
-    "folke/noice.nvim",
-    event = "VeryLazy",
-    dependencies = {
-      "MunifTanjim/nui.nvim",
-    },
-    opts = {
-      lsp = {
-        override = {
-          ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-          ["vim.lsp.util.stylize_markdown"] = true,
-        },
-      },
-      cmdline = {
-        view = "cmdline",
-      },
-      presets = {
-        bottom_search = true, -- use a classic bottom cmdline for search
-        command_palette = true, -- position the cmdline and popupmenu together
-        long_message_to_split = true, -- long messages will be sent to a split
-        lsp_doc_border = true, -- add a border to hover docs and signature help
-      },
-    },
-  },
+  -- noice.nvim replaced by the built-in (experimental) ui2, see config/settings.lua
 }

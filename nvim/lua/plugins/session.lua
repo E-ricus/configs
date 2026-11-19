@@ -13,14 +13,14 @@ return {
       desc = "Load the session current directory",
     },
     {
-      "<leader>qs",
+      "<leader>qS",
       function()
         require("persistence").select()
       end,
       desc = "Select session to load",
     },
     {
-      "<leader>qs",
+      "<leader>ql",
       function()
         require("persistence").load({ last = true })
       end,

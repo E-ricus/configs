@@ -2,7 +2,6 @@ return {
   { "nvim-lua/plenary.nvim", event = "VeryLazy" },
   -- Editor enhancements
   { "tpope/vim-surround", event = "VeryLazy" },
-  { "lukas-reineke/indent-blankline.nvim", event = "VeryLazy" },
   { "andymass/vim-matchup", event = "BufReadPre" },
   {
     "shortcuts/no-neck-pain.nvim",
@@ -30,7 +29,12 @@ return {
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" },
     ---@module 'render-markdown'
     ---@type render.md.UserConfig
-    opts = {},
+    opts = {
+      -- By default render-markdown disables the `conceal_lines` patterns of the *global* markdown
+      -- highlights query, which un-hides ```lang fences in every other markdown float too
+      -- (blink completion docs, LSP hover). Keep the query intact.
+      patterns = { markdown = { disable = false } },
+    },
     ft = "markdown",
   },
   {

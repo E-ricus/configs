@@ -62,13 +62,7 @@ return {
   "neovim/nvim-lspconfig",
   event = "BufReadPre",
   dependencies = {
-    {
-      "williamboman/mason.nvim",
-      init = function()
-        require("mason").setup()
-      end,
-    },
-    "onsails/lspkind-nvim",
+    { "mason-org/mason.nvim", opts = {} },
   },
   config = function()
     for server, config in pairs(servers) do

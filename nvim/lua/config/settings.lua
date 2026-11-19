@@ -3,7 +3,8 @@ vim.opt.timeoutlen = 300
 vim.opt.number = true
 vim.opt.relativenumber = true
 -- Make diffing better: https://vimways.org/2018/the-power-of-diff/
-vim.opt.diffopt:append({ "algorithm:patience", "indent-heuristic" })
+-- (indent-heuristic is a default since 0.12)
+vim.opt.diffopt:append({ "algorithm:patience" })
 vim.opt.smartcase = true
 vim.opt.scrolloff = 5
 vim.opt.mouse = "a"
@@ -25,13 +26,19 @@ vim.opt.splitbelow = true
 vim.opt.signcolumn = "yes"
 vim.opt.updatetime = 300
 vim.opt.showmode = false
-vim.cmd("syntax on")
+
+-- Built-in message/cmdline UI redesign (0.12, experimental). Replaces noice.nvim.
+-- No "Press ENTER" prompts, highlighted cmdline, messages pager. Remove if it misbehaves.
+local ok_ui2, ui2 = pcall(require, "vim._core.ui2")
+if ok_ui2 then
+  ui2.enable()
+end
 
 -- Autocmds
 local highlight_group = vim.api.nvim_create_augroup("YankHighlight", { clear = true })
 vim.api.nvim_create_autocmd("TextYankPost", {
   callback = function()
-    vim.highlight.on_yank()
+    vim.hl.on_yank()
   end,
   group = highlight_group,
   pattern = "*",

@@ -111,10 +111,7 @@ return {
   {
     "saecki/crates.nvim",
     tag = "stable",
-    lazy = true,
     event = { "BufReadPre Cargo.toml" },
-    init = function()
-      require("crates").setup({})
-    end,
+    opts = {},
   },
 }

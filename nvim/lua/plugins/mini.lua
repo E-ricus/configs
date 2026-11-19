@@ -1,5 +1,4 @@
 return {
-  { "nvim-mini/mini.comment", version = "*", event = "VeryLazy" },
   {
     "nvim-mini/mini.bracketed",
     event = "VeryLazy",

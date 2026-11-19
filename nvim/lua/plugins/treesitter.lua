@@ -47,8 +47,9 @@ return {
         "zig",
         "nix",
         "nu",
+        "odin",
       })
     end,
-    dependencies = { "nvim-treesitter/nvim-treesitter-context", "nvim-treesitter/nvim-treesitter-textobjects" },
+    dependencies = { "nvim-treesitter/nvim-treesitter-context" },
   },
 }
