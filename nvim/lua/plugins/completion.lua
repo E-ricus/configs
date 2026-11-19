@@ -37,7 +37,7 @@ return {
 
       ["<C-space>"] = { "show", "show_documentation", "hide_documentation" },
       ["<C-e>"] = { "hide" },
-      ["<Enter>"] = { "select_and_accept", "fallback" },
+      ["<Enter>"] = { "accept", "fallback" },
 
       ["<Up>"] = { "select_prev", "fallback" },
       ["<Down>"] = { "select_next", "fallback" },
@@ -59,6 +59,7 @@ return {
       list = {
         selection = {
           preselect = false,
+          auto_insert = false,
         },
       },
       menu = {

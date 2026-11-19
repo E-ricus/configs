@@ -19,6 +19,12 @@ return {
   { "ziglang/zig.vim", event = "BufReadPre *.zig" },
   { "ChrisWellsWood/roc.vim", event = "BufReadPre *.roc" },
   {
+    "Sarctiann/mojo.nvim",
+    main = "mojo",
+    opts = {},
+    event = "BufReadPre *.mojo",
+  },
+  {
     "chomosuke/typst-preview.nvim",
     ft = "typst",
     version = "1.*",
